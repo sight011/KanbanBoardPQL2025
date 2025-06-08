@@ -1,0 +1,55 @@
+.task-board {
+    padding: 20px;
+    height: calc(100vh - 60px);
+    overflow-x: auto;
+}
+
+.columns-container {
+    display: flex;
+    gap: 20px;
+    height: 100%;
+    min-width: max-content;
+}
+
+.task-column {
+    background: #f4f5f7;
+    border-radius: 8px;
+    width: 300px;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.column-header {
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #e1e4e8;
+}
+
+.column-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #172b4d;
+}
+
+.task-count {
+    background: #e1e4e8;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 14px;
+    color: #172b4d;
+}
+
+.task-list {
+    padding: 8px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.task-list.dragging-over {
+    background: #e1e4e8;
+    color: red
+} 
