@@ -55,6 +55,7 @@ form {
 
 .form-group {
     margin-bottom: 16px;
+    
 }
 
 .form-group label {
@@ -67,11 +68,13 @@ form {
 .form-group input,
 .form-group textarea,
 .form-group select {
-    width: 100%;
+    width: 96%;
     padding: 8px;
     border: 1px solid #dfe1e6;
     border-radius: 4px;
     font-size: 14px;
+    background: #ffffff;
+    color: black;
 }
 
 .form-group input:focus,
@@ -119,3 +122,24 @@ form {
 .submit-button:hover {
     background-color: #0747a6;
 } 
+
+#status {
+    width: 100%;
+}
+#priority {
+    width: 100%;
+}
+
+label {
+    text-align: left;
+}
+
+.task-title {
+    text-align: left;
+}
+
+.task-description{
+    text-align: left;
+}
+
+
