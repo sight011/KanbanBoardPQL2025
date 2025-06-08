@@ -1,3 +1,6 @@
+Kanban Board based on Node.js, React.js, PostgreSQL, Vite
+
+I used:
 # PERN stack starter
 
 A boilerplate quickstart for using the PERN (Postgres sql, Express.js, React.js, Node.js) stack.
