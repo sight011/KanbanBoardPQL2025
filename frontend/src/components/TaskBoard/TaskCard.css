@@ -6,6 +6,24 @@
     padding: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+/* Status-based border colors */
+.task-card[data-status="todo"] {
+    border-left-color: #0052cc;
+}
+
+.task-card[data-status="inProgress"] {
+    border-left-color: #ffab00;
+}
+
+.task-card[data-status="review"] {
+    border-left-color: #6554c0;
+}
+
+.task-card[data-status="done"] {
+    border-left-color: #36b37e;
 }
 
 .task-card:hover {
@@ -99,4 +117,16 @@
 
 .assignee-circle:hover {
     background-color: #0747a6;
+}
+
+/* Style for unassigned bubble */
+.assignee-circle:has(+ span:empty),
+.assignee-circle:not(:has(+ span:not(:empty))) {
+    background-color: #dfe1e6;
+    color: #6b778c;
+}
+
+.assignee-circle:has(+ span:empty):hover,
+.assignee-circle:not(:has(+ span:not(:empty))):hover {
+    background-color: #c1c7d0;
 } 

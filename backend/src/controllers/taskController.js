@@ -108,9 +108,9 @@ const taskController = {
             const { id } = req.params;
             const { title, description, status, priority, assignee_id } = req.body;
 
-            // First check if the assignee exists
+            // Handle assignee_id
             let assigneeId = null;
-            if (assignee_id) {
+            if (assignee_id && assignee_id !== 'unassigned') {
                 const assigneeResult = await pool.query(
                     'SELECT id FROM users WHERE id = $1',
                     [assignee_id]
