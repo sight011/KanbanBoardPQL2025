@@ -43,25 +43,41 @@
 }
 
 .app {
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
     background-color: #f4f5f7;
+    transition: background-color 0.3s ease;
+}
+
+.dark-mode .app {
+    background-color: #1a1a1a;
 }
 
 .app-header {
-    background-color: white;
-    padding: 16px 24px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background-color: #0052cc;
+    color: white;
+    padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    height: 60px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.dark-mode .app-header {
+    background-color: #1f2937;
 }
 
 .app-logo-container {
     display: flex;
     align-items: center;
-    gap: 10px; /* Space between icon and text */
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .robot-icon {
@@ -76,23 +92,64 @@
 }
 
 .create-task-button {
-    background-color: #0052cc;
+    background-color: #36b37e;
     color: white;
     border: none;
     padding: 8px 16px;
     border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
     cursor: pointer;
+    font-weight: 500;
     transition: background-color 0.2s;
 }
 
 .create-task-button:hover {
-    background-color: #0747a6;
+    background-color: #2d9d6b;
+}
+
+.dark-mode .create-task-button {
+    background-color: #059669;
+}
+
+.dark-mode .create-task-button:hover {
+    background-color: #047857;
 }
 
 .app-main {
     flex: 1;
-    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     overflow: hidden;
+}
+
+:root {
+    --primary-color: #0052cc;
+    --secondary-color: #0747a6;
+    --background-color: #f8f9fa;
+    --text-color: #172b4d;
+    --border-color: #dfe1e6;
+    --hover-color: #ebecf0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode {
+    --primary-color: #3182ce;
+    --secondary-color: #2b6cb0;
+    --background-color: #1a202c;
+    --text-color: #e2e8f0;
+    --border-color: #4a5568;
+    --hover-color: #2d3748;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }

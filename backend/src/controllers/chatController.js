@@ -45,8 +45,20 @@ const chatController = {
                 `ID: ${task.id}, Title: ${task.title}, Description: ${task.description}, Status: ${task.status}, Priority: ${task.priority}`
             ).join('\n');
 
-            // 3. Construct the full prompt for the LLM
-            const fullPrompt = `You are a helpful Kanban board assistant. Here is the current state of the Kanban board tasks:\n\n${tasksContext}\n\nUser query: ${prompt}\n\nBased on the tasks provided, please answer the user's question concisely and helpfully.`;
+            // 3. Construct the full prompt for the LLM with formatting guidelines
+            const fullPrompt = `You are a helpful Kanban board assistant. Your responses should be:
+1. Concise and direct
+2. Focused on the specific question
+3. Include relevant numbers and statistics when applicable
+4. Use bullet points for multiple items
+5. Format numbers and percentages clearly
+
+Here is the current state of the Kanban board tasks:
+${tasksContext}
+
+User query: ${prompt}
+
+Based on the tasks provided, please answer the user's question following the response structure guidelines.`;
 
             console.log('Sending prompt to Ollama...');
             // 4. Send the combined prompt to Ollama LLM

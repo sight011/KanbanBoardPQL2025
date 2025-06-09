@@ -55,7 +55,7 @@ export const TaskProvider = ({ children }) => {
             const response = await api.put(`/api/tasks/${taskId}`, taskData);
             setTasks(prevTasks =>
                 prevTasks.map(task =>
-                    task.id === taskId ? response.data : task
+                    task.id === taskId ? { ...task, ...response.data } : task
                 )
             );
             return response.data;

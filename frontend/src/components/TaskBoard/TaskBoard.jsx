@@ -1,20 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import TaskColumn from './TaskColumn';
+import TaskFilters from './TaskFilters';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskBoard.css';
 
 const TaskBoard = () => {
     const { tasks, updateTaskPosition, loading, error } = useTaskContext();
-    const [columns, setColumns] = useState({
-        todo: [],
-        inProgress: [],
-        review: [],
-        done: []
+    const [filters, setFilters] = useState({
+        text: '',
+        priority: '',
+        assignee: ''
     });
 
-    useEffect(() => {
-        // Organize tasks into columns
+    // Use useMemo to efficiently filter tasks
+    const filteredTasks = useMemo(() => {
+        return tasks.filter(task => {
+            const matchesText = !filters.text || 
+                task.title.toLowerCase().includes(filters.text.toLowerCase()) ||
+                task.description.toLowerCase().includes(filters.text.toLowerCase());
+            
+            const matchesPriority = !filters.priority || 
+                task.priority === filters.priority;
+            
+            const matchesAssignee = !filters.assignee || 
+                (filters.assignee === 'unassigned' && !task.assignee_id) ||
+                task.assignee_id === parseInt(filters.assignee);
+
+            return matchesText && matchesPriority && matchesAssignee;
+        });
+    }, [tasks, filters]);
+
+    // Organize filtered tasks into columns
+    const columns = useMemo(() => {
         const organizedTasks = {
             todo: [],
             inProgress: [],
@@ -22,7 +40,7 @@ const TaskBoard = () => {
             done: []
         };
 
-        tasks.forEach(task => {
+        filteredTasks.forEach(task => {
             if (organizedTasks[task.status]) {
                 organizedTasks[task.status].push(task);
             }
@@ -33,8 +51,15 @@ const TaskBoard = () => {
             organizedTasks[status].sort((a, b) => a.position - b.position);
         });
 
-        setColumns(organizedTasks);
-    }, [tasks]);
+        return organizedTasks;
+    }, [filteredTasks]);
+
+    const handleFilterChange = (filterType, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [filterType]: value
+        }));
+    };
 
     const onDragStart = () => {
         // Add a class to the body when drag starts
@@ -87,6 +112,10 @@ const TaskBoard = () => {
 
     return (
         <div className="task-board">
+            <TaskFilters 
+                filters={filters}
+                onFilterChange={handleFilterChange}
+            />
             <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
                 <div className="columns-container">
                     <TaskColumn

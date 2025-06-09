@@ -6,6 +6,11 @@
     display: flex;
     flex-direction: column;
     margin-right: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.dark-mode .task-column {
+    background: #2d3748;
 }
 
 .column-header {
@@ -14,6 +19,11 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid #e1e4e8;
+    transition: border-color 0.3s ease;
+}
+
+.dark-mode .column-header {
+    border-bottom-color: #4a5568;
 }
 
 .column-header h3 {
@@ -21,6 +31,11 @@
     font-size: 16px;
     font-weight: 600;
     color: #172b4d;
+    transition: color 0.3s ease;
+}
+
+.dark-mode .column-header h3 {
+    color: #e2e8f0;
 }
 
 .task-count {
@@ -29,6 +44,12 @@
     padding: 2px 8px;
     font-size: 14px;
     color: #172b4d;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark-mode .task-count {
+    background: #4a5568;
+    color: #e2e8f0;
 }
 
 .task-list {
@@ -40,6 +61,10 @@
 
 .task-list.dragging-over {
     background: #e1e4e8;
+}
+
+.dark-mode .task-list.dragging-over {
+    background: #4a5568;
 }
 
 /* Prevent hover effects during drag operation */

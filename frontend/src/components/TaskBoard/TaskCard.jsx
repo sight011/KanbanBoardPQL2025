@@ -20,6 +20,25 @@ const TaskCard = memo(({ task, index }) => {
         return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     };
 
+    const getAssigneeColor = (assigneeId) => {
+        // Array of visually distinct colors
+        const colors = [
+            '#0052cc', // Blue
+            '#36b37e', // Green
+            '#ff5630', // Red
+            '#ffab00', // Yellow
+            '#6554c0', // Purple
+            '#00b8d9', // Cyan
+            '#ff7452', // Orange
+            '#8777d9', // Lavender
+            '#57d9a3', // Mint
+            '#00a3bf'  // Teal
+        ];
+        
+        // Use assigneeId to consistently map to a color
+        return colors[(assigneeId - 1) % colors.length];
+    };
+
     return (
         <Draggable draggableId={task.id.toString()} index={index}>
             {(provided, snapshot) => {
@@ -50,18 +69,22 @@ const TaskCard = memo(({ task, index }) => {
                                 <span className={`priority ${task.priority}`}>
                                     {task.priority}
                                 </span>
+                                {task.ticket_number && (
+                                    <span className="task-ticket-number">
+                                        {task.ticket_number}
+                                    </span>
+                                )}
                                 {task.assignee_id ? (
-                                    <span className="assignee-circle" title={`Assigned to ${getAssigneeInitials(task.assignee_id)}`}>
+                                    <span 
+                                        className="assignee-circle" 
+                                        title={`Assigned to ${getAssigneeInitials(task.assignee_id)}`}
+                                        style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}
+                                    >
                                         {getAssigneeInitials(task.assignee_id)}
                                     </span>
                                 ) : (
                                     <span className="assignee-circle unassigned" title="Unassigned">
                                         UA
-                                    </span>
-                                )}
-                                {task.ticket_number && (
-                                    <span className="task-ticket-number">
-                                        {task.ticket_number}
                                     </span>
                                 )}
                             </div>
