@@ -39,8 +39,7 @@ Based on the tasks above, please answer the user's question.`;
             <div className="app">
                 <header className="app-header">
                     <div className="app-logo-container">
-                        <span role="img" aria-label="robot-icon" className="robot-icon">🤖</span>
-                        <h1>Task Management</h1>
+                        <img src="/flexflex2.png" alt="FlexFlex Logo" width="200" height="55" />
                     </div>
                     <CreateTaskButton />
                 </header>

@@ -2,6 +2,29 @@ const pool = require('../db');
 const axios = require('axios');
 
 const chatController = {
+    checkStatus: async (req, res) => {
+        try {
+            // Try to connect to Ollama using the generate endpoint with a simple test
+            await axios.post('http://127.0.0.1:11434/api/generate', {
+                model: 'llama3',
+                prompt: 'test',
+                stream: false
+            });
+            console.log('✅ Ollama connection successful');
+            res.json({ status: 'online' });
+        } catch (error) {
+            console.error('❌ Error checking Ollama status:', error.message);
+            if (error.response) {
+                // If we get a response from Ollama, it means the service is running
+                console.log('✅ Ollama service is running');
+                res.json({ status: 'online' });
+            } else {
+                console.log('❌ Ollama service is not responding');
+                res.status(503).json({ status: 'offline' });
+            }
+        }
+    },
+
     handleChat: async (req, res) => {
         console.log('🔍 handleChat endpoint hit');
         const { prompt } = req.body;

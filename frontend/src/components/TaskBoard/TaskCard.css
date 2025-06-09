@@ -5,7 +5,10 @@
     margin-bottom: 8px;
     padding: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    position: relative;
+    will-change: transform;
+    transform: translateZ(0);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .task-card:hover {
@@ -14,8 +17,45 @@
     background: #f8f9fa;
 }
 
+/* When dragging is active on the body */
+body.dragging .task-card {
+    transition: none;
+}
+
+body.dragging .task-card:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    background: white;
+}
+
 .task-card.dragging {
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Style for the placeholder that appears during drag */
+.task-card + .task-card {
+    transition: transform 0.2s ease;
+}
+
+/* When a card is being dragged, allow smooth transitions for other cards */
+.task-card.dragging ~ .task-card {
+    transition: transform 0.2s ease;
+}
+
+/* Prevent layout shifts during drag */
+.task-card.drag-placeholder {
+    opacity: 0.5;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* When dragging, disable hover effects */
+.task-card.dragging:hover {
+    transform: none;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    background: white;
 }
 
 .task-card-content {
@@ -56,6 +96,7 @@
     padding: 2px 6px;
     border-radius: 3px;
     text-transform: uppercase;
+    font-weight: bold;
 }
 
 .priority.high {
@@ -112,4 +153,5 @@
 } 
 
 .task-ticket-number {
-font-size: 0.7rem;}
+font-size: 0.7rem;
+font-weight: bold;}

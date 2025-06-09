@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import TaskCard from './TaskCard';
 import './TaskColumn.css';
 
-const TaskColumn = ({ title, tasks, status }) => {
+const TaskColumn = memo(({ title, tasks, status }) => {
     return (
         <div className="task-column">
             <div className="column-header">
@@ -16,6 +16,11 @@ const TaskColumn = ({ title, tasks, status }) => {
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                         className={`task-list ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
+                        style={{
+                            minHeight: '100px',
+                            padding: '8px',
+                            transition: 'background-color 0.2s ease'
+                        }}
                     >
                         {tasks.map((task, index) => (
                             <TaskCard
@@ -30,6 +35,17 @@ const TaskColumn = ({ title, tasks, status }) => {
             </Droppable>
         </div>
     );
-};
+}, (prevProps, nextProps) => {
+    // Only re-render if tasks array has changed
+    if (prevProps.tasks.length !== nextProps.tasks.length) return false;
+    
+    // Check if any task has changed
+    return prevProps.tasks.every((task, index) => 
+        task.id === nextProps.tasks[index].id && 
+        task.status === nextProps.tasks[index].status
+    );
+});
+
+TaskColumn.displayName = 'TaskColumn';
 
 export default TaskColumn; 

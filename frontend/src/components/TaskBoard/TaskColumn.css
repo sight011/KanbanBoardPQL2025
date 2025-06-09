@@ -35,8 +35,16 @@
     padding: 8px;
     flex-grow: 1;
     overflow-y: auto;
+    transition: background-color 0.2s ease;
 }
 
 .task-list.dragging-over {
     background: #e1e4e8;
+}
+
+/* Prevent hover effects during drag operation */
+.task-column.dragging .task-card:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    background: white;
 } 

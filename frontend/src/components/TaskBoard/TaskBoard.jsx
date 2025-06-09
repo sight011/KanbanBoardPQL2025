@@ -36,7 +36,15 @@ const TaskBoard = () => {
         setColumns(organizedTasks);
     }, [tasks]);
 
+    const onDragStart = () => {
+        // Add a class to the body when drag starts
+        document.body.classList.add('dragging');
+    };
+
     const onDragEnd = async (result) => {
+        // Remove the dragging class from body
+        document.body.classList.remove('dragging');
+
         const { source, destination, draggableId } = result;
 
         // Dropped outside a valid destination
@@ -79,7 +87,7 @@ const TaskBoard = () => {
 
     return (
         <div className="task-board">
-            <DragDropContext onDragEnd={onDragEnd}>
+            <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
                 <div className="columns-container">
                     <TaskColumn
                         title="To Do"

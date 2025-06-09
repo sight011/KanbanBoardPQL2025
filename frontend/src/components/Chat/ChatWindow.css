@@ -3,7 +3,7 @@
   bottom: 90px; /* Adjust to be above the bubble */
   right: 20px;
   width: 350px;
-  height: 450px;
+  height: 720px;
   background-color: #f9f9f9;
   border-radius: 8px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
@@ -22,10 +22,34 @@
   align-items: center;
   font-size: 1.1em;
   font-weight: bold;
+  height: 9px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-indicator {
+  font-size: 0.7em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: normal;
+}
+
+.status-indicator.online {
+  background-color: #28a745;
+}
+
+.status-indicator.offline {
+  background-color: #659aea;
+  font-weight: bold;
 }
 
 .chat-header h3 {
   margin: 0;
+  font-size: 0.88em;
 }
 
 .chat-header .close-button {
@@ -38,7 +62,8 @@
 }
 
 button .close-chat-icon {
-  font-size: 0.95em!important;
+  font-size: 0.8em!important;
+  margin-top: 4px;
 }
 
 .chat-bubble .close-chat-icon {
@@ -76,10 +101,11 @@ button .close-chat-icon {
 
 .chat-message.default-question {
   align-self: flex-start;
-  background-color: #f0f0f0;
+  background-color: #c6ddf8;
   color: #555;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  font-size: 0.9em;
 }
 
 .chat-message.default-question:hover {
@@ -107,13 +133,26 @@ button .close-chat-icon {
   color: white;
   border: none;
   border-radius: 20px;
-  padding: 10px 20px;
+  padding: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding-top: 12px;
+  padding-left: 7px;
 }
 
 .chat-input button:hover {
   background-color: #0056b3;
+}
+
+.send-icon {
+  width: 20px;
+  height: 20px;
+  fill: white;
 }
 
 .close-chat-icon {
