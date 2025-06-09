@@ -25,6 +25,7 @@
   height: 1.2em; /* Made smaller */
   fill: white; /* Fill white */
   border: none; /* Ensure no outline */
+  margin-top: -2px;
 }
 
 .close-chat-icon {

@@ -12,6 +12,13 @@ const TaskModal = () => {
         deleteTask
     } = useTaskContext();
 
+    // User mapping for consistent display across components
+    const userMap = {
+        1: { firstName: 'John', lastName: 'Doe' },
+        2: { firstName: 'Jane', lastName: 'Smith' },
+        3: { firstName: 'Bob', lastName: 'Johnson' }
+    };
+
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -74,10 +81,22 @@ const TaskModal = () => {
         }));
     };
 
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit(e);
+        }
+    };
+
     if (!isModalOpen) return null;
 
     return (
-        <div className="modal-overlay" onClick={closeTaskModal}>
+        <div 
+            className="modal-overlay" 
+            onClick={closeTaskModal}
+            onKeyPress={handleKeyPress}
+            tabIndex={0}
+        >
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2>{selectedTask ? 'Edit Task' : 'Create New Task'}</h2>
@@ -141,9 +160,11 @@ const TaskModal = () => {
                             onChange={handleChange}
                         >
                             <option value="">Unassigned</option>
-                            <option value="1">User 1</option>
-                            <option value="2">User 2</option>
-                            <option value="3">User 3</option>
+                            {Object.entries(userMap).map(([id, user]) => (
+                                <option key={id} value={id}>
+                                    {`${user.firstName} ${user.lastName}`}
+                                </option>
+                            ))}
                         </select>
                     </div>
                     <div className="modal-footer">
