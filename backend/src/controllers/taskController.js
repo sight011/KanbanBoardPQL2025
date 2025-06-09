@@ -23,7 +23,7 @@ const taskController = {
         try {
             console.log('📊 About to query database...');
             const result = await pool.query(
-                'SELECT * FROM tasks ORDER BY status, position'
+                'SELECT * FROM tasks ORDER BY status, position ASC'
             );
             console.log('✅ Query successful, found', result.rows.length, 'tasks');
             console.log('First task:', result.rows[0]);
@@ -108,9 +108,9 @@ const taskController = {
             const { id } = req.params;
             const { title, description, status, priority, assignee_id } = req.body;
 
-            // Handle assignee_id
+            // First check if the assignee exists
             let assigneeId = null;
-            if (assignee_id && assignee_id !== 'unassigned') {
+            if (assignee_id) {
                 const assigneeResult = await pool.query(
                     'SELECT id FROM users WHERE id = $1',
                     [assignee_id]
@@ -192,17 +192,97 @@ const taskController = {
                 await client.query('BEGIN');
                 console.log('Transaction started');
 
+                // Get the current task's status and position
+                const currentTask = await client.query(
+                    'SELECT status, position FROM tasks WHERE id = $1',
+                    [id]
+                );
+
+                if (currentTask.rows.length === 0) {
+                    throw new Error('Task not found');
+                }
+
+                const { status: oldStatus, position: oldPosition } = currentTask.rows[0];
+
+                // If moving to a different status column
+                if (oldStatus !== newStatus) {
+                    // First, update positions in the old status column
+                    await client.query(
+                        `UPDATE tasks 
+                         SET position = position - 1 
+                         WHERE status = $1 
+                         AND position > $2`,
+                        [oldStatus, oldPosition]
+                    );
+
+                    // Then, update positions in the new status column
+                    await client.query(
+                        `UPDATE tasks 
+                         SET position = position + 1 
+                         WHERE status = $1 
+                         AND position >= $2`,
+                        [newStatus, newPosition]
+                    );
+                } else {
+                    // Moving within the same column
+                    if (oldPosition < newPosition) {
+                        // Moving down: decrement positions of tasks between old and new position
+                        await client.query(
+                            `UPDATE tasks 
+                             SET position = position - 1 
+                             WHERE status = $1 
+                             AND position > $2 
+                             AND position <= $3`,
+                            [newStatus, oldPosition, newPosition]
+                        );
+                    } else if (oldPosition > newPosition) {
+                        // Moving up: increment positions of tasks between new and old position
+                        await client.query(
+                            `UPDATE tasks 
+                             SET position = position + 1 
+                             WHERE status = $1 
+                             AND position >= $2 
+                             AND position < $3`,
+                            [newStatus, newPosition, oldPosition]
+                        );
+                    }
+                }
+
                 // Update the task's position and status
                 await client.query(
                     'UPDATE tasks SET position = $1, status = $2 WHERE id = $3',
                     [newPosition, newStatus, id]
                 );
 
-                // Reorder other tasks in the same status
+                // Normalize positions to ensure they are sequential
                 await client.query(
-                    'UPDATE tasks SET position = position + 1 WHERE status = $1 AND position >= $2 AND id != $3',
-                    [newStatus, newPosition, id]
+                    `WITH ranked_tasks AS (
+                        SELECT id, ROW_NUMBER() OVER (PARTITION BY status ORDER BY position) as new_position
+                        FROM tasks
+                        WHERE status = $1
+                    )
+                    UPDATE tasks t
+                    SET position = rt.new_position
+                    FROM ranked_tasks rt
+                    WHERE t.id = rt.id`,
+                    [newStatus]
                 );
+
+                // If we moved from a different status, normalize positions in the old status too
+                if (oldStatus !== newStatus) {
+                    await client.query(
+                        `WITH ranked_tasks AS (
+                            SELECT id, ROW_NUMBER() OVER (PARTITION BY status ORDER BY position) as new_position
+                            FROM tasks
+                            WHERE status = $1
+                        )
+                        UPDATE tasks t
+                        SET position = rt.new_position
+                        FROM ranked_tasks rt
+                        WHERE t.id = rt.id`,
+                        [oldStatus]
+                    );
+                }
 
                 await client.query('COMMIT');
                 console.log('✅ Task position updated successfully');

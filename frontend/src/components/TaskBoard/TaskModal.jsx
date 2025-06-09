@@ -17,7 +17,7 @@ const TaskModal = () => {
         description: '',
         status: 'todo',
         priority: 'medium',
-        assignee_id: 'unassigned'
+        assignee_id: ''
     });
 
     useEffect(() => {
@@ -27,7 +27,7 @@ const TaskModal = () => {
                 description: selectedTask.description,
                 status: selectedTask.status,
                 priority: selectedTask.priority,
-                assignee_id: selectedTask.assignee_id || 'unassigned'
+                assignee_id: selectedTask.assignee_id || ''
             });
         } else {
             // Reset form data when creating a new task
@@ -36,7 +36,7 @@ const TaskModal = () => {
                 description: '',
                 status: 'todo',
                 priority: 'medium',
-                assignee_id: 'unassigned'
+                assignee_id: ''
             });
         }
     }, [selectedTask, isModalOpen]); // Added isModalOpen as a dependency
@@ -85,7 +85,7 @@ const TaskModal = () => {
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label htmlFor="title">Title <span className="required">*</span></label>
+                        <label htmlFor="title">Title</label>
                         <input
                             type="text"
                             id="title"
@@ -96,14 +96,13 @@ const TaskModal = () => {
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="description">Description <span className="required">*</span></label>
+                        <label htmlFor="description">Description</label>
                         <textarea
                             id="description"
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
                             rows="4"
-                            required
                         />
                     </div>
                     <div className="form-group">
@@ -141,7 +140,7 @@ const TaskModal = () => {
                             value={formData.assignee_id}
                             onChange={handleChange}
                         >
-                            <option value="unassigned">Unassigned</option>
+                            <option value="">Unassigned</option>
                             <option value="1">User 1</option>
                             <option value="2">User 2</option>
                             <option value="3">User 3</option>

@@ -15,7 +15,7 @@ const TaskCard = ({ task, index }) => {
         };
         
         const user = userMap[assigneeId];
-        if (!user) return 'UA';
+        if (!user) return '?';
         
         return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     };
@@ -41,9 +41,11 @@ const TaskCard = ({ task, index }) => {
                             <span className={`priority ${task.priority}`}>
                                 {task.priority}
                             </span>
-                            <span className="assignee-circle" title={task.assignee_id ? `Assigned to ${getAssigneeInitials(task.assignee_id)}` : 'Unassigned'}>
-                                {getAssigneeInitials(task.assignee_id)}
-                            </span>
+                            {task.assignee_id && (
+                                <span className="assignee-circle" title={`Assigned to ${getAssigneeInitials(task.assignee_id)}`}>
+                                    {getAssigneeInitials(task.assignee_id)}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
