@@ -97,6 +97,16 @@
     transition: background-color 0.2s;
 }
 
+.assignee-circle.unassigned {
+    background-color: #6b778c;
+    font-size: 10px;
+    opacity: 0.8;
+}
+
 .assignee-circle:hover {
     background-color: #0747a6;
+}
+
+.assignee-circle.unassigned:hover {
+    background-color: #5a6a7f;
 } 

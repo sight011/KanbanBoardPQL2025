@@ -48,7 +48,10 @@ Based on the tasks above, please answer the user's question.`;
                     <TaskBoard />
                 </main>
                 <TaskModal />
-                <ChatBubble onClick={() => setIsChatOpen(!isChatOpen)} />
+                <ChatBubble
+                    onClick={() => setIsChatOpen(!isChatOpen)}
+                    isChatOpen={isChatOpen}
+                />
                 <ChatWindow
                     isOpen={isChatOpen}
                     onClose={() => setIsChatOpen(false)}

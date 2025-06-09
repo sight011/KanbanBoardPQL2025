@@ -32,9 +32,17 @@
   background: none;
   border: none;
   color: white;
-  font-size: 1.2em;
+  font-size: 0.95em;
   cursor: pointer;
   padding: 5px;
+}
+
+button .close-chat-icon {
+  font-size: 0.95em!important;
+}
+
+.chat-bubble .close-chat-icon {
+  font-size: 0.5em!important;
 }
 
 .chat-messages {
@@ -44,6 +52,7 @@
   background-color: #e9ecef;
   display: flex;
   flex-direction: column;
+  text-align: left;
 }
 
 .chat-message {
@@ -105,4 +114,10 @@
 
 .chat-input button:hover {
   background-color: #0056b3;
+}
+
+.close-chat-icon {
+  font-size: 0.45em; /* Made smaller */
+  color: white;
+  font-weight: bold;
 } 

@@ -41,9 +41,13 @@ const TaskCard = ({ task, index }) => {
                             <span className={`priority ${task.priority}`}>
                                 {task.priority}
                             </span>
-                            {task.assignee_id && (
+                            {task.assignee_id ? (
                                 <span className="assignee-circle" title={`Assigned to ${getAssigneeInitials(task.assignee_id)}`}>
                                     {getAssigneeInitials(task.assignee_id)}
+                                </span>
+                            ) : (
+                                <span className="assignee-circle unassigned" title="Unassigned">
+                                    UA
                                 </span>
                             )}
                         </div>

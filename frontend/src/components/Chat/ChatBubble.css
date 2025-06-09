@@ -18,4 +18,18 @@
 
 .chat-bubble:hover {
   background-color: #0056b3;
+}
+
+.robot-chat-icon {
+  width: 1.2em; /* Made smaller */
+  height: 1.2em; /* Made smaller */
+  fill: white; /* Fill white */
+  border: none; /* Ensure no outline */
+}
+
+.close-chat-icon {
+  width: 1.5em; /* Adjust size as needed for SVG */
+  height: 1.5em; /* Adjust size as needed for SVG */
+  fill: white;
+  font-size: 0.45em;
 } 
