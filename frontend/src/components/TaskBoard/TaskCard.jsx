@@ -6,6 +6,20 @@ import './TaskCard.css';
 const TaskCard = ({ task, index }) => {
     const { openTaskModal } = useTaskContext();
 
+    const getAssigneeInitials = (assigneeId) => {
+        // For now, we'll use a simple mapping
+        const userMap = {
+            1: { firstName: 'John', lastName: 'Doe' },
+            2: { firstName: 'Jane', lastName: 'Smith' },
+            3: { firstName: 'Bob', lastName: 'Johnson' }
+        };
+        
+        const user = userMap[assigneeId];
+        if (!user) return '?';
+        
+        return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    };
+
     return (
         <Draggable draggableId={task.id.toString()} index={index}>
             {(provided, snapshot) => (
@@ -28,8 +42,8 @@ const TaskCard = ({ task, index }) => {
                                 {task.priority}
                             </span>
                             {task.assignee_id && (
-                                <span className="assignee">
-                                    Assigned
+                                <span className="assignee-circle" title={`Assigned to ${getAssigneeInitials(task.assignee_id)}`}>
+                                    {getAssigneeInitials(task.assignee_id)}
                                 </span>
                             )}
                         </div>

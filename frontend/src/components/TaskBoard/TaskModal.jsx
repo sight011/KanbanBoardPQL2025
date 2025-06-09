@@ -8,14 +8,16 @@ const TaskModal = () => {
         isModalOpen,
         closeTaskModal,
         createTask,
-        updateTask
+        updateTask,
+        deleteTask
     } = useTaskContext();
 
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         status: 'todo',
-        priority: 'medium'
+        priority: 'medium',
+        assignee_id: ''
     });
 
     useEffect(() => {
@@ -24,17 +26,20 @@ const TaskModal = () => {
                 title: selectedTask.title,
                 description: selectedTask.description,
                 status: selectedTask.status,
-                priority: selectedTask.priority
+                priority: selectedTask.priority,
+                assignee_id: selectedTask.assignee_id || ''
             });
         } else {
+            // Reset form data when creating a new task
             setFormData({
                 title: '',
                 description: '',
                 status: 'todo',
-                priority: 'medium'
+                priority: 'medium',
+                assignee_id: ''
             });
         }
-    }, [selectedTask]);
+    }, [selectedTask, isModalOpen]); // Added isModalOpen as a dependency
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -47,6 +52,17 @@ const TaskModal = () => {
             closeTaskModal();
         } catch (error) {
             console.error('Error saving task:', error);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (selectedTask) {
+            try {
+                await deleteTask(selectedTask.id);
+                closeTaskModal();
+            } catch (error) {
+                console.error('Error deleting task:', error);
+            }
         }
     };
 
@@ -116,7 +132,30 @@ const TaskModal = () => {
                             <option value="high">High</option>
                         </select>
                     </div>
+                    <div className="form-group">
+                        <label htmlFor="assignee_id">Assignee</label>
+                        <select
+                            id="assignee_id"
+                            name="assignee_id"
+                            value={formData.assignee_id}
+                            onChange={handleChange}
+                        >
+                            <option value="">Unassigned</option>
+                            <option value="1">User 1</option>
+                            <option value="2">User 2</option>
+                            <option value="3">User 3</option>
+                        </select>
+                    </div>
                     <div className="modal-footer">
+                        {selectedTask && (
+                            <button 
+                                type="button" 
+                                className="delete-button" 
+                                onClick={handleDelete}
+                            >
+                                Delete
+                            </button>
+                        )}
                         <button type="button" className="cancel-button" onClick={closeTaskModal}>
                             Cancel
                         </button>

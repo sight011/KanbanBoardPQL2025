@@ -108,9 +108,23 @@ const taskController = {
             const { id } = req.params;
             const { title, description, status, priority, assignee_id } = req.body;
 
+            // First check if the assignee exists
+            let assigneeId = null;
+            if (assignee_id) {
+                const assigneeResult = await pool.query(
+                    'SELECT id FROM users WHERE id = $1',
+                    [assignee_id]
+                );
+                if (assigneeResult.rows.length > 0) {
+                    assigneeId = assignee_id;
+                } else {
+                    console.log('⚠️ Assignee not found, setting to null');
+                }
+            }
+
             const result = await pool.query(
                 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, assignee_id = $5 WHERE id = $6 RETURNING *',
-                [title, description, status, priority, assignee_id, id]
+                [title, description, status, priority, assigneeId, id]
             );
 
             if (result.rows.length === 0) {
@@ -123,7 +137,18 @@ const taskController = {
         } catch (err) {
             console.error('❌ Error in updateTask:', err.message);
             console.error('Full error stack:', err.stack);
-            res.status(500).json({ error: 'Server error', details: err.message });
+            console.error('Error details:', {
+                code: err.code,
+                detail: err.detail,
+                hint: err.hint,
+                where: err.where
+            });
+            res.status(500).json({ 
+                error: 'Server error', 
+                details: err.message,
+                code: err.code,
+                hint: err.hint
+            });
         }
     },
 

@@ -55,7 +55,6 @@ form {
 
 .form-group {
     margin-bottom: 16px;
-    
 }
 
 .form-group label {
@@ -94,7 +93,8 @@ form {
 }
 
 .cancel-button,
-.submit-button {
+.submit-button,
+.delete-button {
     padding: 8px 16px;
     border-radius: 4px;
     font-size: 14px;
@@ -121,11 +121,24 @@ form {
 
 .submit-button:hover {
     background-color: #0747a6;
-} 
+}
+
+.delete-button {
+    background-color: #ffebe6;
+    border: none;
+    color: #de350b;
+    margin-right: auto;
+}
+
+.delete-button:hover {
+    background-color: #ffebe6;
+    color: #bf2600;
+}
 
 #status {
     width: 100%;
 }
+
 #priority {
     width: 100%;
 }
@@ -138,7 +151,7 @@ label {
     text-align: left;
 }
 
-.task-description{
+.task-description {
     text-align: left;
 }
 
