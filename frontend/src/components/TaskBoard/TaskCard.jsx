@@ -50,6 +50,11 @@ const TaskCard = ({ task, index }) => {
                                     UA
                                 </span>
                             )}
+                             {task.ticket_number && ( // <--- ENSURE THIS BLOCK IS PRESENT
+                            <span className="task-ticket-number">
+                                {task.ticket_number}
+                            </span>
+                        )}
                         </div>
                     </div>
                 </div>

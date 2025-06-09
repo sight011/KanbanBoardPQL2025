@@ -77,6 +77,19 @@ const taskController = {
             const reporter_id = req.user.id;
             console.log('Creating task for user ID:', reporter_id);
 
+            // Generate ticket number
+            const lastTicketResult = await pool.query(
+                'SELECT ticket_number FROM tasks WHERE ticket_number IS NOT NULL ORDER BY ticket_number DESC LIMIT 1'
+            );
+            let nextTicketNumber = 1;
+            if (lastTicketResult.rows.length > 0) {
+                const lastTicket = lastTicketResult.rows[0].ticket_number;
+                const lastNumber = parseInt(lastTicket.replace('PT-', ''), 10);
+                nextTicketNumber = lastNumber + 1;
+            }
+            const formattedTicketNumber = `PT-${String(nextTicketNumber).padStart(4, '0')}`;
+            console.log('Generated new ticket number:', formattedTicketNumber);
+
             // Get the highest position in the status column
             const positionResult = await pool.query(
                 'SELECT COALESCE(MAX(position), 0) + 1 as new_position FROM tasks WHERE status = $1',
@@ -86,8 +99,8 @@ const taskController = {
             console.log('New position will be:', position);
 
             const result = await pool.query(
-                'INSERT INTO tasks (title, description, status, priority, position, reporter_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-                [title, description, status, priority, position, reporter_id]
+                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+                [title, description, status, priority, position, reporter_id, formattedTicketNumber]
             );
 
             console.log('✅ Task created successfully:', result.rows[0]);

@@ -110,3 +110,6 @@
 .assignee-circle.unassigned:hover {
     background-color: #5a6a7f;
 } 
+
+.task-ticket-number {
+font-size: 0.7rem;}
