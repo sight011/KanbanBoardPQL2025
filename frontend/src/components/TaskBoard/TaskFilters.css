@@ -1,13 +1,8 @@
 .task-filters {
     display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
+    gap: 1rem;
     align-items: center;
-    flex-wrap: wrap;
-    transition: background-color 0.3s ease;
+    flex: 1;
 }
 
 .dark-mode .task-filters {
@@ -16,10 +11,8 @@
 
 .filter-group {
     display: flex;
+    gap: 1rem;
     align-items: center;
-    gap: 8px;
-    flex: 1;
-    min-width: 200px;
 }
 
 .filter-group:first-child {
@@ -38,49 +31,71 @@
     color: #e2e8f0;
 }
 
-.filter-group select,
 .filter-input {
-    padding: 6px 12px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 200px;
+    transition: border-color 0.2s ease;
+}
+
+.filter-select {
+    height: 36px;
+    padding: 0 12px;
     border: 1px solid #e2e8f0;
     border-radius: 4px;
     font-size: 14px;
     background-color: white;
-    color: #2d3748;
     cursor: pointer;
-    height: 32px;
-    box-sizing: border-box;
-    width: 100%;
-    transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    min-width: 140px;
+    transition: border-color 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 32px;
+    color: #1a202c;
 }
 
-.dark-mode .filter-group select,
-.dark-mode .filter-input {
+.filter-select option {
+    padding: 8px;
+    font-size: 14px;
+    color: #1a202c;
+    background-color: white;
+}
+
+.filter-select option:first-child {
+    color: #718096;
+}
+
+[data-theme='dark'] .filter-input,
+[data-theme='dark'] .filter-select {
     background-color: #2d3748;
     border-color: #4a5568;
     color: #e2e8f0;
 }
 
-.filter-group select:hover,
-.filter-input:hover {
-    border-color: #cbd5e0;
-}
-
-.dark-mode .filter-group select:hover,
-.dark-mode .filter-input:hover {
-    border-color: #718096;
-}
-
-.filter-group select:focus,
-.filter-input:focus {
+.filter-input:focus,
+.filter-select:focus {
     outline: none;
-    border-color: #4c9aff;
-    box-shadow: 0 0 0 2px rgba(76, 154, 255, 0.2);
+    border-color: #3e6aff;
 }
 
-.dark-mode .filter-group select:focus,
-.dark-mode .filter-input:focus {
+[data-theme='dark'] .filter-input:focus,
+[data-theme='dark'] .filter-select:focus {
     border-color: #63b3ed;
-    box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.2);
+}
+
+[data-theme='dark'] .filter-select option {
+    background-color: #2d3748;
+    color: #e2e8f0;
+}
+
+[data-theme='dark'] .filter-select option:first-child {
+    color: #a0aec0;
 }
 
 .clear-filters {
@@ -117,8 +132,8 @@
 }
 
 .clear-filters-button {
-    width: 360px;
-    height: 30px;
+    width: 120px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -128,8 +143,42 @@
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .clear-filters-button:hover {
     background-color: #2d5ae0;
+}
+
+.dark-mode .clear-filters-button {
+    background-color: #4a5568;
+    color: #e2e8f0;
+}
+
+.dark-mode .clear-filters-button:hover {
+    background-color: #2d3748;
+}
+
+#task-search-input {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #1a202c;
+    width: 300px;
+}
+
+#task-search-input:focus {
+    background-color: #ffffff;
+    border-color: #3e6aff;
+}
+
+[data-theme='dark'] #task-search-input {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+[data-theme='dark'] #task-search-input:focus {
+    background-color: #1a202c;
+    border-color: #63b3ed;
 }

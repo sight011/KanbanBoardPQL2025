@@ -19,6 +19,7 @@ const TaskFilters = ({ filters, onFilterChange }) => {
             <div className="filter-group">
                 <input
                     type="text"
+                    id="task-search-input"
                     placeholder="Search tasks..."
                     value={filters.text}
                     onChange={(e) => onFilterChange('text', e.target.value)}
@@ -31,17 +32,17 @@ const TaskFilters = ({ filters, onFilterChange }) => {
                     onChange={(e) => onFilterChange('priority', e.target.value)}
                     className="filter-select"
                 >
-                    <option value="">All Priorities</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
+                    <option value="">Priority</option>
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="low">Low Priority</option>
                 </select>
                 <select
                     value={filters.assignee}
                     onChange={(e) => onFilterChange('assignee', e.target.value)}
                     className="filter-select"
                 >
-                    <option value="">All Assignees</option>
+                    <option value="">Assignee</option>
                     <option value="unassigned">Unassigned</option>
                     {Object.entries(userMap).map(([id, user]) => (
                         <option key={id} value={id}>
