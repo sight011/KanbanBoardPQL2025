@@ -13,8 +13,10 @@ export const TaskProvider = ({ children }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchTasks = async () => {
+        console.log('Attempting to fetch tasks...');
         try {
             const response = await api.get('/api/tasks');
+            console.log('Tasks fetched successfully:', response.data); // Log fetched data
             setTasks(response.data);
             setError(null);
         } catch (err) {
@@ -22,6 +24,7 @@ export const TaskProvider = ({ children }) => {
             console.error('Error fetching tasks:', err);
         } finally {
             setLoading(false);
+            console.log('Fetch tasks complete. Loading:', false, 'Error:', error, 'Tasks count:', tasks.length); // Log final states
         }
     };
 

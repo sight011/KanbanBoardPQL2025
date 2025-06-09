@@ -5,7 +5,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import './TaskBoard.css';
 
 const TaskBoard = () => {
-    const { tasks, updateTaskPosition } = useTaskContext();
+    const { tasks, updateTaskPosition, loading, error } = useTaskContext();
     const [columns, setColumns] = useState({
         todo: [],
         inProgress: [],
@@ -58,6 +58,24 @@ const TaskBoard = () => {
             console.error('Error updating task position:', error);
         }
     };
+
+    if (loading) {
+        return (
+            <div className="task-board-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading tasks...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="task-board-error">
+                <p>Error: {error}</p>
+                <p>Please try again later.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="task-board">
