@@ -2,12 +2,14 @@ Kanban Board
 
 --> based on Node.js, React.js, PostgreSQL, Vite
 
+<img src="https://i.ibb.co/1Jm13sz1/Screenshot-2025-06-10-at-20-31-12.png)" alt="" width="500" height="600">
+<img src="https://i.ibb.co/HLgwJ5Tv/Screenshot-2025-06-10-at-20-31-25.png" alt="" width="500" height="600">
+<img src="https://i.ibb.co/Z6yg7dDW/Screenshot-2025-06-10-at-20-31-39.png" alt="" width="500" height="600">
+<img src="https://i.ibb.co/NgXF2ZZY/Screenshot-2025-06-10-at-20-31-48.png" alt="" width="500" height="600">
+<img src="https://i.ibb.co/fz5Dch6B/Screenshot-2025-06-10-at-20-37-30.png" alt="" width="500" height="600">
 
-![Alt text]([https://ibb.co/rfwYgbdY](https://i.ibb.co/1Jm13sz1/Screenshot-2025-06-10-at-20-31-12.png))
-![Alt text](https://ibb.co/fV06cjdR)
-![Alt text](https://ibb.co/SXqmGNCR)
-![Alt text](https://ibb.co/p6g1jJJX)
-![Alt text](https://ibb.co/ksfmdRbk)
+
+
 
 
 ## Running
