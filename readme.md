@@ -3,7 +3,7 @@ Kanban Board
 --> based on Node.js, React.js, PostgreSQL, Vite
 
 
-![Alt text](https://ibb.co/rfwYgbdY)
+![Alt text]([https://ibb.co/rfwYgbdY](https://i.ibb.co/1Jm13sz1/Screenshot-2025-06-10-at-20-31-12.png))
 ![Alt text](https://ibb.co/fV06cjdR)
 ![Alt text](https://ibb.co/SXqmGNCR)
 ![Alt text](https://ibb.co/p6g1jJJX)
