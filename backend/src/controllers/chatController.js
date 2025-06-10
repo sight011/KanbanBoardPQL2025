@@ -6,7 +6,7 @@ const chatController = {
         try {
             // Try to connect to Ollama using the generate endpoint with a simple test
             await axios.post('http://127.0.0.1:11434/api/generate', {
-                model: 'llama3',
+                model: 'mistral:latest',
                 prompt: 'test',
                 stream: false
             });
@@ -50,7 +50,7 @@ const chatController = {
 1. Concise and direct
 2. Focused on the specific question
 3. Include relevant numbers and statistics when applicable
-4. Use bullet points for multiple items
+4. Use bullet points for multiple items with line breaks between each point
 5. Format numbers and percentages clearly
 
 Here is the current state of the Kanban board tasks:
@@ -63,7 +63,7 @@ Based on the tasks provided, please answer the user's question following the res
             console.log('Sending prompt to Ollama...');
             // 4. Send the combined prompt to Ollama LLM
             const ollamaResponse = await axios.post('http://127.0.0.1:11434/api/generate', {
-                model: 'llama3',
+                model: 'mistral:latest',
                 prompt: fullPrompt,
                 stream: false,
             });
