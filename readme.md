@@ -1,4 +1,4 @@
-Kanban Board 
+**Kanban Board with A.i. Assistant**
 
 --> based on Node.js, React.js, PostgreSQL, Vite
 --> Ollama Ai Assistant (llama3.1:8b)
