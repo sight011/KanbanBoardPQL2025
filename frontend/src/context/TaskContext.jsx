@@ -12,24 +12,29 @@ export const TaskProvider = ({ children }) => {
     const [selectedTask, setSelectedTask] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const fetchTasks = async () => {
+    const fetchTasks = async (signal) => {
         console.log('Attempting to fetch tasks...');
         try {
-            const response = await api.get('/api/tasks');
+            const response = await api.get('/api/tasks', { signal });
             console.log('Tasks fetched successfully:', response.data); // Log fetched data
             setTasks(response.data);
             setError(null);
         } catch (err) {
+            if (err.code === "ERR_CANCELED") {
+                console.log('TaskProvider unmounted before fetch completed. Aborting fetch.');
+                return; // Ignore abort errors
+            }
             setError('Failed to fetch tasks');
             console.error('Error fetching tasks:', err);
-        } finally {
-            setLoading(false);
-            console.log('Fetch tasks complete. Loading:', false, 'Error:', error, 'Tasks count:', tasks.length); // Log final states
         }
+        console.log('Fetch tasks complete. Loading:', false, 'Error:', error, 'Tasks count:', tasks.length); // Log final states
+        setLoading(false);
     };
 
     useEffect(() => {
-        fetchTasks();
+        const controller = new AbortController();
+        fetchTasks(controller.signal);
+        return () => controller.abort();
     }, []);
 
     const createTask = async (taskData) => {
