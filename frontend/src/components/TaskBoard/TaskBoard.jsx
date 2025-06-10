@@ -4,33 +4,81 @@ import TaskColumn from './TaskColumn';
 import TaskFilters from './TaskFilters';
 import { useTaskContext } from '../../context/TaskContext';
 import TaskModal from './TaskModal';
+import { Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import './TaskBoard.css';
 
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend);
+
 const TaskBoard = () => {
-    const { tasks, updateTaskPosition, loading, error } = useTaskContext();
-    const [selectedTask, setSelectedTask] = useState(null);
+    const { tasks, updateTaskPosition, loading, error, updateTaskStatus, selectedTask, setSelectedTask } = useTaskContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'list'
+    const [viewMode, setViewMode] = useState('kanban'); // 'kanban', 'list', or 'diagram'
+    const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark-mode'));
     const [filters, setFilters] = useState({
         text: '',
         priority: '',
         assignee: ''
     });
 
+    // Define userMap at component level
+    const userMap = {
+        1: 'John Doe',
+        2: 'Jane Smith',
+        3: 'Bob Johnson'
+    };
+
+    // Add toggleViewMode function
+    const toggleViewMode = () => {
+        setViewMode(prevMode => {
+            switch (prevMode) {
+                case 'kanban':
+                    return 'list';
+                case 'list':
+                    return 'diagram';
+                case 'diagram':
+                    return 'kanban';
+                default:
+                    return 'kanban';
+            }
+        });
+    };
+
+    // Add effect to handle theme changes
+    useEffect(() => {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'class') {
+                    setIsDarkMode(document.documentElement.classList.contains('dark-mode'));
+                }
+            });
+        });
+
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+
+        return () => observer.disconnect();
+    }, []);
+
+    // Add handleClearFilters function
+    const handleClearFilters = () => {
+        setFilters({
+            text: '',
+            priority: '',
+            assignee: ''
+        });
+    };
+
     // Use useMemo to efficiently filter tasks
     const filteredTasks = useMemo(() => {
         return tasks.filter(task => {
-            const matchesText = !filters.text || 
-                task.title.toLowerCase().includes(filters.text.toLowerCase()) ||
-                task.description.toLowerCase().includes(filters.text.toLowerCase());
-            
-            const matchesPriority = !filters.priority || 
-                task.priority === filters.priority;
-            
-            const matchesAssignee = !filters.assignee || 
-                (filters.assignee === 'unassigned' && !task.assignee_id) ||
-                task.assignee_id === parseInt(filters.assignee);
-
+            const matchesText = task.title.toLowerCase().includes(filters.text.toLowerCase()) ||
+                              task.description.toLowerCase().includes(filters.text.toLowerCase());
+            const matchesPriority = !filters.priority || task.priority === filters.priority;
+            const matchesAssignee = !filters.assignee || task.assignee_id === parseInt(filters.assignee);
             return matchesText && matchesPriority && matchesAssignee;
         });
     }, [tasks, filters]);
@@ -128,22 +176,11 @@ const TaskBoard = () => {
         handleCloseModal();
     };
 
-    const toggleViewMode = () => {
-        setViewMode(prevMode => prevMode === 'kanban' ? 'list' : 'kanban');
-    };
-
     const getAssigneeInitials = (assigneeId) => {
-        // For now, we'll use a simple mapping
-        const userMap = {
-            1: { firstName: 'John', lastName: 'Doe' },
-            2: { firstName: 'Jane', lastName: 'Smith' },
-            3: { firstName: 'Bob', lastName: 'Johnson' }
-        };
-        
+        if (!assigneeId) return 'UA';
         const user = userMap[assigneeId];
         if (!user) return '?';
-        
-        return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+        return user.split(' ').map(n => n[0]).join('').toUpperCase();
     };
 
     const getAssigneeColor = (assigneeId) => {
@@ -165,6 +202,146 @@ const TaskBoard = () => {
         return colors[(assigneeId - 1) % colors.length];
     };
 
+    // Custom plugin to draw text on pie slices
+    const textPlugin = {
+        id: 'textPlugin',
+        beforeDraw: function(chart) {
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillStyle = '#ffffff';
+
+            chart.data.datasets.forEach((dataset, i) => {
+                const meta = chart.getDatasetMeta(i);
+                meta.data.forEach((element, index) => {
+                    const value = dataset.data[index];
+                    if (value > 0) {
+                        const text = value.toString();
+                        const x = element.x;
+                        const y = element.y;
+                        ctx.fillText(text, x, y);
+                    }
+                });
+            });
+            ctx.restore();
+        }
+    };
+
+    // Register the custom plugin
+    ChartJS.register(textPlugin);
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: isDarkMode ? '#e2e8f0' : '#2d3748',
+                    font: {
+                        size: 12,
+                        weight: '500'
+                    },
+                    padding: 15,
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    boxWidth: 8,
+                    boxHeight: 8
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.raw || 0;
+                        return `${label}: ${value}`;
+                    }
+                }
+            }
+        },
+        elements: {
+            arc: {
+                borderWidth: 0
+            }
+        },
+        cutout: '0%',
+        layout: {
+            padding: {
+                top: 20,
+                bottom: 60
+            }
+        }
+    };
+
+    // Prepare data for pie charts
+    const priorityData = useMemo(() => {
+        const counts = filteredTasks.reduce((acc, task) => {
+            acc[task.priority] = (acc[task.priority] || 0) + 1;
+            return acc;
+        }, {});
+
+        return {
+            labels: ['High', 'Medium', 'Low'],
+            datasets: [{
+                data: [counts.high || 0, counts.medium || 0, counts.low || 0],
+                backgroundColor: ['#ff5630', '#ffab00', '#00b8d9'],
+                borderColor: ['#ff5630', '#ffab00', '#00b8d9'],
+                borderWidth: 1
+            }]
+        };
+    }, [filteredTasks]);
+
+    const statusData = useMemo(() => {
+        const counts = filteredTasks.reduce((acc, task) => {
+            acc[task.status] = (acc[task.status] || 0) + 1;
+            return acc;
+        }, {});
+
+        return {
+            labels: ['To Do', 'In Progress', 'Review', 'Done'],
+            datasets: [{
+                data: [
+                    counts.todo || 0,
+                    counts.in_progress || 0,
+                    counts.review || 0,
+                    counts.done || 0
+                ],
+                backgroundColor: ['#4a5568', '#3182ce', '#805ad5', '#38a169'],
+                borderColor: ['#4a5568', '#3182ce', '#805ad5', '#38a169'],
+                borderWidth: 1
+            }]
+        };
+    }, [filteredTasks]);
+
+    const assigneeData = useMemo(() => {
+        const counts = filteredTasks.reduce((acc, task) => {
+            const assignee = task.assignee_id ? userMap[task.assignee_id] : 'Unassigned';
+            acc[assignee] = (acc[assignee] || 0) + 1;
+            return acc;
+        }, {});
+
+        return {
+            labels: Object.keys(counts),
+            datasets: [{
+                data: Object.values(counts),
+                backgroundColor: ['#0052cc', '#36b37e', '#ff5630', '#ffab00'],
+                borderColor: ['#0052cc', '#36b37e', '#ff5630', '#ffab00'],
+                borderWidth: 1
+            }]
+        };
+    }, [filteredTasks]);
+
+    // Effect to set root width for all views
+    useEffect(() => {
+        const root = document.getElementById('root');
+        root.style.width = '1426px';
+        return () => {
+            root.style.width = '';
+        };
+    }, []);
+
     if (loading) {
         return (
             <div className="task-board-loading">
@@ -183,121 +360,197 @@ const TaskBoard = () => {
         );
     }
 
-    if (viewMode === 'list') {
-        return (
-            <div className="task-board">
-                <div className="board-header">
-                    <TaskFilters
-                        tasks={tasks}
-                        filters={filters}
-                        onFilterChange={handleFilterChange}
-                        onClearFilters={() => handleFilterChange('text', '')}
-                    />
-                    <button 
-                        className="view-toggle-button"
-                        onClick={toggleViewMode}
-                        title={viewMode === 'kanban' ? 'Switch to Kanban View' : 'Switch to List View'}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
-                        </svg>
-                    </button>
-                </div>
-                <div className="list-view">
-                    <div className="list-header">
-                        <div className="list-column">Title</div>
-                        <div className="list-column">Description</div>
-                        <div className="list-column">Priority</div>
-                        <div className="list-column">Assignee</div>
-                        <div className="list-column">Status</div>
-                    </div>
-                    {sortedTasks.map(task => (
-                        <div 
-                            key={task.id} 
-                            className="list-item"
-                            onClick={() => handleTaskClick(task)}
-                        >
-                            <div className="list-column">{task.title}</div>
-                            <div className="list-column">{task.description}</div>
-                            <div className="list-column">
-                                <span className={`priority-badge ${task.priority}`}>
-                                    {task.priority}
-                                </span>
-                            </div>
-                            <div className="list-column">
-                                {task.assignee_id ? (
-                                    <div 
-                                        className="assignee-bubble"
-                                        style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}
-                                        title={`Assigned to ${getAssigneeInitials(task.assignee_id)}`}
-                                    >
-                                        {getAssigneeInitials(task.assignee_id)}
-                                    </div>
-                                ) : (
-                                    <span className="unassigned">Unassigned</span>
-                                )}
-                            </div>
-                            <div className="list-column">{task.status}</div>
-                        </div>
-                    ))}
-                </div>
-                {isModalOpen && (
-                    <TaskModal
-                        task={selectedTask}
-                        onClose={handleCloseModal}
-                        onUpdate={handleUpdateTask}
-                        onDelete={handleDeleteTask}
-                    />
-                )}
-            </div>
-        );
-    }
-
     return (
         <div className="task-board">
             <div className="board-header">
-                <TaskFilters 
-                    filters={filters}
-                    onFilterChange={handleFilterChange}
-                />
-                <button 
-                    className="view-toggle-button"
-                    onClick={toggleViewMode}
-                    title={viewMode === 'kanban' ? 'Switch to List View' : 'Switch to Kanban View'}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M4 11h5V5H4v6zm0 7h5v-6H4v6zm6 0h5v-6h-5v6zm6 0h5v-6h-5v6zm-6-7h5V5h-5v6zm6-6v6h5V5h-5z"/>
-                    </svg>
-                </button>
-            </div>
-            <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
-                <div className="columns-container">
-                    <TaskColumn
-                        title="To Do"
-                        tasks={columns.todo}
-                        status="todo"
-                        onTaskClick={handleTaskClick}
-                    />
-                    <TaskColumn
-                        title="In Progress"
-                        tasks={columns.inProgress}
-                        status="inProgress"
-                        onTaskClick={handleTaskClick}
-                    />
-                    <TaskColumn
-                        title="Review"
-                        tasks={columns.review}
-                        status="review"
-                        onTaskClick={handleTaskClick}
-                    />
-                    <TaskColumn
-                        title="Done"
-                        tasks={columns.done}
-                        status="done"
-                        onTaskClick={handleTaskClick}
-                    />
+                <h2>Task Board</h2>
+                <div className="view-controls">
+                    <button 
+                        className={`view-button ${viewMode === 'kanban' ? 'active' : ''}`}
+                        onClick={() => setViewMode('kanban')}
+                        title="Kanban View"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 6H20V8H4V6Z" fill="currentColor"/>
+                            <path d="M4 10H20V12H4V10Z" fill="currentColor"/>
+                            <path d="M4 14H20V16H4V14Z" fill="currentColor"/>
+                        </svg>
+                        <span>Kanban</span>
+                    </button>
+                    <button 
+                        className={`view-button ${viewMode === 'list' ? 'active' : ''}`}
+                        onClick={() => setViewMode('list')}
+                        title="List View"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 6H20V8H4V6Z" fill="currentColor"/>
+                            <path d="M4 10H20V12H4V10Z" fill="currentColor"/>
+                            <path d="M4 14H20V16H4V14Z" fill="currentColor"/>
+                        </svg>
+                        <span>List</span>
+                    </button>
+                    <button 
+                        className={`view-button ${viewMode === 'diagram' ? 'active' : ''}`}
+                        onClick={() => setViewMode('diagram')}
+                        title="Diagram View"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
+                            <path d="M12 2v10l8-4c0-3.31-2.69-6-6-6z" fill="currentColor"/>
+                        </svg>
+                        <span>Diagram</span>
+                    </button>
                 </div>
-            </DragDropContext>
+            </div>
+
+            <TaskFilters
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onClearFilters={handleClearFilters}
+                onViewToggle={toggleViewMode}
+                currentView={viewMode}
+            />
+
+            {loading ? (
+                <div className="loading">Loading tasks...</div>
+            ) : error ? (
+                <div className="error">{error}</div>
+            ) : (
+                <>
+                    {viewMode === 'kanban' && (
+                        <DragDropContext onDragEnd={onDragEnd}>
+                            <div className="board-columns">
+                                <TaskColumn
+                                    title="To Do"
+                                    tasks={columns.todo}
+                                    status="todo"
+                                    onTaskClick={handleTaskClick}
+                                />
+                                <TaskColumn
+                                    title="In Progress"
+                                    tasks={columns.inProgress}
+                                    status="inProgress"
+                                    onTaskClick={handleTaskClick}
+                                />
+                                <TaskColumn
+                                    title="Review"
+                                    tasks={columns.review}
+                                    status="review"
+                                    onTaskClick={handleTaskClick}
+                                />
+                                <TaskColumn
+                                    title="Done"
+                                    tasks={columns.done}
+                                    status="done"
+                                    onTaskClick={handleTaskClick}
+                                />
+                            </div>
+                        </DragDropContext>
+                    )}
+                    {viewMode === 'list' && (
+                        <div className="list-view" style={{ 
+                            width: '100%',
+                            maxWidth: '1320px',
+                            margin: '0 auto',
+                            padding: '0'
+                        }}>
+                            <table style={{ width: '100%' }}>
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Description</th>
+                                        <th>Priority</th>
+                                        <th>Assignee</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredTasks.map(task => (
+                                        <tr key={task.id} onClick={() => handleTaskClick(task)}>
+                                            <td>{task.title}</td>
+                                            <td>{task.description}</td>
+                                            <td>
+                                                <span className={`priority-badge priority-${task.priority}`}>
+                                                    {task.priority}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {task.assignee_id ? (
+                                                    <div className="assignee-bubble" style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}>
+                                                        {getAssigneeInitials(task.assignee_id)}
+                                                    </div>
+                                                ) : (
+                                                    <div className="assignee-bubble unassigned">UA</div>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <span className={`status-badge status-${task.status}`}>
+                                                    {task.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                    {viewMode === 'diagram' && (
+                        <div className="diagram-view">
+                            <div className="chart-container">
+                                <div className="chart-wrapper">
+                                    <h3>Priority Distribution</h3>
+                                    <div style={{ 
+                                        height: '400px', 
+                                        width: '100%',
+                                        position: 'relative', 
+                                        backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center'
+                                    }}>
+                                        <div style={{ width: '350px', height: '350px' }}>
+                                            <Pie data={priorityData} options={chartOptions} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="chart-wrapper">
+                                    <h3>Status Distribution</h3>
+                                    <div style={{ 
+                                        height: '400px', 
+                                        width: '100%',
+                                        position: 'relative', 
+                                        backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center'
+                                    }}>
+                                        <div style={{ width: '350px', height: '350px' }}>
+                                            <Pie data={statusData} options={chartOptions} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="chart-wrapper">
+                                    <h3>Assignment Distribution</h3>
+                                    <div style={{ 
+                                        height: '400px', 
+                                        width: '100%',
+                                        position: 'relative', 
+                                        backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center'
+                                    }}>
+                                        <div style={{ width: '350px', height: '350px' }}>
+                                            <Pie data={assigneeData} options={chartOptions} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+
             {isModalOpen && (
                 <TaskModal
                     task={selectedTask}

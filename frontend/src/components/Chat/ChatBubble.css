@@ -33,4 +33,32 @@
   height: 1.5em; /* Adjust size as needed for SVG */
   fill: white;
   font-size: 0.45em;
+}
+
+/* Pulsing animation for the chat bubble when closed */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.chat-bubble:not(.open) {
+  animation: pulse 0.5s ease-in-out 2;
+  animation-delay: 15s;
+  animation-iteration-count: 1;
+}
+
+/* Dark mode styles */
+[data-theme='dark'] .chat-bubble {
+  background-color: #3e6aff;
+}
+
+[data-theme='dark'] .chat-bubble:hover {
+  background-color: #2d5ae0;
 } 

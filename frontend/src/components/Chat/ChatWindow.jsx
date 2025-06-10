@@ -11,12 +11,17 @@ const defaultQuestions = [
 const ChatWindow = ({ isOpen, onClose, onSendMessage }) => {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
+    const chatMessagesRef = useRef(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (chatMessagesRef.current) {
+            chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+        }
     };
 
+    // Scroll to bottom whenever messages change
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
@@ -29,11 +34,13 @@ const ChatWindow = ({ isOpen, onClose, onSendMessage }) => {
                 content: inputMessage
             };
             setMessages(prev => [...prev, newMessage]);
+            setIsLoading(true);
             onSendMessage(inputMessage, (response) => {
                 setMessages(prev => [...prev, {
                     type: 'bot',
                     content: response
                 }]);
+                setIsLoading(false);
             });
             setInputMessage('');
         }
@@ -52,11 +59,13 @@ const ChatWindow = ({ isOpen, onClose, onSendMessage }) => {
             content: question
         };
         setMessages(prev => [...prev, newMessage]);
+        setIsLoading(true);
         onSendMessage(question, (response) => {
             setMessages(prev => [...prev, {
                 type: 'bot',
                 content: response
             }]);
+            setIsLoading(false);
         });
     };
 
@@ -82,7 +91,7 @@ const ChatWindow = ({ isOpen, onClose, onSendMessage }) => {
                     </button>
                 </div>
             </div>
-            <div className="chat-messages" ref={messagesEndRef}>
+            <div className="chat-messages" ref={chatMessagesRef}>
                 {defaultQuestions.length > 0 && (
                     <>
                         <div className="default-questions-header">Suggested Questions</div>
@@ -116,10 +125,14 @@ const ChatWindow = ({ isOpen, onClose, onSendMessage }) => {
                     onKeyPress={handleKeyPress}
                     placeholder="Type your message..."
                 />
-                <button id="send-message-button" onClick={handleSendMessage}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="send-chat-icon">
-                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
-                    </svg>
+                <button id="send-message-button" onClick={handleSendMessage} disabled={isLoading}>
+                    {isLoading ? (
+                        <div className="spinner"></div>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="send-chat-icon">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                        </svg>
+                    )}
                 </button>
             </div>
         </div>
