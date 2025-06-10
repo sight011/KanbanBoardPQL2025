@@ -75,14 +75,19 @@ body.dragging .task-card:hover {
 }
 
 .task-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #172b4d;
-    white-space: nowrap;
+    font-size: 0.95em;
+    font-weight: 500;
+    color: #2d3748;
+    line-height: 1.4;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: color 0.3s ease;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .dark-mode .task-title {
@@ -201,4 +206,30 @@ body.dragging .task-card:hover {
 
 .assignee-circle.unassigned:hover {
     opacity: 0.6;
+}
+
+.stack-icon {
+    width: 16px;
+    height: 16px;
+    color: #6b778c;
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+    transform: translateY(3px) scale(0.9);
+    margin-right: 5px;
+}
+
+.task-card:hover .stack-icon {
+    color: #3e6aff;
+}
+
+[data-theme='dark'] .task-title {
+    color: #e2e8f0;
+}
+
+[data-theme='dark'] .stack-icon {
+    color: #a0aec0;
+}
+
+[data-theme='dark'] .task-card:hover .stack-icon {
+    color: #3e6aff;
 }

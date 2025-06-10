@@ -60,6 +60,11 @@ const TaskCard = memo(({ task, index }) => {
                     >
                         <div className="task-card-content">
                             <h4 className="task-title" title={task.title}>
+                                <svg id="stack-icon" className="stack-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M4 6H20V8H4V6Z" fill="currentColor"/>
+                                    <path d="M4 10H20V12H4V10Z" fill="currentColor"/>
+                                    <path d="M4 14H20V16H4V14Z" fill="currentColor"/>
+                                </svg>
                                 {task.title}
                             </h4>
                             <p className="task-description" title={task.description}>
