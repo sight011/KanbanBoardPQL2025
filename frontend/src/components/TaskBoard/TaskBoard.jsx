@@ -465,7 +465,7 @@ const TaskBoard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredTasks.map(task => (
+                                    {sortedTasks.map(task => (
                                         <tr key={task.id} onClick={() => handleTaskClick(task)}>
                                             <td>{task.title}</td>
                                             <td>{task.description}</td>
@@ -483,9 +483,9 @@ const TaskBoard = () => {
                                                     <div className="assignee-bubble unassigned">UA</div>
                                                 )}
                                             </td>
-                                            <td>
-                                                <span className={`status-badge status-${task.status}`}>
-                                                    {task.status}
+                                            <td className="status-cell">
+                                                <span className={`status-badge status-${task.status.toLowerCase()}`}>
+                                                    {task.status === 'inProgress' ? 'In Progress' : task.status}
                                                 </span>
                                             </td>
                                         </tr>

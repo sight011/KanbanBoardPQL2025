@@ -41,7 +41,9 @@
 
 .list-view table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 1rem;
     background-color: var(--bg-secondary);
     border-radius: 8px;
     overflow: hidden;
@@ -161,13 +163,16 @@
 
 /* List View Styles */
 .list-view th {
-    padding: 1rem;
-    text-align: left;
+    background-color: #f7fafc;
+    padding: 0.75rem 1rem;
     font-weight: 600;
-    color: var(--text-primary);
-    border-bottom: 2px solid var(--border-color);
-    background-color: var(--bg-tertiary);
-    white-space: nowrap;
+    color: #4a5568;
+    text-align: center;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.list-view th:first-child {
+    text-align: left;
 }
 
 .list-view td {
@@ -196,6 +201,9 @@
     font-weight: 500;
     text-transform: capitalize;
     white-space: nowrap;
+    width: 80px;
+    text-align: center;
+    display: inline-block;
 }
 
 .list-view .priority-high {
@@ -214,20 +222,21 @@
 }
 
 .list-view .assignee-bubble {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 500;
+    font-size: 0.75rem;
+    font-weight: 600;
     color: white;
-    background-color: var(--primary-color);
+    background-color: #4a5568;
 }
 
 .list-view .assignee-bubble.unassigned {
-    background-color: var(--bg-tertiary);
-    color: var(--text-secondary);
+    background-color: #e2e8f0;
+    color: #4a5568;
 }
 
 .list-view .status-badge {
@@ -237,25 +246,23 @@
     font-weight: 500;
     text-transform: capitalize;
     white-space: nowrap;
+    width: 100px;
+    text-align: center;
+    display: inline-block;
 }
 
 .list-view .status-todo {
-    background-color: #4a5568;
+    background-color: #ff5630;
     color: white;
 }
 
-.list-view .status-in_progress {
-    background-color: #3182ce;
-    color: white;
-}
-
-.list-view .status-review {
-    background-color: #805ad5;
+.list-view .status-inprogress {
+    background-color: #ffab00;
     color: white;
 }
 
 .list-view .status-done {
-    background-color: #38a169;
+    background-color: #36b37e;
     color: white;
 }
 
@@ -474,4 +481,17 @@
 
 .task-filters button:hover {
     background-color: var(--primary-hover);
+}
+
+.dark-mode .list-view .assignee-bubble.unassigned {
+    background-color: #2d3748;
+    color: #a0aec0;
+    border: 2px solid #4a5568;
+}
+
+/* Dark mode styles */
+.dark .list-view th {
+    background-color: #1a202c;
+    color: #e2e8f0;
+    border-bottom: 2px solid #4a5568;
 } 
