@@ -9,7 +9,8 @@ export const TaskProvider = ({ children }) => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedTask, setSelectedTask] = useState(null);
+    const [selectedTaskId, setSelectedTaskId] = useState(null);
+    const selectedTask = tasks.find(t => t.id === selectedTaskId) || null;
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchTasks = async (signal) => {
@@ -39,9 +40,15 @@ export const TaskProvider = ({ children }) => {
 
     const createTask = async (taskData) => {
         try {
-            console.log('Sending task data:', taskData); // Debug log
-            const response = await api.post('/api/tasks', taskData);
-            setTasks(prevTasks => [...prevTasks, response.data]);
+            // Convert empty string to null for assignee_id and effort
+            const cleanTaskData = {
+                ...taskData,
+                assignee_id: taskData.assignee_id === '' ? null : taskData.assignee_id,
+                effort: taskData.effort === '' ? null : taskData.effort
+            };
+            console.log('Sending task data:', cleanTaskData); // Debug log
+            const response = await api.post('/api/tasks', cleanTaskData);
+            await fetchTasks(); // Fetch fresh list after create
             return response.data;
         } catch (err) {
             console.error('Create task error details:', {
@@ -57,12 +64,22 @@ export const TaskProvider = ({ children }) => {
 
     const updateTask = async (taskId, taskData) => {
         try {
-            const response = await api.put(`/api/tasks/${taskId}`, taskData);
+            // Convert empty string to null for assignee_id and effort
+            const cleanTaskData = {
+                ...taskData,
+                assignee_id: taskData.assignee_id === '' ? null : taskData.assignee_id,
+                effort: taskData.effort === '' ? null : taskData.effort
+            };
+            const response = await api.put(`/api/tasks/${taskId}`, cleanTaskData);
+            // Optimistically update the local state
             setTasks(prevTasks =>
                 prevTasks.map(task =>
-                    task.id === taskId ? { ...task, ...response.data } : task
+                    task.id === taskId ? { ...task, ...cleanTaskData } : task
                 )
             );
+            // setSelectedTask({ ...response.data }); // No longer needed
+            // Fetch from backend to ensure consistency
+            await fetchTasks();
             return response.data;
         } catch (err) {
             setError('Failed to update task');
@@ -94,12 +111,16 @@ export const TaskProvider = ({ children }) => {
     };
 
     const openTaskModal = (task) => {
-        setSelectedTask(task);
+        if (!task) {
+            setSelectedTaskId(null);
+        } else {
+            setSelectedTaskId(task.id);
+        }
         setIsModalOpen(true);
     };
 
     const closeTaskModal = () => {
-        setSelectedTask(null);
+        setSelectedTaskId(null);
         setIsModalOpen(false);
     };
 

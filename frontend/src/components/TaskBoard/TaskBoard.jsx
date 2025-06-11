@@ -57,8 +57,7 @@ const textPlugin = {
 ChartJS.register(textPlugin);
 
 const TaskBoard = () => {
-    const { tasks, updateTaskPosition, loading, error, updateTaskStatus, selectedTask, setSelectedTask } = useTaskContext();
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const { tasks, updateTaskPosition, loading, error, updateTaskStatus, openTaskModal, isModalOpen } = useTaskContext();
     const [viewMode, setViewMode] = useState('kanban'); // 'kanban', 'list', or 'diagram'
     const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark-mode'));
     const [filters, setFilters] = useState({
@@ -200,13 +199,12 @@ const TaskBoard = () => {
     };
 
     const handleTaskClick = (task) => {
-        setSelectedTask(task);
-        setIsModalOpen(true);
+        openTaskModal(task);
     };
 
     const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setSelectedTask(null);
+        // Implement the logic to close the modal
+        console.log('Closing modal');
     };
 
     const handleUpdateTask = (updatedTask) => {
@@ -571,7 +569,6 @@ const TaskBoard = () => {
 
             {isModalOpen && (
                 <TaskModal
-                    task={selectedTask}
                     onClose={handleCloseModal}
                     onUpdate={handleUpdateTask}
                     onDelete={handleDeleteTask}

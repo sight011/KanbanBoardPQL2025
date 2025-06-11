@@ -31,6 +31,7 @@ const TaskModal = () => {
     const [effortError, setEffortError] = useState('');
 
     useEffect(() => {
+        console.log('selectedTask in modal:', selectedTask);
         if (selectedTask) {
             setFormData({
                 title: selectedTask.title,
@@ -52,6 +53,10 @@ const TaskModal = () => {
             });
         }
     }, [selectedTask, isModalOpen]);
+
+    useEffect(() => {
+        console.log('formData in modal:', formData);
+    }, [formData]);
 
     const validateEffort = (value) => {
         if (!value) return true; // Empty value is allowed
