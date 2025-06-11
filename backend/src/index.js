@@ -11,10 +11,23 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    credentials: true
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
+
+// Add headers middleware
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
+});
+
 app.use(express.json());
 
 // Routes
@@ -28,8 +41,12 @@ app.get('/', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
+    console.error('Error:', err.stack);
+    res.status(500).json({ 
+        error: 'Something went wrong!',
+        message: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
 });
 
 const PORT = process.env.PORT || 3001;

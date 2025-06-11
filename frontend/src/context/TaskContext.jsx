@@ -5,6 +5,16 @@ const TaskContext = createContext();
 
 export const useTaskContext = () => useContext(TaskContext);
 
+// Helper function for logging API responses
+const logApiResponse = (response, operation) => {
+    console.log(`📡 ${operation} Response:`, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        data: response.data
+    });
+};
+
 export const TaskProvider = ({ children }) => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -13,22 +23,32 @@ export const TaskProvider = ({ children }) => {
     const selectedTask = tasks.find(t => t.id === selectedTaskId) || null;
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    // Add debug logging
+    useEffect(() => {
+        console.log('🔄 Tasks state changed:', tasks.length, 'tasks');
+        console.log('📋 Current tasks:', tasks.map(t => ({ id: t.id, title: t.title, status: t.status, position: t.position })));
+    }, [tasks]);
+
     const fetchTasks = async (signal) => {
-        console.log('Attempting to fetch tasks...');
+        console.log('🔍 Fetching tasks from server...');
         try {
             const response = await api.get('/api/tasks', { signal });
-            console.log('Tasks fetched successfully:', response.data); // Log fetched data
-            setTasks(response.data);
+            logApiResponse(response, 'Fetch Tasks');
+            
+            setTasks(response.data.tasks);
             setError(null);
         } catch (err) {
             if (err.code === "ERR_CANCELED") {
-                console.log('TaskProvider unmounted before fetch completed. Aborting fetch.');
-                return; // Ignore abort errors
+                console.log('❌ Fetch canceled');
+                return;
             }
+            console.error('💥 Error fetching tasks:', {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status
+            });
             setError('Failed to fetch tasks');
-            console.error('Error fetching tasks:', err);
         }
-        console.log('Fetch tasks complete. Loading:', false, 'Error:', error, 'Tasks count:', tasks.length); // Log final states
         setLoading(false);
     };
 
@@ -39,23 +59,26 @@ export const TaskProvider = ({ children }) => {
     }, []);
 
     const createTask = async (taskData) => {
+        console.log('➕ Creating task:', taskData);
         try {
-            // Convert empty string to null for assignee_id and effort
             const cleanTaskData = {
                 ...taskData,
                 assignee_id: taskData.assignee_id === '' ? null : taskData.assignee_id,
                 effort: taskData.effort === '' ? null : taskData.effort
             };
-            console.log('Sending task data:', cleanTaskData); // Debug log
+            
             const response = await api.post('/api/tasks', cleanTaskData);
-            await fetchTasks(); // Fetch fresh list after create
-            return response.data;
+            logApiResponse(response, 'Create Task');
+            
+            // Optimistic update
+            setTasks(prevTasks => [...prevTasks, response.data.task]);
+            
+            return response.data.task;
         } catch (err) {
-            console.error('Create task error details:', {
+            console.error('💥 Create task failed:', {
                 message: err.message,
                 response: err.response?.data,
-                status: err.response?.status,
-                taskData
+                status: err.response?.status
             });
             setError('Failed to create task');
             throw err;
@@ -63,54 +86,113 @@ export const TaskProvider = ({ children }) => {
     };
 
     const updateTask = async (taskId, taskData) => {
+        console.log('✏️ Updating task:', taskId, taskData);
+        
+        const cleanTaskData = {
+            ...taskData,
+            assignee_id: taskData.assignee_id === '' ? null : taskData.assignee_id,
+            effort: taskData.effort === '' ? null : taskData.effort
+        };
+
+        // Optimistic update
+        setTasks(prevTasks => 
+            prevTasks.map(task => 
+                task.id === taskId ? { ...task, ...cleanTaskData } : task
+            )
+        );
+
         try {
-            // Convert empty string to null for assignee_id and effort
-            const cleanTaskData = {
-                ...taskData,
-                assignee_id: taskData.assignee_id === '' ? null : taskData.assignee_id,
-                effort: taskData.effort === '' ? null : taskData.effort
-            };
             const response = await api.put(`/api/tasks/${taskId}`, cleanTaskData);
-            // Optimistically update the local state
-            setTasks(prevTasks =>
-                prevTasks.map(task =>
-                    task.id === taskId ? { ...task, ...cleanTaskData } : task
+            logApiResponse(response, 'Update Task');
+            
+            // Update with server response
+            setTasks(prevTasks => 
+                prevTasks.map(task => 
+                    task.id === taskId ? response.data.task : task
                 )
             );
-            // setSelectedTask({ ...response.data }); // No longer needed
-            // Fetch from backend to ensure consistency
-            await fetchTasks();
-            return response.data;
+            
+            return response.data.task;
         } catch (err) {
+            console.error('💥 Update task failed:', {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status
+            });
             setError('Failed to update task');
+            // Revert optimistic update
+            await fetchTasks();
             throw err;
         }
     };
 
     const deleteTask = async (taskId) => {
+        console.log('🗑️ Deleting task:', taskId);
+        
+        // Optimistic delete
+        setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+
         try {
-            await api.delete(`/api/tasks/${taskId}`);
-            setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+            const response = await api.delete(`/api/tasks/${taskId}`);
+            logApiResponse(response, 'Delete Task');
+            
+            // No need to update state as we already removed the task optimistically
+            return response.data;
         } catch (err) {
+            console.error('💥 Delete task failed:', {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status
+            });
             setError('Failed to delete task');
+            // Revert optimistic delete
+            await fetchTasks();
             throw err;
         }
     };
 
     const updateTaskPosition = async (taskId, newPosition, newStatus) => {
+        console.log('🔄 Updating task position:', { taskId, newPosition, newStatus });
+        
+        // Optimistic update
+        setTasks(prevTasks => {
+            const taskToMove = prevTasks.find(t => t.id === taskId);
+            if (!taskToMove) return prevTasks;
+
+            return prevTasks.map(task => {
+                if (task.id === taskId) {
+                    return { ...task, position: newPosition, status: newStatus };
+                }
+                return task;
+            });
+        });
+
         try {
-            await api.patch(`/api/tasks/${taskId}/position`, {
+            const response = await api.patch(`/api/tasks/${taskId}/position`, {
                 newPosition,
                 newStatus
             });
-            await fetchTasks(); // Refresh tasks to get updated positions
+            logApiResponse(response, 'Update Task Position');
+            
+            // Update with server response
+            setTasks(response.data.tasks);
+            
+            return response.data;
         } catch (err) {
+            console.error('💥 Update position failed:', {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status
+            });
             setError('Failed to update task position');
+            // Revert optimistic update
+            await fetchTasks();
             throw err;
         }
     };
 
     const openTaskModal = (task) => {
+        console.log('📝 Opening modal for task:', task?.id);
         if (!task) {
             setSelectedTaskId(null);
         } else {
@@ -120,6 +202,7 @@ export const TaskProvider = ({ children }) => {
     };
 
     const closeTaskModal = () => {
+        console.log('❌ Closing modal');
         setSelectedTaskId(null);
         setIsModalOpen(false);
     };
@@ -143,4 +226,4 @@ export const TaskProvider = ({ children }) => {
             {children}
         </TaskContext.Provider>
     );
-}; 
+};

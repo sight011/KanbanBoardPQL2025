@@ -35,15 +35,6 @@ const TaskColumn = memo(({ title, tasks, status }) => {
             </Droppable>
         </div>
     );
-}, (prevProps, nextProps) => {
-    // Only re-render if tasks array has changed
-    if (prevProps.tasks.length !== nextProps.tasks.length) return false;
-    
-    // Check if any task has changed
-    return prevProps.tasks.every((task, index) => 
-        task.id === nextProps.tasks[index].id && 
-        task.status === nextProps.tasks[index].status
-    );
 });
 
 TaskColumn.displayName = 'TaskColumn';

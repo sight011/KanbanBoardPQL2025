@@ -27,7 +27,11 @@ const taskController = {
             );
             console.log('✅ Query successful, found', result.rows.length, 'tasks');
             console.log('First task:', result.rows[0]);
-            res.json(result.rows);
+            res.status(200).json({
+                success: true,
+                tasks: result.rows,
+                message: 'Tasks retrieved successfully'
+            });
         } catch (err) {
             console.error('❌ Error in getAllTasks:', err.message);
             console.error('Full error stack:', err.stack);
@@ -51,7 +55,11 @@ const taskController = {
             }
             
             console.log('✅ Task found:', result.rows[0]);
-            res.json(result.rows[0]);
+            res.status(200).json({
+                success: true,
+                task: result.rows[0],
+                message: 'Task retrieved successfully'
+            });
         } catch (err) {
             console.error('❌ Error in getTaskById:', err.message);
             console.error('Full error stack:', err.stack);
@@ -68,7 +76,6 @@ const taskController = {
         try {
             const { title, description, status, priority, effort } = req.body;
             
-            // Check if user exists
             if (!req.user || !req.user.id) {
                 console.log('❌ No authenticated user found');
                 return res.status(401).json({ error: 'User not authenticated' });
@@ -99,12 +106,16 @@ const taskController = {
             console.log('New position will be:', position);
 
             const result = await pool.query(
-                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()) RETURNING *',
                 [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort]
             );
 
             console.log('✅ Task created successfully:', result.rows[0]);
-            res.status(201).json(result.rows[0]);
+            res.status(201).json({
+                success: true,
+                task: result.rows[0],
+                message: 'Task created successfully'
+            });
         } catch (err) {
             console.error('❌ Error in createTask:', err.message);
             console.error('Full error stack:', err.stack);
@@ -121,7 +132,15 @@ const taskController = {
             const { id } = req.params;
             const { title, description, status, priority, effort, assignee_id } = req.body;
 
-            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, assignee_id = $6 WHERE id = $7 RETURNING *';
+            // Validate required fields
+            if (!title || !status || !priority) {
+                return res.status(400).json({
+                    error: 'Missing required fields',
+                    message: 'Title, status, and priority are required'
+                });
+            }
+
+            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, assignee_id = $6, updated_at = NOW() WHERE id = $7 RETURNING *';
             const params = [title, description, status, priority, effort, assignee_id || null, id];
             console.log('Executing SQL:', sql);
             console.log('With parameters:', params);
@@ -129,17 +148,29 @@ const taskController = {
             const result = await pool.query(sql, params);
 
             if (result.rows.length === 0) {
-                return res.status(404).json({ error: 'Task not found' });
+                return res.status(404).json({
+                    error: 'Task not found',
+                    message: `No task found with ID ${id}`
+                });
             }
 
             console.log('✅ Task updated successfully:', result.rows[0]);
-            res.json(result.rows[0]);
+            res.status(200).json({
+                success: true,
+                task: result.rows[0],
+                message: 'Task updated successfully'
+            });
         } catch (err) {
             console.error('❌ Error in updateTask:', err.message);
             console.error('Full error stack:', err.stack);
             if (err.detail) console.error('Error detail:', err.detail);
             if (err.hint) console.error('Error hint:', err.hint);
-            res.status(500).json({ error: 'Server error', details: err.message });
+            res.status(500).json({
+                error: 'Server error',
+                message: err.message,
+                details: err.detail,
+                hint: err.hint
+            });
         }
     },
 
@@ -149,22 +180,41 @@ const taskController = {
         
         try {
             const { id } = req.params;
-            const result = await pool.query(
+
+            // First get the task to return it in the response
+            const taskResult = await pool.query(
+                'SELECT * FROM tasks WHERE id = $1',
+                [id]
+            );
+
+            if (taskResult.rows.length === 0) {
+                return res.status(404).json({
+                    error: 'Task not found',
+                    message: `No task found with ID ${id}`
+                });
+            }
+
+            // Then delete the task
+            const deleteResult = await pool.query(
                 'DELETE FROM tasks WHERE id = $1 RETURNING *',
                 [id]
             );
 
-            if (result.rows.length === 0) {
-                console.log('❌ Task not found for deletion, ID:', id);
-                return res.status(404).json({ error: 'Task not found' });
-            }
-
             console.log('✅ Task deleted successfully');
-            res.json({ message: 'Task deleted successfully' });
+            res.status(200).json({
+                success: true,
+                task: taskResult.rows[0],
+                message: 'Task deleted successfully'
+            });
         } catch (err) {
             console.error('❌ Error in deleteTask:', err.message);
             console.error('Full error stack:', err.stack);
-            res.status(500).json({ error: 'Server error', details: err.message });
+            res.status(500).json({
+                error: 'Server error',
+                message: err.message,
+                details: err.detail,
+                hint: err.hint
+            });
         }
     },
 
@@ -177,7 +227,14 @@ const taskController = {
             const { id } = req.params;
             const { newPosition, newStatus } = req.body;
 
-            // Start a transaction
+            // Validate required fields
+            if (typeof newPosition !== 'number' || !newStatus) {
+                return res.status(400).json({
+                    error: 'Invalid input',
+                    message: 'newPosition must be a number and newStatus is required'
+                });
+            }
+
             const client = await pool.connect();
             try {
                 await client.query('BEGIN');
@@ -195,9 +252,8 @@ const taskController = {
 
                 const { status: oldStatus, position: oldPosition } = currentTask.rows[0];
 
-                // If moving to a different status column
+                // Position update logic
                 if (oldStatus !== newStatus) {
-                    // First, update positions in the old status column
                     await client.query(
                         `UPDATE tasks 
                          SET position = position - 1 
@@ -206,7 +262,6 @@ const taskController = {
                         [oldStatus, oldPosition]
                     );
 
-                    // Then, update positions in the new status column
                     await client.query(
                         `UPDATE tasks 
                          SET position = position + 1 
@@ -215,9 +270,7 @@ const taskController = {
                         [newStatus, newPosition]
                     );
                 } else {
-                    // Moving within the same column
                     if (oldPosition < newPosition) {
-                        // Moving down: decrement positions of tasks between old and new position
                         await client.query(
                             `UPDATE tasks 
                              SET position = position - 1 
@@ -227,7 +280,6 @@ const taskController = {
                             [newStatus, oldPosition, newPosition]
                         );
                     } else if (oldPosition > newPosition) {
-                        // Moving up: increment positions of tasks between new and old position
                         await client.query(
                             `UPDATE tasks 
                              SET position = position + 1 
@@ -240,44 +292,23 @@ const taskController = {
                 }
 
                 // Update the task's position and status
-                await client.query(
-                    'UPDATE tasks SET position = $1, status = $2 WHERE id = $3',
+                const updatedTask = await client.query(
+                    'UPDATE tasks SET position = $1, status = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
                     [newPosition, newStatus, id]
                 );
 
-                // Normalize positions to ensure they are sequential
-                await client.query(
-                    `WITH ranked_tasks AS (
-                        SELECT id, ROW_NUMBER() OVER (PARTITION BY status ORDER BY position) as new_position
-                        FROM tasks
-                        WHERE status = $1
-                    )
-                    UPDATE tasks t
-                    SET position = rt.new_position
-                    FROM ranked_tasks rt
-                    WHERE t.id = rt.id`,
-                    [newStatus]
-                );
-
-                // If we moved from a different status, normalize positions in the old status too
-                if (oldStatus !== newStatus) {
-                    await client.query(
-                        `WITH ranked_tasks AS (
-                            SELECT id, ROW_NUMBER() OVER (PARTITION BY status ORDER BY position) as new_position
-                            FROM tasks
-                            WHERE status = $1
-                        )
-                        UPDATE tasks t
-                        SET position = rt.new_position
-                        FROM ranked_tasks rt
-                        WHERE t.id = rt.id`,
-                        [oldStatus]
-                    );
-                }
+                // Get all tasks with updated positions
+                const allTasks = await client.query('SELECT * FROM tasks ORDER BY status, position');
 
                 await client.query('COMMIT');
                 console.log('✅ Task position updated successfully');
-                res.json({ message: 'Task position updated successfully' });
+                
+                res.status(200).json({
+                    success: true,
+                    tasks: allTasks.rows,
+                    updatedTask: updatedTask.rows[0],
+                    message: 'Task position updated successfully'
+                });
             } catch (err) {
                 await client.query('ROLLBACK');
                 console.log('Transaction rolled back');
@@ -288,7 +319,12 @@ const taskController = {
         } catch (err) {
             console.error('❌ Error in updateTaskPosition:', err.message);
             console.error('Full error stack:', err.stack);
-            res.status(500).json({ error: 'Server error', details: err.message });
+            res.status(500).json({
+                error: 'Server error',
+                message: err.message,
+                details: err.detail,
+                hint: err.hint
+            });
         }
     },
 
@@ -303,7 +339,11 @@ const taskController = {
                 [status]
             );
             console.log('✅ Found', result.rows.length, 'tasks with status:', status);
-            res.json(result.rows);
+            res.status(200).json({
+                success: true,
+                tasks: result.rows,
+                message: 'Tasks retrieved successfully'
+            });
         } catch (err) {
             console.error('❌ Error in getTasksByStatus:', err.message);
             console.error('Full error stack:', err.stack);

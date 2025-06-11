@@ -416,6 +416,16 @@ const TaskBoard = () => {
                         </svg>
                         <span>Diagram</span>
                     </button>
+                    <button
+                        className={`view-button ${viewMode === 'burndown' ? 'active' : ''}`}
+                        onClick={() => setViewMode('burndown')}
+                        title="Burn Down View"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 20h16v-2H4v2zm0-4h10v-2H4v2zm0-4h7V6h3l-4-4-4 4h3v6z" fill="currentColor"/>
+                        </svg>
+                        <span>Burn Down</span>
+                    </button>
                 </div>
             </div>
 

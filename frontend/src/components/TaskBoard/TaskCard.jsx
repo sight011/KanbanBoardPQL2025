@@ -99,11 +99,6 @@ const TaskCard = memo(({ task, index }) => {
             }}
         </Draggable>
     );
-}, (prevProps, nextProps) => {
-    // Only re-render if the task or index has actually changed
-    return prevProps.task.id === nextProps.task.id && 
-           prevProps.index === nextProps.index &&
-           prevProps.task.status === nextProps.task.status;
 });
 
 TaskCard.displayName = 'TaskCard';
