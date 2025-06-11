@@ -11,6 +11,57 @@ import './TaskBoard.css';
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+// Custom plugin to draw text on pie slices
+const textPlugin = {
+    id: 'textPlugin',
+    afterDraw: function(chart) {
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = '#ffffff';
+
+        chart.data.datasets.forEach((dataset, i) => {
+            const meta = chart.getDatasetMeta(i);
+            meta.data.forEach((element, index) => {
+                const value = dataset.data[index];
+                if (value > 0) {
+                    const text = value.toString();
+                    
+                    // Get the center point of the slice
+                    const centerX = element.x;
+                    const centerY = element.y;
+                    
+                    // Calculate the angle of the slice
+                    const startAngle = element.startAngle;
+                    const endAngle = element.endAngle;
+                    const midAngle = (startAngle + endAngle) / 2;
+                    
+                    // Calculate the distance from center (adjust this value to position text)
+                    const distance = element.outerRadius * 0.7;
+                    
+                    // Calculate the new position
+                    const x = centerX + Math.cos(midAngle) * distance;
+                    const y = centerY + Math.sin(midAngle) * distance;
+                    
+                    // Add a shadow for better visibility
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetX = 2;
+                    ctx.shadowOffsetY = 2;
+                    
+                    ctx.fillText(text, x, y);
+                }
+            });
+        });
+        ctx.restore();
+    }
+};
+
+// Register the custom plugin
+ChartJS.register(textPlugin);
+
 const TaskBoard = () => {
     const { tasks, updateTaskPosition, loading, error, updateTaskStatus, selectedTask, setSelectedTask } = useTaskContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -202,36 +253,6 @@ const TaskBoard = () => {
         return colors[(assigneeId - 1) % colors.length];
     };
 
-    // Custom plugin to draw text on pie slices
-    const textPlugin = {
-        id: 'textPlugin',
-        beforeDraw: function(chart) {
-            const ctx = chart.ctx;
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font = 'bold 16px Arial';
-            ctx.fillStyle = '#ffffff';
-
-            chart.data.datasets.forEach((dataset, i) => {
-                const meta = chart.getDatasetMeta(i);
-                meta.data.forEach((element, index) => {
-                    const value = dataset.data[index];
-                    if (value > 0) {
-                        const text = value.toString();
-                        const x = element.x;
-                        const y = element.y;
-                        ctx.fillText(text, x, y);
-                    }
-                });
-            });
-            ctx.restore();
-        }
-    };
-
-    // Register the custom plugin
-    ChartJS.register(textPlugin);
-
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -259,6 +280,9 @@ const TaskBoard = () => {
                         return `${label}: ${value}`;
                     }
                 }
+            },
+            textPlugin: {
+                enabled: true
             }
         },
         elements: {
