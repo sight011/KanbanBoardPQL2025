@@ -271,10 +271,14 @@ label {
 }
 
 .modal-description {
+    display: block;
     margin: 8px 0 0 0;
     font-size: 14px;
     color: #4a5568;
     transition: color 0.3s ease;
+    text-align: left;
+    width: 100%;
+    padding-left: 0;
 }
 
 .dark-mode .modal-description {

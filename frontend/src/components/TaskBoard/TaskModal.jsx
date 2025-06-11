@@ -24,8 +24,11 @@ const TaskModal = () => {
         description: '',
         status: 'todo',
         priority: 'medium',
-        assignee_id: ''
+        assignee_id: '',
+        effort: ''
     });
+
+    const [effortError, setEffortError] = useState('');
 
     useEffect(() => {
         if (selectedTask) {
@@ -34,7 +37,8 @@ const TaskModal = () => {
                 description: selectedTask.description,
                 status: selectedTask.status,
                 priority: selectedTask.priority,
-                assignee_id: selectedTask.assignee_id || ''
+                assignee_id: selectedTask.assignee_id || '',
+                effort: selectedTask.effort || ''
             });
         } else {
             // Reset form data when creating a new task
@@ -43,13 +47,26 @@ const TaskModal = () => {
                 description: '',
                 status: 'todo',
                 priority: 'medium',
-                assignee_id: ''
+                assignee_id: '',
+                effort: ''
             });
         }
-    }, [selectedTask, isModalOpen]); // Added isModalOpen as a dependency
+    }, [selectedTask, isModalOpen]);
+
+    const validateEffort = (value) => {
+        if (!value) return true; // Empty value is allowed
+        const regex = /^\d+(\.\d+)?[hd]$/;
+        if (!regex.test(value)) return false;
+        const number = parseFloat(value);
+        const unit = value.slice(-1);
+        if (unit === 'h' && number < 0.5) return false;
+        if (unit === 'd' && number < 1) return false;
+        return true;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (effortError) return;
         try {
             if (selectedTask) {
                 await updateTask(selectedTask.id, formData);
@@ -75,10 +92,22 @@ const TaskModal = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        if (name === 'effort') {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+            if (!validateEffort(value) && value) {
+                setEffortError('Invalid format. Use e.g. 2h, 0.5h, 1d. Min: 0.5h or 1d');
+            } else {
+                setEffortError('');
+            }
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
     const handleKeyPress = (e) => {
@@ -123,6 +152,21 @@ const TaskModal = () => {
                             onChange={handleChange}
                             rows="4"
                         />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="effort">Effort Estimation</label>
+                        <input
+                            type="text"
+                            id="effort"
+                            name="effort"
+                            value={formData.effort}
+                            onChange={handleChange}
+                            placeholder="e.g., 2h, 0.5h, 1d, 5d"
+                        />
+                        <small className="modal-description">
+                            Format: number + unit (h for hours, d for days). Minimum: 0.5h or 1d
+                        </small>
+                        {effortError && <div style={{ color: 'red', marginTop: 4 }}>{effortError}</div>}
                     </div>
                     <div className="form-group">
                         <label htmlFor="status">Status</label>

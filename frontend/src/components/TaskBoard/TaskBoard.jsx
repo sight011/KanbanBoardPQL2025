@@ -45,12 +45,6 @@ const textPlugin = {
                     const x = centerX + Math.cos(midAngle) * distance;
                     const y = centerY + Math.sin(midAngle) * distance;
                     
-                    // Add a shadow for better visibility
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowOffsetX = 2;
-                    ctx.shadowOffsetY = 2;
-                    
                     ctx.fillText(text, x, y);
                 }
             });

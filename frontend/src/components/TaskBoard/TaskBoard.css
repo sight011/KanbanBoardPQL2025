@@ -489,9 +489,8 @@
 }
 
 .dark-mode .list-view .assignee-bubble.unassigned {
-    background-color: #2d3748;
-    color: #a0aec0;
-    border: 2px solid #4a5568;
+    background-color: #ffffff4f;
+    color: #d4d7db;
 }
 
 /* Dark mode styles */

@@ -66,7 +66,7 @@ const taskController = {
         console.log('User:', req.user);
         
         try {
-            const { title, description, status, priority } = req.body;
+            const { title, description, status, priority, effort } = req.body;
             
             // Check if user exists
             if (!req.user || !req.user.id) {
@@ -99,8 +99,8 @@ const taskController = {
             console.log('New position will be:', position);
 
             const result = await pool.query(
-                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-                [title, description, status, priority, position, reporter_id, formattedTicketNumber]
+                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort]
             );
 
             console.log('✅ Task created successfully:', result.rows[0]);
@@ -119,29 +119,16 @@ const taskController = {
         
         try {
             const { id } = req.params;
-            const { title, description, status, priority, assignee_id } = req.body;
+            const { title, description, status, priority, effort, assignee_id } = req.body;
 
-            // First check if the assignee exists
-            let assigneeId = null;
-            if (assignee_id) {
-                const assigneeResult = await pool.query(
-                    'SELECT id FROM users WHERE id = $1',
-                    [assignee_id]
-                );
-                if (assigneeResult.rows.length > 0) {
-                    assigneeId = assignee_id;
-                } else {
-                    console.log('⚠️ Assignee not found, setting to null');
-                }
-            }
+            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, assignee_id = $6 WHERE id = $7 RETURNING *';
+            const params = [title, description, status, priority, effort, assignee_id || null, id];
+            console.log('Executing SQL:', sql);
+            console.log('With parameters:', params);
 
-            const result = await pool.query(
-                'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, assignee_id = $5 WHERE id = $6 RETURNING *',
-                [title, description, status, priority, assigneeId, id]
-            );
+            const result = await pool.query(sql, params);
 
             if (result.rows.length === 0) {
-                console.log('❌ Task not found for update, ID:', id);
                 return res.status(404).json({ error: 'Task not found' });
             }
 
@@ -150,18 +137,9 @@ const taskController = {
         } catch (err) {
             console.error('❌ Error in updateTask:', err.message);
             console.error('Full error stack:', err.stack);
-            console.error('Error details:', {
-                code: err.code,
-                detail: err.detail,
-                hint: err.hint,
-                where: err.where
-            });
-            res.status(500).json({ 
-                error: 'Server error', 
-                details: err.message,
-                code: err.code,
-                hint: err.hint
-            });
+            if (err.detail) console.error('Error detail:', err.detail);
+            if (err.hint) console.error('Error hint:', err.hint);
+            res.status(500).json({ error: 'Server error', details: err.message });
         }
     },
 
