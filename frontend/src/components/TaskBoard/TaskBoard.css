@@ -70,7 +70,7 @@
     border-radius: 8px;
     padding: 1.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    width: 100%;
+    width: 90%;
 }
 
 .chart-wrapper h3 {
@@ -258,6 +258,11 @@
 
 .list-view .status-inprogress {
     background-color: #ffab00;
+    color: white;
+}
+
+.list-view .status-review {
+    background-color: #3972ce;
     color: white;
 }
 
@@ -495,3 +500,15 @@
     color: #e2e8f0;
     border-bottom: 2px solid #4a5568;
 } 
+
+
+.dark-mode .list-view th  {
+background-color: #2D3748;
+color: #e2e8f0;
+border-bottom: 2px solid #6a7685;
+}
+
+
+.dark-mode .chart-wrapper div {
+    background-color: #97a4ba!important;
+  }
