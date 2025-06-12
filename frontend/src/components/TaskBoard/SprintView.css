@@ -2,7 +2,7 @@
 .sprint-view {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
     padding: 1rem;
 }
 
@@ -21,7 +21,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0rem;
 }
 
 .create-sprint-button {
@@ -56,7 +56,7 @@
 .sprint-list {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
     width: 100%;
 }
 
@@ -90,7 +90,7 @@
 
 /* Sprint Section Header */
 .sprint-section-header {
-    margin-bottom: 1rem;
+    margin-bottom: 0px;
 }
 
 .sprint-section-header h3 {
@@ -113,6 +113,7 @@
     display: flex;
     gap: 0.5rem;
     margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 /* Action Buttons */

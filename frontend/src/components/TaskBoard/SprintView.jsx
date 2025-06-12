@@ -78,6 +78,36 @@ function formatDateRange(start, end) {
     return `${s.toLocaleDateString()} – ${e.toLocaleDateString()}`;
 }
 
+const DeleteSprintModal = ({ open, onClose, onConfirm, sprints, defaultValue }) => {
+    const [destination, setDestination] = useState(defaultValue || 'backlog');
+    useEffect(() => {
+        setDestination(defaultValue || 'backlog');
+    }, [defaultValue, open]);
+    if (!open) return null;
+    return (
+        <div className="modal-backdrop">
+            <div className="modal-content">
+                <h3>Delete Sprint</h3>
+                <p>Where should the tickets from this sprint go?</p>
+                <select
+                    className="modal-input"
+                    value={destination}
+                    onChange={e => setDestination(e.target.value)}
+                >
+                    <option value="backlog">Backlog</option>
+                    {sprints.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                </select>
+                <div className="modal-actions">
+                    <button className="modal-button secondary" onClick={onClose}>Cancel</button>
+                    <button className="modal-button primary" onClick={() => onConfirm(destination)}>Delete</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const SprintView = () => {
     const { tasks, updateTask } = useTaskContext();
     const [sprints, setSprints] = useState([]);
@@ -91,6 +121,15 @@ const SprintView = () => {
         document.documentElement.classList.contains('dark-mode') ||
         document.body.classList.contains('dark-mode')
     );
+    const [users, setUsers] = useState([]);
+    const [filters, setFilters] = useState({
+        assignee: '',
+        priority: '',
+        sprint: ''
+    });
+    const [foldedSprints, setFoldedSprints] = useState(new Set());
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [sprintToDelete, setSprintToDelete] = useState(null);
 
     useEffect(() => {
         const observer = new MutationObserver(() => {
@@ -104,12 +143,39 @@ const SprintView = () => {
         return () => observer.disconnect();
     }, []);
 
+    // Fetch users for the assignee filter
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch('/api/users');
+                const data = await res.json();
+                setUsers(data.users || []);
+            } catch (err) {
+                setUsers([]);
+            }
+        };
+        fetchUsers();
+    }, []);
+
     const fetchSprints = async () => {
         setLoading(true);
         try {
             const res = await fetch('/api/sprints');
             const data = await res.json();
-            setSprints(data.sprints || []);
+            // Sort sprints: Sprint 1 first, then others by name, then by ID
+            const sortedSprints = (data.sprints || []).sort((a, b) => {
+                // Sprint 1 always comes first
+                if (a.name === 'Sprint 1') return -1;
+                if (b.name === 'Sprint 1') return 1;
+                
+                // Then sort by name
+                const nameCompare = a.name.localeCompare(b.name);
+                if (nameCompare !== 0) return nameCompare;
+                
+                // Finally sort by ID
+                return a.id - b.id;
+            });
+            setSprints(sortedSprints);
         } catch (err) {
             setError('Failed to load sprints');
         } finally {
@@ -203,15 +269,42 @@ const SprintView = () => {
         }
     };
 
-    const handleDeleteSprint = async (sprint) => {
-        if (!window.confirm(`Delete sprint "${sprint.name}"? All tasks will be moved to backlog.`)) return;
-        setDeleteLoading(sprint.id);
+    const handleDeleteSprint = (sprint) => {
+        setSprintToDelete(sprint);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDeleteSprint = async (destination) => {
+        setDeleteLoading(sprintToDelete.id);
         try {
-            await fetch(`/api/sprints/${sprint.id}`, { method: 'DELETE' });
+            // Move all tasks to destination
+            const tasksToMove = tasks.filter(t => t.sprint_id === sprintToDelete.id);
+            for (const task of tasksToMove) {
+                await updateTask(task.id, {
+                    sprint_id: destination === 'backlog' ? null : parseInt(destination),
+                    sprint_order: 1 // or recalculate as needed
+                });
+            }
+            // Delete the sprint
+            await fetch(`/api/sprints/${sprintToDelete.id}`, { method: 'DELETE' });
             await fetchSprints();
         } finally {
             setDeleteLoading(null);
+            setDeleteModalOpen(false);
+            setSprintToDelete(null);
         }
+    };
+
+    const toggleSprintFold = (sprintId) => {
+        setFoldedSprints(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(sprintId)) {
+                newSet.delete(sprintId);
+            } else {
+                newSet.add(sprintId);
+            }
+            return newSet;
+        });
     };
 
     return (
@@ -221,6 +314,13 @@ const SprintView = () => {
                 onClose={() => { setModalOpen(false); setEditSprint(null); }}
                 onSave={handleSaveSprint}
                 initial={editSprint}
+            />
+            <DeleteSprintModal
+                open={deleteModalOpen}
+                onClose={() => { setDeleteModalOpen(false); setSprintToDelete(null); }}
+                onConfirm={confirmDeleteSprint}
+                sprints={sprints.filter(s => sprintToDelete && s.id !== sprintToDelete.id)}
+                defaultValue="backlog"
             />
             <div className="sprint-header">
                 <h2>Sprints</h2>
@@ -244,13 +344,23 @@ const SprintView = () => {
                                     {(provided, snapshot) => (
                                         <div
                                             id={`sprint-${sprint.id}`}
-                                            className={classNames('sprint-section', isDarkMode ? 'dark' : 'light', { 'dragging-over': snapshot.isDraggingOver })}
+                                            className={classNames('sprint-section', isDarkMode ? 'dark' : 'light', { 'dragging-over': snapshot.isDraggingOver, 'folded': foldedSprints.has(sprint.id) })}
                                             style={{boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: 32}}
                                             ref={provided.innerRef}
                                             {...provided.droppableProps}
                                         >
                                             <div className="sprint-section-header">
                                                 <div className="sprint-section-header-row" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                                    <button
+                                                        className="fold-toggle-button"
+                                                        onClick={() => toggleSprintFold(sprint.id)}
+                                                        title={foldedSprints.has(sprint.id) ? 'Expand sprint' : 'Collapse sprint'}
+                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: foldedSprints.has(sprint.id) ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                                                            <path d="M19 9l-7 7-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        </svg>
+                                                    </button>
                                                     <h3 style={{ margin: 0 }}>{sprint.name}</h3>
                                                     <span className="sprint-dates" style={{ marginLeft: 16 }}>{formatDateRange(sprint.start_date, sprint.end_date)}</span>
                                                     <span className="sprint-status-badge" style={{ marginLeft: 16 }}>Status: {sprint.status}</span>
@@ -289,35 +399,37 @@ const SprintView = () => {
                                                     </button>
                                                 </div>
                                             </div>
-                                            <ul className="sprint-task-list">
-                                                {(tasksBySprint[sprint.id] || [])
-                                                    .slice()
-                                                    .sort((a, b) => (a.sprint_order ?? 0) - (b.sprint_order ?? 0) || a.id - b.id)
-                                                    .map((task, idx) => (
-                                                        <Draggable draggableId={String(task.id)} index={idx} key={task.id}>
-                                                            {(provided, snapshot) => (
-                                                                <li
-                                                                    id={`task-${task.id}`}
-                                                                    className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''}`}
-                                                                    ref={provided.innerRef}
-                                                                    {...provided.draggableProps}
-                                                                    {...provided.dragHandleProps}
-                                                                >
-                                                                    <span className="stack-icon-wrapper">
-                                                                        <svg className="stack-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                            <path d="M4 6H20V8H4V6Z" fill="currentColor"></path>
-                                                                            <path d="M4 10H20V12H4V10Z" fill="currentColor"></path>
-                                                                            <path d="M4 14H20V16H4V14Z" fill="currentColor"></path>
-                                                                        </svg>
-                                                                    </span>
-                                                                    <span className="task-title">{task.title}</span>
-                                                                    <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
-                                                                </li>
-                                                            )}
-                                                        </Draggable>
-                                                    ))}
-                                                {provided.placeholder}
-                                            </ul>
+                                            {!foldedSprints.has(sprint.id) && (
+                                                <ul className="sprint-task-list">
+                                                    {(tasksBySprint[sprint.id] || [])
+                                                        .slice()
+                                                        .sort((a, b) => (a.sprint_order ?? 0) - (b.sprint_order ?? 0) || a.id - b.id)
+                                                        .map((task, idx) => (
+                                                            <Draggable draggableId={String(task.id)} index={idx} key={task.id}>
+                                                                {(provided, snapshot) => (
+                                                                    <li
+                                                                        id={`task-${task.id}`}
+                                                                        className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''}`}
+                                                                        ref={provided.innerRef}
+                                                                        {...provided.draggableProps}
+                                                                        {...provided.dragHandleProps}
+                                                                    >
+                                                                        <span className="stack-icon-wrapper">
+                                                                            <svg className="stack-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M4 6H20V8H4V6Z" fill="currentColor"></path>
+                                                                                <path d="M4 10H20V12H4V10Z" fill="currentColor"></path>
+                                                                                <path d="M4 14H20V16H4V14Z" fill="currentColor"></path>
+                                                                            </svg>
+                                                                        </span>
+                                                                        <span className="task-title">{task.title}</span>
+                                                                        <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
+                                                                    </li>
+                                                                )}
+                                                            </Draggable>
+                                                        ))}
+                                                    {provided.placeholder}
+                                                </ul>
+                                            )}
                                         </div>
                                     )}
                                 </Droppable>

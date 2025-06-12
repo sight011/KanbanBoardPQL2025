@@ -63,6 +63,7 @@ const TaskBoard = () => {
     const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark-mode'));
     const [filters, setFilters] = useState({
         text: '',
+        sprint: '',
         priority: '',
         assignee: ''
     });
@@ -127,15 +128,6 @@ const TaskBoard = () => {
         fetchSprints();
     }, []);
 
-    // Add handleClearFilters function
-    const handleClearFilters = () => {
-        setFilters({
-            text: '',
-            priority: '',
-            assignee: ''
-        });
-    };
-
     // Use useMemo to efficiently filter tasks
     const filteredTasks = useMemo(() => {
         return tasks.filter(task => {
@@ -143,10 +135,27 @@ const TaskBoard = () => {
                               task.description.toLowerCase().includes(filters.text.toLowerCase());
             const matchesPriority = !filters.priority || task.priority === filters.priority;
             const matchesAssignee = !filters.assignee || task.assignee_id === parseInt(filters.assignee);
-            const matchesSprint = !selectedSprint || String(task.sprint_id) === selectedSprint;
+            const matchesSprint = !filters.sprint || String(task.sprint_id) === filters.sprint;
             return matchesText && matchesPriority && matchesAssignee && matchesSprint;
         });
-    }, [tasks, filters, selectedSprint]);
+    }, [tasks, filters]);
+
+    // Add handleClearFilters function
+    const handleClearFilters = () => {
+        setFilters({
+            text: '',
+            sprint: '',
+            priority: '',
+            assignee: ''
+        });
+    };
+
+    const handleFilterChange = (filterType, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [filterType]: value
+        }));
+    };
 
     // Organize filtered tasks into columns
     const columns = useMemo(() => {
@@ -180,13 +189,6 @@ const TaskBoard = () => {
         }
         return filteredTasks;
     }, [filteredTasks, viewMode]);
-
-    const handleFilterChange = (filterType, value) => {
-        setFilters(prev => ({
-            ...prev,
-            [filterType]: value
-        }));
-    };
 
     const onDragStart = () => {
         // Add a class to the body when drag starts
@@ -461,199 +463,144 @@ const TaskBoard = () => {
                 </div>
             </div>
 
-            <div className="task-filters">
-                <div className="filter-group">
-                    <input
-                        type="text"
-                        id="task-search-input"
-                        placeholder="Search tasks..."
-                        value={filters.text}
-                        onChange={(e) => handleFilterChange('text', e.target.value)}
-                        className="filter-input"
-                    />
-                </div>
-                <div className="filter-group">
-                    <select
-                        value={selectedSprint}
-                        onChange={e => setSelectedSprint(e.target.value)}
-                        className="filter-select"
-                        style={{ minWidth: 120 }}
-                    >
-                        <option value="">All Sprints</option>
-                        {sprints.map(sprint => (
-                            <option key={sprint.id} value={String(sprint.id)}>
-                                {sprint.name} {sprint.status === 'active' ? '(Active)' : ''}
-                            </option>
-                        ))}
-                    </select>
-                    <select
-                        value={filters.priority}
-                        onChange={(e) => handleFilterChange('priority', e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="">Priority</option>
-                        <option value="high">High Priority</option>
-                        <option value="medium">Medium Priority</option>
-                        <option value="low">Low Priority</option>
-                    </select>
-                    <select
-                        value={filters.assignee}
-                        onChange={(e) => handleFilterChange('assignee', e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="">Assignee</option>
-                        <option value="unassigned">Unassigned</option>
-                        {Object.entries(userMap).map(([id, user]) => (
-                            <option key={id} value={id}>
-                                {`${user.firstName} ${user.lastName}`}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            </div>
-
-            {loading ? (
-                <div className="loading">Loading tasks...</div>
-            ) : error ? (
-                <div className="error">{error}</div>
-            ) : (
-                <>
-                    {viewMode === 'sprint' && (
-                        <SprintView />
-                    )}
-                    {viewMode === 'kanban' && (
-                        <DragDropContext onDragEnd={onDragEnd}>
-                            <div className="board-columns">
-                                <TaskColumn
-                                    title="To Do"
-                                    tasks={columns.todo}
-                                    status="todo"
-                                    onTaskClick={handleTaskClick}
-                                />
-                                <TaskColumn
-                                    title="In Progress"
-                                    tasks={columns.inProgress}
-                                    status="inProgress"
-                                    onTaskClick={handleTaskClick}
-                                />
-                                <TaskColumn
-                                    title="Review"
-                                    tasks={columns.review}
-                                    status="review"
-                                    onTaskClick={handleTaskClick}
-                                />
-                                <TaskColumn
-                                    title="Done"
-                                    tasks={columns.done}
-                                    status="done"
-                                    onTaskClick={handleTaskClick}
-                                />
-                            </div>
-                        </DragDropContext>
-                    )}
-                    {viewMode === 'list' && (
-                        <div className="list-view" style={{ 
-                            width: '100%',
-                            maxWidth: '1320px',
-                            margin: '0 auto',
-                            padding: '0'
-                        }}>
-                            <table style={{ width: '100%' }}>
-                                <thead>
-                                    <tr>
-                                        <th>Title</th>
-                                        <th>Description</th>
-                                        <th>Priority</th>
-                                        <th>Assignee</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sortedTasks.map(task => (
-                                        <tr key={task.id} onClick={() => handleTaskClick(task)}>
-                                            <td>{task.title}</td>
-                                            <td>{task.description}</td>
-                                            <td>
-                                                <span className={`priority-badge priority-${task.priority}`}>
-                                                    {task.priority}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {task.assignee_id ? (
-                                                    <div className="assignee-bubble" style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}>
-                                                        {getAssigneeInitials(task.assignee_id)}
-                                                    </div>
-                                                ) : (
-                                                    <div className="assignee-bubble unassigned">UA</div>
-                                                )}
-                                            </td>
-                                            <td className="status-cell">
-                                                <span className={`status-badge status-${task.status.toLowerCase()}`}>
-                                                    {task.status === 'inProgress' ? 'In Progress' : task.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                    {viewMode === 'diagram' && (
-                        <div className="diagram-view">
-                            <div className="chart-container">
-                                <div className="chart-wrapper">
-                                    <h3>Priority Distribution</h3>
-                                    <div style={{ 
-                                        height: '400px', 
-                                        width: '100%',
-                                        position: 'relative', 
-                                        backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center'
-                                    }}>
-                                        <div style={{ width: '350px', height: '350px' }}>
-                                            <Pie data={priorityData} options={chartOptions} />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="chart-wrapper">
-                                    <h3>Status Distribution</h3>
-                                    <div style={{ 
-                                        height: '400px', 
-                                        width: '100%',
-                                        position: 'relative', 
-                                        backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center'
-                                    }}>
-                                        <div style={{ width: '350px', height: '350px' }}>
-                                            <Pie data={statusData} options={chartOptions} />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="chart-wrapper">
-                                    <h3>Assignment Distribution</h3>
-                                    <div style={{ 
-                                        height: '400px', 
-                                        width: '100%',
-                                        position: 'relative', 
-                                        backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center'
-                                    }}>
-                                        <div style={{ width: '350px', height: '350px' }}>
-                                            <Pie data={assigneeData} options={chartOptions} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </>
+            {viewMode !== 'sprint' && (
+                <TaskFilters 
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                />
             )}
+
+            {viewMode === 'sprint' ? (
+                <SprintView />
+            ) : viewMode === 'kanban' ? (
+                <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
+                    <div className="board-columns">
+                        <TaskColumn
+                            title="To Do"
+                            tasks={columns.todo}
+                            status="todo"
+                            onTaskClick={handleTaskClick}
+                        />
+                        <TaskColumn
+                            title="In Progress"
+                            tasks={columns.inProgress}
+                            status="inProgress"
+                            onTaskClick={handleTaskClick}
+                        />
+                        <TaskColumn
+                            title="Review"
+                            tasks={columns.review}
+                            status="review"
+                            onTaskClick={handleTaskClick}
+                        />
+                        <TaskColumn
+                            title="Done"
+                            tasks={columns.done}
+                            status="done"
+                            onTaskClick={handleTaskClick}
+                        />
+                    </div>
+                </DragDropContext>
+            ) : viewMode === 'list' ? (
+                <div className="list-view" style={{ 
+                    width: '100%',
+                    maxWidth: '1320px',
+                    margin: '0 auto',
+                    padding: '0'
+                }}>
+                    <table style={{ width: '100%' }}>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Priority</th>
+                                <th>Assignee</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sortedTasks.map(task => (
+                                <tr key={task.id} onClick={() => handleTaskClick(task)}>
+                                    <td>{task.title}</td>
+                                    <td>{task.description}</td>
+                                    <td>
+                                        <span className={`priority-badge priority-${task.priority}`}>
+                                            {task.priority}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {task.assignee_id ? (
+                                            <div className="assignee-bubble" style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}>
+                                                {getAssigneeInitials(task.assignee_id)}
+                                            </div>
+                                        ) : (
+                                            <div className="assignee-bubble unassigned">UA</div>
+                                        )}
+                                    </td>
+                                    <td className="status-cell">
+                                        <span className={`status-badge status-${task.status.toLowerCase()}`}>
+                                            {task.status === 'inProgress' ? 'In Progress' : task.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : viewMode === 'diagram' ? (
+                <div className="diagram-view">
+                    <div className="chart-container">
+                        <div className="chart-wrapper">
+                            <h3>Priority Distribution</h3>
+                            <div style={{ 
+                                height: '400px', 
+                                width: '100%',
+                                position: 'relative', 
+                                backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            }}>
+                                <div style={{ width: '350px', height: '350px' }}>
+                                    <Pie data={priorityData} options={chartOptions} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="chart-wrapper">
+                            <h3>Status Distribution</h3>
+                            <div style={{ 
+                                height: '400px', 
+                                width: '100%',
+                                position: 'relative', 
+                                backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            }}>
+                                <div style={{ width: '350px', height: '350px' }}>
+                                    <Pie data={statusData} options={chartOptions} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="chart-wrapper">
+                            <h3>Assignment Distribution</h3>
+                            <div style={{ 
+                                height: '400px', 
+                                width: '100%',
+                                position: 'relative', 
+                                backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            }}>
+                                <div style={{ width: '350px', height: '350px' }}>
+                                    <Pie data={assigneeData} options={chartOptions} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
 
             {isModalOpen && (
                 <TaskModal

@@ -1,15 +1,55 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './TaskFilters.css';
 
 const TaskFilters = ({ filters, onFilterChange }) => {
-    const userMap = {
-        1: { firstName: 'John', lastName: 'Doe' },
-        2: { firstName: 'Jane', lastName: 'Smith' },
-        3: { firstName: 'Bob', lastName: 'Johnson' }
+    const [users, setUsers] = useState([]);
+    const [sprints, setSprints] = useState([]);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch('/api/users');
+                const data = await res.json();
+                setUsers(data.users || []);
+            } catch (err) {
+                setUsers([]);
+            }
+        };
+        fetchUsers();
+    }, []);
+
+    useEffect(() => {
+        const fetchSprints = async () => {
+            try {
+                const res = await fetch('/api/sprints');
+                const data = await res.json();
+                setSprints(data.sprints || []);
+            } catch (err) {
+                setSprints([]);
+            }
+        };
+        fetchSprints();
+    }, []);
+
+    const handleInputChange = (e) => {
+        onFilterChange('text', e.target.value);
+    };
+
+    const handleSprintChange = (e) => {
+        onFilterChange('sprint', e.target.value);
+    };
+
+    const handlePriorityChange = (e) => {
+        onFilterChange('priority', e.target.value);
+    };
+
+    const handleAssigneeChange = (e) => {
+        onFilterChange('assignee', e.target.value);
     };
 
     const handleClearFilters = () => {
         onFilterChange('text', '');
+        onFilterChange('sprint', '');
         onFilterChange('priority', '');
         onFilterChange('assignee', '');
     };
@@ -21,36 +61,42 @@ const TaskFilters = ({ filters, onFilterChange }) => {
                     type="text"
                     id="task-search-input"
                     placeholder="Search tasks..."
-                    value={filters.text}
-                    onChange={(e) => onFilterChange('text', e.target.value)}
                     className="filter-input"
+                    value={filters.text || ''}
+                    onChange={handleInputChange}
                 />
-            </div>
-            <div className="filter-group">
                 <select
-                    value={filters.priority}
-                    onChange={(e) => onFilterChange('priority', e.target.value)}
                     className="filter-select"
+                    value={filters.sprint || ''}
+                    onChange={handleSprintChange}
                 >
-                    <option value="">Priority</option>
-                    <option value="high">High Priority</option>
-                    <option value="medium">Medium Priority</option>
-                    <option value="low">Low Priority</option>
-                </select>
-                <select
-                    value={filters.assignee}
-                    onChange={(e) => onFilterChange('assignee', e.target.value)}
-                    className="filter-select"
-                >
-                    <option value="">Assignee</option>
-                    <option value="unassigned">Unassigned</option>
-                    {Object.entries(userMap).map(([id, user]) => (
-                        <option key={id} value={id}>
-                            {`${user.firstName} ${user.lastName}`}
-                        </option>
+                    <option value="">All Sprints</option>
+                    <option value="backlog">Backlog</option>
+                    {sprints.map((sprint) => (
+                        <option key={sprint.id} value={sprint.id}>{sprint.name}</option>
                     ))}
                 </select>
-                <button 
+                <select
+                    className="filter-select"
+                    value={filters.priority || ''}
+                    onChange={handlePriorityChange}
+                >
+                    <option value="">Priority</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <select
+                    className="filter-select"
+                    value={filters.assignee || ''}
+                    onChange={handleAssigneeChange}
+                >
+                    <option value="">Assignee</option>
+                    {users.map((user) => (
+                        <option key={user.id} value={user.id}>{user.firstName} {user.lastName}</option>
+                    ))}
+                </select>
+                <button
                     className="clear-filters-button"
                     onClick={handleClearFilters}
                 >
@@ -61,4 +107,4 @@ const TaskFilters = ({ filters, onFilterChange }) => {
     );
 };
 
-export default TaskFilters; 
+export default TaskFilters;

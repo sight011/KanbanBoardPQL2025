@@ -1,193 +1,66 @@
 .task-filters {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    height: 36px;
-    padding: 0 0.75rem;
     background-color: var(--bg-secondary);
-    border-radius: 8px;
     margin-bottom: 1rem;
-}
-
-.dark-mode .task-filters {
-    background: #1a202c;
+    width: 98%;
 }
 
 .filter-group {
     display: flex;
     gap: 1rem;
     align-items: center;
-}
-
-.filter-group:first-child {
-    flex: 2;
-}
-
-.filter-group label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #2d3748;
-    transition: color 0.3s ease;
-    white-space: nowrap;
-}
-
-.dark-mode .filter-group label {
-    color: #e2e8f0;
+    width: 100%;
 }
 
 .filter-input {
-    height: 36px;
-    padding: 0 12px;
-    border: 1px solid #e2e8f0;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
-    font-size: 14px;
-    width: 200px;
-    transition: border-color 0.2s ease;
+    flex: 2;
+    min-width: 165px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .filter-select {
-    min-width: 140px;
-    height: 34px;
-    padding: 0 12px;
-    border: 1px solid #e2e8f0;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
-    font-size: 0.9em;
-    color: #2d3748;
-    background-color: #f8fafc;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 8.825L1.175 4 2.05 3.125 6 7.075 9.95 3.125 10.825 4z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    padding-right: 32px;
-}
-
-.filter-select:focus {
-    outline: none;
-    border-color: #3e6aff;
-    box-shadow: 0 0 0 2px rgba(62, 106, 255, 0.1);
-}
-
-.dark-mode .filter-select {
-    background-color: #2d3748;
-    border-color: #4a5568;
-    color: #e2e8f0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0aec0' d='M6 8.825L1.175 4 2.05 3.125 6 7.075 9.95 3.125 10.825 4z'/%3E%3C/svg%3E");
-}
-
-.dark-mode .filter-select:focus {
-    border-color: #3e6aff;
-    box-shadow: 0 0 0 2px rgba(62, 106, 255, 0.2);
-}
-
-.dark-mode .filter-select option {
-    background-color: #2d3748;
-    color: #e2e8f0;
-}
-
-.filter-select option {
-    padding: 8px;
-    font-size: 14px;
-    color: #1a202c;
-    background-color: white;
-}
-
-.filter-select option:first-child {
-    color: #718096;
-}
-
-.clear-filters {
-    margin-left: auto;
-    padding: 6px 12px;
-    background-color: #3e6aff;
-    border: none;
-    border-radius: 4px;
-    color: white;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.3s ease, color 0.3s ease;
-    height: 32px;
-    box-sizing: border-box;
-    min-width: 360px;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dark-mode .clear-filters {
-    background-color: #3e6aff;
-    color: white;
-}
-
-.clear-filters:hover {
-    background-color: #2d5ae0;
-}
-
-.dark-mode .clear-filters:hover {
-    background-color: #2d5ae0;
+    flex: 1;
+    min-width: 150px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .clear-filters-button {
-    width: 120px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #3e6aff;
+    padding: 0.5rem 1rem;
+    background-color: var(--danger-color);
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    font-size: 14px;
-    font-weight: 500;
+    transition: background-color 0.2s;
+    flex: 0 0 auto;
 }
 
 .clear-filters-button:hover {
-    background-color: #2d5ae0;
+    background-color: var(--danger-color-hover);
 }
 
-.dark-mode .clear-filters-button {
-    background-color: #4a5568;
-    color: #e2e8f0;
+/* Dark mode styles */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --text-primary: #2d3748;
+    --border-color: #e2e8f0;
+    --danger-color: #e53e3e;
+    --danger-color-hover: #c53030;
 }
 
-.dark-mode .clear-filters-button:hover {
-    background-color: #2d3748;
-}
-
-#task-search-input {
-    width: 100%;
-    height: 34px;
-    padding: 0 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    font-size: 0.9em;
-    color: #2d3748;
-    background-color: #f8fafc;
-    transition: all 0.2s ease;
-}
-
-#task-search-input:focus {
-    outline: none;
-    border-color: #3e6aff;
-    box-shadow: 0 0 0 2px rgba(62, 106, 255, 0.1);
-}
-
-.dark-mode #task-search-input {
-    background-color: #2d3748;
-    border-color: #4a5568;
-    color: #e2e8f0;
-}
-
-.dark-mode #task-search-input:focus {
-    border-color: #3e6aff;
-    box-shadow: 0 0 0 2px rgba(62, 106, 255, 0.2);
-}
-
-[data-theme='dark'] #task-search-input::placeholder {
-    color: #9ca3af;
+.dark-mode {
+    --bg-primary: #2d3748;
+    --bg-secondary: #1a202c;
+    --text-primary: #e2e8f0;
+    --border-color: #4a5568;
+    --danger-color: #fc8181;
+    --danger-color-hover: #f56565;
 }

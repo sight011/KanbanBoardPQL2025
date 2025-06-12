@@ -36,6 +36,17 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/sprints', sprintRoutes);
 
+// Add /api/users endpoint
+const pool = require('./db/db');
+app.get('/api/users', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, username, email FROM users');
+        res.json({ users: result.rows });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch users', details: err.message });
+    }
+});
+
 // Basic route for testing
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to the Task Management API' });
