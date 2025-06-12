@@ -18,7 +18,9 @@ CREATE TABLE tasks (
     reporter_id INTEGER REFERENCES users(id),
     assignee_id INTEGER REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    sprint_id INTEGER REFERENCES sprints(id),
+    sprint_order INTEGER
 );
 
 -- Create comments table
@@ -39,6 +41,17 @@ CREATE TABLE task_history (
     old_value TEXT,
     new_value TEXT,
     changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create sprints table
+CREATE TABLE sprints (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    start_date DATE,
+    end_date DATE,
+    status VARCHAR(20) NOT NULL DEFAULT 'planned', -- planned, active, completed
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes

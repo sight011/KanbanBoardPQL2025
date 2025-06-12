@@ -7,6 +7,7 @@ import TaskModal from './TaskModal';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import './TaskBoard.css';
+import SprintView from './SprintView';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -58,13 +59,15 @@ ChartJS.register(textPlugin);
 
 const TaskBoard = () => {
     const { tasks, updateTaskPosition, loading, error, updateTaskStatus, openTaskModal, isModalOpen } = useTaskContext();
-    const [viewMode, setViewMode] = useState('kanban'); // 'kanban', 'list', or 'diagram'
+    const [viewMode, setViewMode] = useState('sprint'); // 'sprint', 'kanban', 'list', or 'diagram'
     const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark-mode'));
     const [filters, setFilters] = useState({
         text: '',
         priority: '',
         assignee: ''
     });
+    const [sprints, setSprints] = useState([]);
+    const [selectedSprint, setSelectedSprint] = useState('');
 
     // Define userMap at component level
     const userMap = {
@@ -107,6 +110,23 @@ const TaskBoard = () => {
         return () => observer.disconnect();
     }, []);
 
+    // Fetch sprints for the filter
+    useEffect(() => {
+        const fetchSprints = async () => {
+            try {
+                const res = await fetch('/api/sprints');
+                const data = await res.json();
+                setSprints(data.sprints || []);
+                // Default to active sprint if present
+                const active = (data.sprints || []).find(s => s.status === 'active');
+                setSelectedSprint(active ? String(active.id) : '');
+            } catch (err) {
+                setSprints([]);
+            }
+        };
+        fetchSprints();
+    }, []);
+
     // Add handleClearFilters function
     const handleClearFilters = () => {
         setFilters({
@@ -123,9 +143,10 @@ const TaskBoard = () => {
                               task.description.toLowerCase().includes(filters.text.toLowerCase());
             const matchesPriority = !filters.priority || task.priority === filters.priority;
             const matchesAssignee = !filters.assignee || task.assignee_id === parseInt(filters.assignee);
-            return matchesText && matchesPriority && matchesAssignee;
+            const matchesSprint = !selectedSprint || String(task.sprint_id) === selectedSprint;
+            return matchesText && matchesPriority && matchesAssignee && matchesSprint;
         });
-    }, [tasks, filters]);
+    }, [tasks, filters, selectedSprint]);
 
     // Organize filtered tasks into columns
     const columns = useMemo(() => {
@@ -382,6 +403,17 @@ const TaskBoard = () => {
                 <h2>Task Board</h2>
                 <div className="view-controls">
                     <button 
+                        className={`view-button ${viewMode === 'sprint' ? 'active' : ''}`}
+                        onClick={() => setViewMode('sprint')}
+                        title="Sprint View"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
+                            <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                        <span>Sprint</span>
+                    </button>
+                    <button 
                         className={`view-button ${viewMode === 'kanban' ? 'active' : ''}`}
                         onClick={() => setViewMode('kanban')}
                         title="Kanban View"
@@ -429,13 +461,43 @@ const TaskBoard = () => {
                 </div>
             </div>
 
-            <TaskFilters
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearFilters}
-                onViewToggle={toggleViewMode}
-                currentView={viewMode}
-            />
+            <div className="task-filters">
+                <div className="filter-group">
+                    <input
+                        type="text"
+                        id="task-search-input"
+                        placeholder="Search tasks..."
+                        value={filters.text}
+                        onChange={(e) => handleFilterChange('text', e.target.value)}
+                        className="filter-input"
+                    />
+                </div>
+                <div className="filter-group">
+                    <select
+                        value={selectedSprint}
+                        onChange={e => setSelectedSprint(e.target.value)}
+                        className="filter-select"
+                        style={{ minWidth: 120 }}
+                    >
+                        <option value="">All Sprints</option>
+                        {sprints.map(sprint => (
+                            <option key={sprint.id} value={String(sprint.id)}>
+                                {sprint.name} {sprint.status === 'active' ? '(Active)' : ''}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        value={filters.priority}
+                        onChange={(e) => handleFilterChange('priority', e.target.value)}
+                        className="filter-select"
+                    >
+                        <option value="">Priority</option>
+                        <option value="high">High Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="low">Low Priority</option>
+                    </select>
+                </div>
+            </div>
 
             {loading ? (
                 <div className="loading">Loading tasks...</div>
@@ -443,6 +505,9 @@ const TaskBoard = () => {
                 <div className="error">{error}</div>
             ) : (
                 <>
+                    {viewMode === 'sprint' && (
+                        <SprintView />
+                    )}
                     {viewMode === 'kanban' && (
                         <DragDropContext onDragEnd={onDragEnd}>
                             <div className="board-columns">

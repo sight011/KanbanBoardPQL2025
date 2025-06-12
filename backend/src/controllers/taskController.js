@@ -23,7 +23,7 @@ const taskController = {
         try {
             console.log('📊 About to query database...');
             const result = await pool.query(
-                'SELECT * FROM tasks ORDER BY status, position ASC'
+                'SELECT * FROM tasks ORDER BY sprint_id, sprint_order, id'
             );
             console.log('✅ Query successful, found', result.rows.length, 'tasks');
             console.log('First task:', result.rows[0]);
@@ -130,7 +130,7 @@ const taskController = {
         
         try {
             const { id } = req.params;
-            const { title, description, status, priority, effort, assignee_id } = req.body;
+            const { title, description, status, priority, effort, assignee_id, sprint_id, sprint_order } = req.body;
 
             // Validate required fields
             if (!title || !status || !priority) {
@@ -140,8 +140,8 @@ const taskController = {
                 });
             }
 
-            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, assignee_id = $6, updated_at = NOW() WHERE id = $7 RETURNING *';
-            const params = [title, description, status, priority, effort, assignee_id || null, id];
+            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, assignee_id = $6, sprint_id = $7, sprint_order = $8, updated_at = NOW() WHERE id = $9 RETURNING *';
+            const params = [title, description, status, priority, effort, assignee_id || null, sprint_id || null, sprint_order || null, id];
             console.log('Executing SQL:', sql);
             console.log('With parameters:', params);
 

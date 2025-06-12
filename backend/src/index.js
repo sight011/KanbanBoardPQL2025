@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const taskRoutes = require('./routes/taskRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const sprintRoutes = require('./routes/sprintRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(express.json());
 // Routes
 app.use('/api/tasks', taskRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/sprints', sprintRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
