@@ -496,6 +496,19 @@ const TaskBoard = () => {
                         <option value="medium">Medium Priority</option>
                         <option value="low">Low Priority</option>
                     </select>
+                    <select
+                        value={filters.assignee}
+                        onChange={(e) => handleFilterChange('assignee', e.target.value)}
+                        className="filter-select"
+                    >
+                        <option value="">Assignee</option>
+                        <option value="unassigned">Unassigned</option>
+                        {Object.entries(userMap).map(([id, user]) => (
+                            <option key={id} value={id}>
+                                {`${user.firstName} ${user.lastName}`}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
