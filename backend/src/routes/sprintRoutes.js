@@ -16,5 +16,9 @@ router.delete('/:id', sprintController.deleteSprint);
 router.post('/:id/start', sprintController.startSprint);
 // Complete a sprint
 router.post('/:id/complete', sprintController.completeSprint);
+// Reactivate a sprint
+router.post('/:id/reactivate', sprintController.reactivateSprint);
+// Get sprint burndown data
+router.get('/:id/burndown', sprintController.getSprintBurndown);
 
 module.exports = router; 

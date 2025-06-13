@@ -40,13 +40,15 @@ app.use('/api/sprints', sprintRoutes);
 const db = require('./db');
 app.get('/api/users', async (req, res) => {
     try {
-        const [users] = await db.query(`
-            SELECT 
-                id, 
-                COALESCE(firstName, SPLIT_PART(username, '.', 1)) as firstName,
-                COALESCE(lastName, SPLIT_PART(username, '.', 2)) as lastName
-            FROM users
-        `);
+        const result = await db.query('SELECT id, username, email, created_at FROM users');
+        const users = result.rows.map(user => {
+            const [firstName, lastName] = user.username.split(' ');
+            return {
+                ...user,
+                firstName: firstName || '',
+                lastName: lastName || ''
+            };
+        });
         res.json({ users });
     } catch (err) {
         console.error('Error fetching users:', err);

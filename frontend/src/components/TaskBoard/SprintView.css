@@ -202,6 +202,40 @@
     background-color: #feb2b2;
 }
 
+/* Sprint Action Buttons */
+.sprint-action-button.reactivate {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sprint-action-button.reactivate.dark {
+    background-color: #805ad5;
+    color: white;
+    border: 1px solid #6b46c1;
+}
+
+.sprint-action-button.reactivate.dark:hover {
+    background-color: #6b46c1;
+}
+
+.sprint-action-button.reactivate.light {
+    background-color: #e9d8fd;
+    color: #553c9a;
+    border: 1px solid #d6bcfa;
+}
+
+.sprint-action-button.reactivate.light:hover {
+    background-color: #d6bcfa;
+}
+
+.sprint-action-button.reactivate:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Task Lists */
 .sprint-task-list,
 .backlog-task-list {
@@ -348,18 +382,20 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.5);
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }
 
 .modal-content {
-    padding: 1.5rem;
+    background: white;
+    padding: 20px;
     border-radius: 8px;
-    max-width: 400px;
-    width: 90%;
+    min-width: 300px;
+    max-width: 500px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .modal-content.dark {
@@ -368,87 +404,67 @@
 }
 
 .modal-content.light {
-    background-color: white;
+    background-color: #ffffff;
     color: #2d3748;
 }
 
-.modal-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 1rem;
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
 }
 
-.modal-input {
-    padding: 0.5rem;
-    border-radius: 4px;
-    border: 1px solid;
-}
-
-.modal-input.dark {
-    background-color: #1a202c;
-    border-color: #4a5568;
-    color: #e2e8f0;
-}
-
-.modal-input.light {
-    background-color: white;
-    border-color: #e2e8f0;
-    color: #2d3748;
+.modal-content p {
+    margin-bottom: 20px;
 }
 
 .modal-actions {
     display: flex;
-    gap: 0.5rem;
     justify-content: flex-end;
-    margin-top: 1rem;
+    gap: 8px;
 }
 
 .modal-button {
-    padding: 0.5rem 1rem;
+    padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.2s;
+    font-weight: 500;
+    border: none;
 }
 
-.modal-button.primary.dark {
+.modal-button.primary {
     background-color: #3182ce;
     color: white;
-    border: 1px solid #2c5282;
 }
 
-.modal-button.primary.dark:hover {
+.modal-button.primary:hover {
     background-color: #2c5282;
 }
 
-.modal-button.primary.light {
-    background-color: #ebf8ff;
-    color: #2b6cb0;
-    border: 1px solid #bee3f8;
+.modal-button.secondary {
+    background-color: #e2e8f0;
+    color: #4a5568;
 }
 
-.modal-button.primary.light:hover {
-    background-color: #bee3f8;
+.modal-button.secondary:hover {
+    background-color: #cbd5e0;
+}
+
+.modal-button.primary.dark {
+    background-color: #4299e1;
+    color: white;
+}
+
+.modal-button.primary.dark:hover {
+    background-color: #3182ce;
 }
 
 .modal-button.secondary.dark {
     background-color: #4a5568;
     color: #e2e8f0;
-    border: 1px solid #2d3748;
 }
 
 .modal-button.secondary.dark:hover {
     background-color: #2d3748;
-}
-
-.modal-button.secondary.light {
-    background-color: #edf2f7;
-    color: #4a5568;
-    border: 1px solid #e2e8f0;
-}
-
-.modal-button.secondary.light:hover {
-    background-color: #e2e8f0;
 }
 
 /* Loading and Error Messages */
@@ -500,4 +516,35 @@
     color: #3182ce;
     margin-left: 1rem;
     font-weight: 500;
+}
+
+/* Modal form layout for vertical stacking and spacing */
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+/* Improve modal input spacing and width */
+.modal-input {
+    margin-bottom: 0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.modal-input.dark {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    border: 1px solid #4a5568;
+}
+
+.modal-input.light {
+    background-color: #fff;
+    color: #2d3748;
+    border: 1px solid #e2e8f0;
 } 

@@ -4,6 +4,7 @@ import './TaskFilters.css';
 const TaskFilters = ({ filters, onFilterChange }) => {
     const [users, setUsers] = useState([]);
     const [sprints, setSprints] = useState([]);
+    const [activeSprintId, setActiveSprintId] = useState(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -24,8 +25,11 @@ const TaskFilters = ({ filters, onFilterChange }) => {
                 const res = await fetch('/api/sprints');
                 const data = await res.json();
                 setSprints(data.sprints || []);
+                const active = (data.sprints || []).find(s => s.status === 'active');
+                setActiveSprintId(active ? String(active.id) : null);
             } catch (err) {
                 setSprints([]);
+                setActiveSprintId(null);
             }
         };
         fetchSprints();
@@ -73,7 +77,9 @@ const TaskFilters = ({ filters, onFilterChange }) => {
                     <option value="">All Sprints</option>
                     <option value="backlog">Backlog</option>
                     {sprints.map((sprint) => (
-                        <option key={sprint.id} value={sprint.id}>{sprint.name}</option>
+                        <option key={sprint.id} value={sprint.id}>
+                            {sprint.name}{activeSprintId === String(sprint.id) ? ' (active)' : ''}
+                        </option>
                     ))}
                 </select>
                 <select

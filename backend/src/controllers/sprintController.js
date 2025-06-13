@@ -102,6 +102,94 @@ const sprintController = {
             res.status(500).json({ success: false, error: error.message });
         }
     },
+    // Get sprint burndown data
+    getSprintBurndown: async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            // Get sprint details
+            const sprintResult = await pool.query('SELECT * FROM sprints WHERE id = $1', [id]);
+            if (sprintResult.rows.length === 0) {
+                return res.status(404).json({ success: false, error: 'Sprint not found' });
+            }
+            const sprint = sprintResult.rows[0];
+
+            // Get all tasks in the sprint
+            const tasksResult = await pool.query(
+                'SELECT id, status, completed_at FROM tasks WHERE sprint_id = $1',
+                [id]
+            );
+            const tasks = tasksResult.rows;
+
+            // Calculate total points
+            const totalPoints = tasks.length;
+
+            // Generate dates between sprint start and end
+            const startDate = new Date(sprint.start_date);
+            const endDate = new Date(sprint.end_date);
+            const dates = [];
+            const currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                dates.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            // Calculate burndown data
+            const burndownData = dates.map(date => {
+                const completedTasks = tasks.filter(task => {
+                    if (!task.completed_at) return false;
+                    const completedDate = new Date(task.completed_at);
+                    return completedDate <= date;
+                });
+
+                return {
+                    date: date.toISOString().split('T')[0],
+                    remainingPoints: totalPoints - completedTasks.length,
+                    idealBurndown: totalPoints * (1 - (date - startDate) / (endDate - startDate))
+                };
+            });
+
+            res.json({
+                success: true,
+                burndownData,
+                sprint: {
+                    id: sprint.id,
+                    name: sprint.name,
+                    start_date: sprint.start_date,
+                    end_date: sprint.end_date,
+                    totalPoints
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    },
+    // Reactivate a completed sprint
+    reactivateSprint: async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            // First, set any active sprint to planned
+            await pool.query("UPDATE sprints SET status = 'planned' WHERE status = 'active'");
+            
+            // Then set the completed sprint to active
+            const result = await pool.query(
+                "UPDATE sprints SET status = 'active' WHERE id = $1 AND status = 'completed' RETURNING *",
+                [id]
+            );
+            
+            if (result.rows.length === 0) {
+                return res.status(404).json({ 
+                    success: false, 
+                    error: 'Sprint not found or not in completed status' 
+                });
+            }
+            
+            res.json({ success: true, sprint: result.rows[0] });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
 };
 
 module.exports = sprintController; 

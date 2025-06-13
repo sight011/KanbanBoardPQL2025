@@ -8,6 +8,7 @@ import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import './TaskBoard.css';
 import SprintView from './SprintView';
+import BurndownChart from './BurndownChart';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -121,6 +122,10 @@ const TaskBoard = () => {
                 // Default to active sprint if present
                 const active = (data.sprints || []).find(s => s.status === 'active');
                 setSelectedSprint(active ? String(active.id) : '');
+                setFilters(prev => ({
+                    ...prev,
+                    sprint: active ? String(active.id) : ''
+                }));
             } catch (err) {
                 setSprints([]);
             }
@@ -142,9 +147,11 @@ const TaskBoard = () => {
 
     // Add handleClearFilters function
     const handleClearFilters = () => {
+        // Reset sprint filter to active sprint if present
+        const active = sprints.find(s => s.status === 'active');
         setFilters({
             text: '',
-            sprint: '',
+            sprint: active ? String(active.id) : '',
             priority: '',
             assignee: ''
         });
@@ -599,6 +606,10 @@ const TaskBoard = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            ) : viewMode === 'burndown' ? (
+                <div className="burndown-view">
+                    <BurndownChart sprintId={selectedSprint} />
                 </div>
             ) : null}
 

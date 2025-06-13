@@ -108,6 +108,37 @@ const DeleteSprintModal = ({ open, onClose, onConfirm, sprints, defaultValue }) 
     );
 };
 
+const ReactivateModal = ({ open, onClose, onConfirm, activeSprint, isDarkMode }) => {
+    if (!open) return null;
+
+    return (
+        <div className="modal-backdrop">
+            <div className={`modal-content ${isDarkMode ? 'dark' : 'light'}`}>
+                <h3>Reactivate Sprint</h3>
+                <p>
+                    {activeSprint 
+                        ? `Sprint "${activeSprint.name}" is currently active. Reactivating this sprint will set the active sprint back to planned status.`
+                        : 'Are you sure you want to reactivate this sprint?'}
+                </p>
+                <div className="modal-actions">
+                    <button 
+                        className={`modal-button secondary ${isDarkMode ? 'dark' : 'light'}`}
+                        onClick={onClose}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        className={`modal-button primary ${isDarkMode ? 'dark' : 'light'}`}
+                        onClick={onConfirm}
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const SprintView = () => {
     const { tasks, updateTask } = useTaskContext();
     const [sprints, setSprints] = useState([]);
@@ -130,6 +161,9 @@ const SprintView = () => {
     const [foldedSprints, setFoldedSprints] = useState(new Set());
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [sprintToDelete, setSprintToDelete] = useState(null);
+    const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
+    const [sprintToReactivate, setSprintToReactivate] = useState(null);
+    const [activeSprint, setActiveSprint] = useState(null);
 
     useEffect(() => {
         const observer = new MutationObserver(() => {
@@ -194,6 +228,12 @@ const SprintView = () => {
         if (!tasksBySprint[sid]) tasksBySprint[sid] = [];
         tasksBySprint[sid].push(task);
     });
+
+    useEffect(() => {
+        // Keep track of active sprint
+        const active = sprints.find(s => s.status === 'active');
+        setActiveSprint(active || null);
+    }, [sprints]);
 
     const onDragEnd = async (result) => {
         const { source, destination, draggableId } = result;
@@ -295,6 +335,47 @@ const SprintView = () => {
         }
     };
 
+    const handleReactivate = (sprint) => {
+        setSprintToReactivate(sprint);
+        const activeSprint = sprints.find(s => s.status === 'active');
+        
+        if (activeSprint && activeSprint.id !== sprint.id) {
+            setActiveSprint(activeSprint);
+            setReactivateModalOpen(true);
+        } else {
+            confirmReactivate();
+        }
+    };
+
+    const confirmReactivate = async () => {
+        if (!sprintToReactivate) return;
+        
+        try {
+            setLoading(true);
+            const response = await fetch(`/api/sprints/${sprintToReactivate.id}/reactivate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to reactivate sprint');
+            }
+
+            await fetchSprints();
+            setReactivateModalOpen(false);
+            setSprintToReactivate(null);
+            setActiveSprint(null);
+        } catch (error) {
+            console.error('Error reactivating sprint:', error);
+            setError(error.message || 'Failed to reactivate sprint');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const toggleSprintFold = (sprintId) => {
         setFoldedSprints(prev => {
             const newSet = new Set(prev);
@@ -321,6 +402,16 @@ const SprintView = () => {
                 onConfirm={confirmDeleteSprint}
                 sprints={sprints.filter(s => sprintToDelete && s.id !== sprintToDelete.id)}
                 defaultValue="backlog"
+            />
+            <ReactivateModal
+                open={reactivateModalOpen}
+                onClose={() => {
+                    setReactivateModalOpen(false);
+                    setSprintToReactivate(null);
+                }}
+                onConfirm={confirmReactivate}
+                activeSprint={activeSprint}
+                isDarkMode={isDarkMode}
             />
             <div className="sprint-header">
                 <h2>Sprints</h2>
@@ -382,6 +473,15 @@ const SprintView = () => {
                                                             disabled={actionLoading === sprint.id}
                                                         >
                                                             {actionLoading === sprint.id ? 'Completing...' : 'Complete'}
+                                                        </button>
+                                                    )}
+                                                    {sprint.status === 'completed' && (
+                                                        <button 
+                                                            className={classNames('sprint-action-button', 'reactivate', isDarkMode ? 'dark' : 'light')}
+                                                            onClick={() => handleReactivate(sprint)} 
+                                                            disabled={actionLoading === sprint.id}
+                                                        >
+                                                            {actionLoading === sprint.id ? 'Reactivating...' : 'Reactivate'}
                                                         </button>
                                                     )}
                                                     <button 
