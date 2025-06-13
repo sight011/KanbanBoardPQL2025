@@ -74,19 +74,26 @@ body.dragging .task-card:hover {
     gap: 8px;
 }
 
-.task-title {
+.task-card-header {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.task-icon {
+    display: flex;
+    align-items: center;
+}
+
+.task-title {
     margin: 0;
-    font-size: 0.95em;
+    font-size: 1rem;
     font-weight: 500;
-    color: #2d3748;
-    line-height: 1.4;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
 }
 

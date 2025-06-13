@@ -154,22 +154,6 @@ const TaskModal = () => {
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label htmlFor="sprint_id"><b>Sprint/Backlog</b></label>
-                        <select
-                            id="sprint_id"
-                            name="sprint_id"
-                            value={formData.sprint_id ?? ''}
-                            onChange={handleInputChange}
-                            disabled={sprintsLoading}
-                        >
-                            <option value="">Backlog</option>
-                            {sprints.map(sprint => (
-                                <option key={sprint.id} value={sprint.id}>{sprint.name}</option>
-                            ))}
-                        </select>
-                        {sprintsError && <div style={{ color: 'red', marginTop: 4 }}>{sprintsError}</div>}
-                    </div>
-                    <div className="form-group">
                         <label htmlFor="title">Title</label>
                         <input
                             type="text"
@@ -187,8 +171,23 @@ const TaskModal = () => {
                             name="description"
                             value={formData.description}
                             onChange={handleInputChange}
-                            rows="4"
                         />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="sprint_id"><b>Sprint/Backlog</b></label>
+                        <select
+                            id="sprint_id"
+                            name="sprint_id"
+                            value={formData.sprint_id ?? ''}
+                            onChange={handleInputChange}
+                            disabled={sprintsLoading}
+                        >
+                            <option value="">Backlog</option>
+                            {sprints.map(sprint => (
+                                <option key={sprint.id} value={sprint.id}>{sprint.name}</option>
+                            ))}
+                        </select>
+                        {sprintsError && <div style={{ color: 'red', marginTop: 4 }}>{sprintsError}</div>}
                     </div>
                     <div className="form-row">
                         <div className="form-group">

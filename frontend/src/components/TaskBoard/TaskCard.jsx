@@ -58,49 +58,49 @@ const TaskCard = memo(({ task, index }) => {
                         onClick={() => openTaskModal(task)}
                         style={style}
                     >
-                        <div className="task-card-content">
-                            <h4 className="task-title" title={task.title}>
-                                <svg id="stack-icon" className="stack-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M4 6H20V8H4V6Z" fill="currentColor"/>
-                                    <path d="M4 10H20V12H4V10Z" fill="currentColor"/>
-                                    <path d="M4 14H20V16H4V14Z" fill="currentColor"/>
+                        <div className="task-card-header">
+                            <span className="task-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                                {task.title}
-                            </h4>
-                            <p className="task-description" title={task.description}>
-                                {task.description}
-                            </p>
-                            <div className="task-meta">
-                                <span className={`priority-badge priority-${task.priority}`}>
-                                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                            </span>
+                            <h4 className="task-title" title={task.title}>{task.title}</h4>
+                        </div>
+                        <p className="task-description" title={task.description}>
+                            {task.description}
+                        </p>
+                        <div className="task-meta">
+                            <span className={`priority-badge priority-${task.priority}`}>
+                                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                            </span>
+                            <span className="task-ticket-number">
+                                {task.ticket_number}
+                            </span>
+                            {task.effort && (
+                                <span className="task-effort">
+                                    EE: {task.effort}
                                 </span>
-                                <span className="task-ticket-number">
-                                    {task.ticket_number}
+                            )}
+                            {task.timespent && (
+                                <span className="task-timespent">
+                                    TS: {task.timespent}
                                 </span>
-                                {task.effort && (
-                                    <span className="task-effort">
-                                        EE: {task.effort}
-                                    </span>
-                                )}
-                                {task.timespent && (
-                                    <span className="task-timespent">
-                                        TS: {task.timespent}
-                                    </span>
-                                )}
-                                {task.assignee_id ? (
-                                    <span 
-                                        className="assignee-circle" 
-                                        title={`Assigned to ${getAssigneeInitials(task.assignee_id)}`}
-                                        style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}
-                                    >
-                                        {getAssigneeInitials(task.assignee_id)}
-                                    </span>
-                                ) : (
-                                    <span className="assignee-circle unassigned" title="Unassigned">
-                                        UA
-                                    </span>
-                                )}
-                            </div>
+                            )}
+                            {task.assignee_id ? (
+                                <span 
+                                    className="assignee-circle" 
+                                    title={`Assigned to ${getAssigneeInitials(task.assignee_id)}`}
+                                    style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}
+                                >
+                                    {getAssigneeInitials(task.assignee_id)}
+                                </span>
+                            ) : (
+                                <span className="assignee-circle unassigned" title="Unassigned">
+                                    UA
+                                </span>
+                            )}
                         </div>
                     </div>
                 );

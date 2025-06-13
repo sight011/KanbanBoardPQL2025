@@ -376,16 +376,25 @@ const SprintView = () => {
         }
     };
 
-    const toggleSprintFold = (sprintId) => {
-        setFoldedSprints(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(sprintId)) {
-                newSet.delete(sprintId);
-            } else {
-                newSet.add(sprintId);
-            }
-            return newSet;
-        });
+    const handleFoldToggle = (sprintId, event) => {
+        if (event && (event.altKey || event.metaKey)) {
+            // Option/Alt or Command/Meta key: fold/unfold all
+            setFoldedSprints(prev => {
+                const allIds = new Set(sprints.map(s => s.id));
+                const anyUnfolded = sprints.some(s => !prev.has(s.id));
+                return anyUnfolded ? allIds : new Set();
+            });
+        } else {
+            setFoldedSprints(prev => {
+                const newSet = new Set(prev);
+                if (newSet.has(sprintId)) {
+                    newSet.delete(sprintId);
+                } else {
+                    newSet.add(sprintId);
+                }
+                return newSet;
+            });
+        }
     };
 
     return (
@@ -444,7 +453,7 @@ const SprintView = () => {
                                                 <div className="sprint-section-header-row" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                                     <button
                                                         className="fold-toggle-button"
-                                                        onClick={() => toggleSprintFold(sprint.id)}
+                                                        onClick={e => handleFoldToggle(sprint.id, e)}
                                                         title={foldedSprints.has(sprint.id) ? 'Expand sprint' : 'Collapse sprint'}
                                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                     >
@@ -514,26 +523,23 @@ const SprintView = () => {
                                                                         {...provided.draggableProps}
                                                                         {...provided.dragHandleProps}
                                                                     >
-                                                                        <span className="stack-icon-wrapper">
-                                                                            <svg className="stack-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                <path d="M4 6H20V8H4V6Z" fill="currentColor"></path>
-                                                                                <path d="M4 10H20V12H4V10Z" fill="currentColor"></path>
-                                                                                <path d="M4 14H20V16H4V14Z" fill="currentColor"></path>
-                                                                            </svg>
-                                                                        </span>
                                                                         <div className="sprint-task">
-                                                                            <span className="task-icon">
-                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                                    <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                                    <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                                </svg>
-                                                                            </span>
-                                                                            <span className="task-title">{task.title}</span>
-                                                                            <span className="task-effort">{task.effort ? `EE: ${task.effort}d` : '–'}</span>
-                                                                            <span className={`priority-badge priority-${task.priority}`}>
-                                                                                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                                                                            </span>
+                                                                            <div className="task-left">
+                                                                                <span className="task-icon">
+                                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                        <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                        <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                    </svg>
+                                                                                </span>
+                                                                                <span className="task-title">{task.title}</span>
+                                                                            </div>
+                                                                            <div className="task-right">
+                                                                                <span className="task-effort">{task.effort ? `EE: ${task.effort}d` : '–'}</span>
+                                                                                <span className={`priority-badge priority-${task.priority}`}>
+                                                                                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                                                                </span>
+                                                                            </div>
                                                                         </div>
                                                                     </li>
                                                                 )}
@@ -568,31 +574,28 @@ const SprintView = () => {
                                                         {(provided, snapshot) => (
                                                             <li
                                                                 id={`task-${task.id}`}
-                                                                className={`backlog-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''}`}
+                                                                className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''}`}
                                                                 ref={provided.innerRef}
                                                                 {...provided.draggableProps}
                                                                 {...provided.dragHandleProps}
                                                             >
-                                                                <span className="stack-icon-wrapper">
-                                                                    <svg className="stack-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                        <path d="M4 6H20V8H4V6Z" fill="currentColor"></path>
-                                                                        <path d="M4 10H20V12H4V10Z" fill="currentColor"></path>
-                                                                        <path d="M4 14H20V16H4V14Z" fill="currentColor"></path>
-                                                                    </svg>
-                                                                </span>
                                                                 <div className="sprint-task">
-                                                                    <span className="task-icon">
-                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                            <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                            <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                        </svg>
-                                                                    </span>
-                                                                    <span className="task-title">{task.title}</span>
-                                                                    <span className="task-effort">{task.effort ? `EE: ${task.effort}d` : '–'}</span>
-                                                                    <span className={`priority-badge priority-${task.priority}`}>
-                                                                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                                                                    </span>
+                                                                    <div className="task-left">
+                                                                        <span className="task-icon">
+                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                            </svg>
+                                                                        </span>
+                                                                        <span className="task-title">{task.title}</span>
+                                                                    </div>
+                                                                    <div className="task-right">
+                                                                        <span className="task-effort">{task.effort ? `EE: ${task.effort}d` : '–'}</span>
+                                                                        <span className={`priority-badge priority-${task.priority}`}>
+                                                                            {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </li>
                                                         )}
