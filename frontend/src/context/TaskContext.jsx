@@ -88,10 +88,20 @@ export const TaskProvider = ({ children }) => {
     const updateTask = async (taskId, taskData) => {
         console.log('✏️ Updating task:', taskId, taskData);
         
+        // Find the previous task to compare status
+        const prevTask = tasks.find(t => t.id === taskId);
+        let completed_at = taskData.completed_at;
+        if (taskData.status === 'done' && prevTask?.status !== 'done') {
+            completed_at = new Date().toISOString();
+        } else if (taskData.status !== 'done' && prevTask?.status === 'done') {
+            completed_at = null;
+        }
+
         const cleanTaskData = {
             ...taskData,
             assignee_id: taskData.assignee_id === '' ? null : taskData.assignee_id,
-            effort: taskData.effort === '' ? null : taskData.effort
+            effort: taskData.effort === '' ? null : taskData.effort,
+            completed_at
         };
 
         // Optimistic update

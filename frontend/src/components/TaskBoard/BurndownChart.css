@@ -3,6 +3,7 @@
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s, color 0.3s;
 }
 
 .burndown-chart-container h3 {
@@ -45,6 +46,46 @@
 .burndown-error {
     color: #dc3545;
     background: #f8d7da;
+}
+
+.burndown-chart-container.dark {
+    background: #23272f;
+    color: #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.burndown-chart-container.dark h3 {
+    color: #e2e8f0;
+}
+
+.burndown-info.dark {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+.burndown-info.dark p {
+    color: #cbd5e1;
+}
+
+.burndown-loading.dark,
+.burndown-error.dark,
+.burndown-no-data.dark {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+.burndown-error.dark {
+    color: #fc8181;
+    background: #4a2323;
+}
+
+.burndown-chart .recharts-cartesian-grid-horizontal line,
+.burndown-chart .recharts-cartesian-grid-vertical line {
+    stroke: #4a5568;
+}
+
+.burndown-chart .recharts-text {
+    fill: #e2e8f0;
 }
 
 /* Responsive adjustments */

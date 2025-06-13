@@ -15,6 +15,10 @@ const BurndownChart = ({ sprintId }) => {
     const [burndownData, setBurndownData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isDarkMode, setIsDarkMode] = useState(() =>
+        document.documentElement.classList.contains('dark-mode') ||
+        document.body.classList.contains('dark-mode')
+    );
 
     useEffect(() => {
         const fetchBurndownData = async () => {
@@ -39,24 +43,36 @@ const BurndownChart = ({ sprintId }) => {
         }
     }, [sprintId]);
 
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+            setIsDarkMode(
+                document.documentElement.classList.contains('dark-mode') ||
+                document.body.classList.contains('dark-mode')
+            );
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
+
     if (loading) {
-        return <div className="burndown-loading">Loading burndown data...</div>;
+        return <div className={`burndown-loading${isDarkMode ? ' dark' : ''}`}>Loading burndown data...</div>;
     }
 
     if (error) {
-        return <div className="burndown-error">Error: {error}</div>;
+        return <div className={`burndown-error${isDarkMode ? ' dark' : ''}`}>Error: {error}</div>;
     }
 
     if (!burndownData) {
-        return <div className="burndown-no-data">No burndown data available</div>;
+        return <div className={`burndown-no-data${isDarkMode ? ' dark' : ''}`}>No burndown data available</div>;
     }
 
     const { burndownData: data, sprint } = burndownData;
 
     return (
-        <div className="burndown-chart-container">
+        <div className={`burndown-chart-container${isDarkMode ? ' dark' : ''}`}>
             <h3>{sprint.name} Burndown Chart</h3>
-            <div className="burndown-info">
+            <div className={`burndown-info${isDarkMode ? ' dark' : ''}`}>
                 <p>Start Date: {new Date(sprint.start_date).toLocaleDateString()}</p>
                 <p>End Date: {new Date(sprint.end_date).toLocaleDateString()}</p>
                 <p>Total Points: {sprint.totalPoints}</p>

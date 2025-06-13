@@ -131,6 +131,9 @@ const TaskBoard = () => {
             }
         };
         fetchSprints();
+        // Poll for active sprint changes every 2 seconds
+        const interval = setInterval(fetchSprints, 2000);
+        return () => clearInterval(interval);
     }, []);
 
     // Use useMemo to efficiently filter tasks
@@ -147,14 +150,14 @@ const TaskBoard = () => {
 
     // Add handleClearFilters function
     const handleClearFilters = () => {
-        // Reset sprint filter to active sprint if present
+        // Reset sprint filter to active sprint only if a different sprint is selected
         const active = sprints.find(s => s.status === 'active');
-        setFilters({
+        setFilters(prev => ({
             text: '',
-            sprint: active ? String(active.id) : '',
+            sprint: prev.sprint === (active ? String(active.id) : '') ? prev.sprint : (active ? String(active.id) : ''),
             priority: '',
             assignee: ''
-        });
+        }));
     };
 
     const handleFilterChange = (filterType, value) => {

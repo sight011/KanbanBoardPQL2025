@@ -351,7 +351,7 @@
     border-radius: 8px;
     padding: 1rem;
     min-width: 250px;
-    width: 100%;
+    width: 97%;
 }
 
 .backlog-section.dark, .dark-mode .backlog-section, [data-theme="dark"] .backlog-section {

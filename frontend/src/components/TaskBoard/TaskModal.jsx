@@ -233,7 +233,7 @@ const TaskModal = () => {
                         {effortError && <div style={{ color: 'red', marginTop: 4 }}>{effortError}</div>}
                     </div>
                     <div className="form-group">
-                        <label htmlFor="time_spent">Time spend</label>
+                        <label htmlFor="time_spent">Time Spent</label>
                         <input
                             type="text"
                             id="time_spent"
