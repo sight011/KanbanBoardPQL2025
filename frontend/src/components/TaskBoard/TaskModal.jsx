@@ -116,10 +116,14 @@ const TaskModal = () => {
         e.preventDefault();
         if (effortError || timeSpentError) return;
         try {
+            const payload = {
+                ...formData,
+                timespent: formData.timespent === '' ? null : formData.timespent
+            };
             if (selectedTask) {
-                await updateTask(selectedTask.id, formData);
+                await updateTask(selectedTask.id, payload);
             } else {
-                await createTask(formData);
+                await createTask(payload);
             }
             closeTaskModal();
         } catch (error) {

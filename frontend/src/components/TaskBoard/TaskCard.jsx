@@ -85,7 +85,7 @@ const TaskCard = memo(({ task, index }) => {
                             )}
                             {task.timespent && (
                                 <span className="task-timespent">
-                                    TS: {task.timespent}
+                                    TS: {task.timespent ? task.timespent : '–'}
                                 </span>
                             )}
                             {task.assignee_id ? (

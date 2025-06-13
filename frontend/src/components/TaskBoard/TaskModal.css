@@ -1,14 +1,16 @@
 .modal-overlay {
     position: fixed;
+    top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    top: -72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 8px;
+    padding-bottom: 8px;
 }
 
 .modal-content {
@@ -17,10 +19,11 @@
     border-radius: 8px;
     width: 90%;
     max-width: 500px;
-    max-height: 90vh;
+    max-height: 95vh;
     overflow-y: auto;
     position: relative;
     transition: background-color 0.3s ease;
+    padding-top: 5px!important;
 }
 
 .dark-mode .modal-content {
@@ -68,7 +71,7 @@
 }
 
 .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     width: 100%;
 }
 
