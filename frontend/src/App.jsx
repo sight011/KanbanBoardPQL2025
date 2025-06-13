@@ -12,6 +12,11 @@ import './App.css';
 
 const App = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const [viewMode, setViewMode] = useState('sprint');
+
+    const handleLogoClick = () => {
+        setViewMode('sprint');
+    };
 
     const handleSendMessage = async (message, setBotResponse) => {
         try {
@@ -48,7 +53,7 @@ Based on the tasks above, please answer the user's question following the respon
             <TaskProvider>
                 <div className="app">
                     <header className="app-header">
-                        <div className="app-logo-container">
+                        <div className="app-logo-container" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
                             <img src="/flexflex.png" alt="FlexFlex Logo" width="200" height="55" />
                         </div>
                         <div className="header-actions">
@@ -57,7 +62,7 @@ Based on the tasks above, please answer the user's question following the respon
                         </div>
                     </header>
                     <main className="app-main">
-                        <TaskBoard />
+                        <TaskBoard viewMode={viewMode} setViewMode={setViewMode} />
                     </main>
                     <TaskModal />
                     <ChatBubble

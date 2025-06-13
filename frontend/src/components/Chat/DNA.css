@@ -1,0 +1,44 @@
+.dna-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dna {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.dna-row {
+  position: absolute;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dna-row:nth-child(2) {
+  top: 50%;
+}
+
+.dna-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #7ad4f8;
+  animation: dnaAnimation 1.5s ease-in-out infinite;
+}
+
+.dna-row:nth-child(2) .dna-dot {
+  background-color: #ed0000;
+}
+
+@keyframes dnaAnimation {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(10px) scale(0.5);
+  }
+} 

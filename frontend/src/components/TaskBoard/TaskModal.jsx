@@ -26,7 +26,7 @@ const TaskModal = () => {
         priority: 'medium',
         assignee_id: '',
         effort: '',
-        time_spent: '',
+        timespent: '',
         sprint_id: ''
     });
 
@@ -46,7 +46,7 @@ const TaskModal = () => {
                 priority: selectedTask.priority,
                 assignee_id: selectedTask.assignee_id || '',
                 effort: selectedTask.effort || '',
-                time_spent: selectedTask.time_spent || '',
+                timespent: selectedTask.timespent || '',
                 sprint_id: selectedTask.sprint_id ?? ''
             });
         } else {
@@ -58,7 +58,7 @@ const TaskModal = () => {
                 priority: 'medium',
                 assignee_id: '',
                 effort: '',
-                time_spent: '',
+                timespent: '',
                 sprint_id: ''
             });
         }
@@ -86,19 +86,31 @@ const TaskModal = () => {
         fetchSprints();
     }, []);
 
-    const validateEffort = (value) => {
-        if (!value) return true; // Empty value is allowed
+    const validateTimeInput = (value) => {
+        if (!value) return true;
         const regex = /^\d+(\.\d+)?[hd]$/;
         if (!regex.test(value)) return false;
+        
         const number = parseFloat(value);
         const unit = value.slice(-1);
+        
         if (unit === 'h' && number < 0.5) return false;
         if (unit === 'd' && number < 1) return false;
+        
         return true;
     };
 
-    // Reuse validateEffort for time spent
-    const validateTimeSpent = validateEffort;
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'effort') {
+            setEffortError(validateTimeInput(value) ? '' : 'Invalid effort format. Use numbers with h (hours) or d (days). Minimum 0.5h or 1d.');
+        }
+        if (name === 'timespent') {
+            setTimeSpentError(validateTimeInput(value) ? '' : 'Invalid time spent format. Use numbers with h (hours) or d (days). Minimum 0.5h or 1d.');
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -126,76 +138,37 @@ const TaskModal = () => {
         }
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        if (name === 'sprint_id') {
-            setFormData(prev => ({ ...prev, sprint_id: value }));
-        } else if (name === 'effort') {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
-            if (!validateEffort(value) && value) {
-                setEffortError('Invalid format. Use e.g. 2h, 0.5h, 1d. Min: 0.5h or 1d');
-            } else {
-                setEffortError('');
-            }
-        } else if (name === 'time_spent') {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
-            if (!validateTimeSpent(value) && value) {
-                setTimeSpentError('Invalid format. Use e.g. 2h, 0.5h, 1d. Min: 0.5h or 1d');
-            } else {
-                setTimeSpentError('');
-            }
-        } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit(e);
-        }
-    };
-
     if (!isModalOpen) return null;
 
     return (
         <div 
             className="modal-overlay" 
             onClick={closeTaskModal}
-            onKeyPress={handleKeyPress}
+            onKeyPress={handleInputChange}
             tabIndex={0}
         >
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <div className="form-group">
-                    <label htmlFor="sprint_id"><b>Sprint/Backlog</b></label>
-                    <select
-                        id="sprint_id"
-                        name="sprint_id"
-                        value={formData.sprint_id ?? ''}
-                        onChange={handleChange}
-                        disabled={sprintsLoading}
-                    >
-                        <option value="">Backlog</option>
-                        {sprints.map(sprint => (
-                            <option key={sprint.id} value={sprint.id}>{sprint.name}</option>
-                        ))}
-                    </select>
-                    {sprintsError && <div style={{ color: 'red', marginTop: 4 }}>{sprintsError}</div>}
-                </div>
                 <div className="modal-header">
                     <h2>{selectedTask ? 'Edit Task' : 'Create New Task'}</h2>
                     <button className="close-button" onClick={closeTaskModal}>×</button>
                 </div>
                 <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="sprint_id"><b>Sprint/Backlog</b></label>
+                        <select
+                            id="sprint_id"
+                            name="sprint_id"
+                            value={formData.sprint_id ?? ''}
+                            onChange={handleInputChange}
+                            disabled={sprintsLoading}
+                        >
+                            <option value="">Backlog</option>
+                            {sprints.map(sprint => (
+                                <option key={sprint.id} value={sprint.id}>{sprint.name}</option>
+                            ))}
+                        </select>
+                        {sprintsError && <div style={{ color: 'red', marginTop: 4 }}>{sprintsError}</div>}
+                    </div>
                     <div className="form-group">
                         <label htmlFor="title">Title</label>
                         <input
@@ -203,7 +176,7 @@ const TaskModal = () => {
                             id="title"
                             name="title"
                             value={formData.title}
-                            onChange={handleChange}
+                            onChange={handleInputChange}
                             required
                         />
                     </div>
@@ -213,66 +186,65 @@ const TaskModal = () => {
                             id="description"
                             name="description"
                             value={formData.description}
-                            onChange={handleChange}
+                            onChange={handleInputChange}
                             rows="4"
                         />
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="effort">Effort Estimation</label>
-                        <input
-                            type="text"
-                            id="effort"
-                            name="effort"
-                            value={formData.effort}
-                            onChange={handleChange}
-                            placeholder="e.g., 2h, 0.5h, 1d, 5d"
-                        />
-                        <small className="modal-description">
-                            Format: number + unit (h for hours, d for days). Minimum: 0.5h or 1d
-                        </small>
-                        {effortError && <div style={{ color: 'red', marginTop: 4 }}>{effortError}</div>}
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label htmlFor="status">Status</label>
+                            <select
+                                id="status"
+                                name="status"
+                                value={formData.status}
+                                onChange={handleInputChange}
+                                required
+                            >
+                                <option value="todo">To Do</option>
+                                <option value="inProgress">In Progress</option>
+                                <option value="done">Done</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="priority">Priority</label>
+                            <select
+                                id="priority"
+                                name="priority"
+                                value={formData.priority}
+                                onChange={handleInputChange}
+                                required
+                            >
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="time_spent">Time Spent</label>
-                        <input
-                            type="text"
-                            id="time_spent"
-                            name="time_spent"
-                            value={formData.time_spent}
-                            onChange={handleChange}
-                            placeholder="e.g., 2h, 0.5h, 1d, 5d"
-                        />
-                        <small className="modal-description">
-                            Format: number + unit (h for hours, d for days). Minimum: 0.5h or 1d
-                        </small>
-                        {timeSpentError && <div style={{ color: 'red', marginTop: 4 }}>{timeSpentError}</div>}
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="status">Status</label>
-                        <select
-                            id="status"
-                            name="status"
-                            value={formData.status}
-                            onChange={handleChange}
-                        >
-                            <option value="todo">To Do</option>
-                            <option value="inProgress">In Progress</option>
-                            <option value="review">Review</option>
-                            <option value="done">Done</option>
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="priority">Priority</label>
-                        <select
-                            id="priority"
-                            name="priority"
-                            value={formData.priority}
-                            onChange={handleChange}
-                        >
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                        </select>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label htmlFor="effort">Effort</label>
+                            <input
+                                type="text"
+                                id="effort"
+                                name="effort"
+                                value={formData.effort}
+                                onChange={handleInputChange}
+                                placeholder="e.g., 2h, 1d"
+                            />
+                            {effortError && <span className="error-message">{effortError}</span>}
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="timespent">Time Spent</label>
+                            <input
+                                type="text"
+                                id="timespent"
+                                name="timespent"
+                                value={formData.timespent}
+                                onChange={handleInputChange}
+                                placeholder="e.g., 2h, 1d"
+                            />
+                            {timeSpentError && <span className="error-message">{timeSpentError}</span>}
+                        </div>
                     </div>
                     <div className="form-group">
                         <label htmlFor="assignee_id">Assignee</label>
@@ -280,32 +252,38 @@ const TaskModal = () => {
                             id="assignee_id"
                             name="assignee_id"
                             value={formData.assignee_id}
-                            onChange={handleChange}
+                            onChange={handleInputChange}
                         >
                             <option value="">Unassigned</option>
                             {Object.entries(userMap).map(([id, user]) => (
                                 <option key={id} value={id}>
-                                    {`${user.firstName} ${user.lastName}`}
+                                    {user.firstName} {user.lastName}
                                 </option>
                             ))}
                         </select>
                     </div>
                     <div className="modal-footer">
                         {selectedTask && (
-                            <button 
-                                type="button" 
-                                className="delete-button" 
+                            <button
+                                type="button"
+                                className="delete-button"
                                 onClick={handleDelete}
                             >
-                                Delete
+                                Delete Task
                             </button>
                         )}
-                        <button type="button" className="cancel-button" onClick={closeTaskModal}>
-                            Cancel
-                        </button>
-                        <button type="submit" className="submit-button">
-                            {selectedTask ? 'Update' : 'Create'}
-                        </button>
+                        <div className="right-buttons">
+                            <button type="button" className="cancel-button" onClick={closeTaskModal}>
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="save-button"
+                                disabled={!!effortError || !!timeSpentError}
+                            >
+                                {selectedTask ? 'Update Task' : 'Create Task'}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -313,4 +291,4 @@ const TaskModal = () => {
     );
 };
 
-export default TaskModal; 
+export default TaskModal;

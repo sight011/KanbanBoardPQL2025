@@ -547,4 +547,55 @@
     background-color: #fff;
     color: #2d3748;
     border: 1px solid #e2e8f0;
+}
+
+.sprint-task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    height: 32px;
+    margin-bottom: 4px;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.sprint-task .task-icon {
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+}
+
+.sprint-task .task-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+}
+
+.sprint-task .task-effort {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-right: 8px;
+}
+
+.sprint-task .priority-badge {
+    margin-left: auto;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.dark-mode .sprint-task {
+    background-color: var(--bg-secondary-dark);
+}
+
+.dark-mode .sprint-task .task-title {
+    color: var(--text-primary-dark);
+}
+
+.dark-mode .sprint-task .task-icon,
+.dark-mode .sprint-task .task-effort {
+    color: var(--text-secondary-dark);
 } 

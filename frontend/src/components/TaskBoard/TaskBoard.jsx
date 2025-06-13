@@ -119,13 +119,15 @@ const TaskBoard = () => {
                 const res = await fetch('/api/sprints');
                 const data = await res.json();
                 setSprints(data.sprints || []);
-                // Default to active sprint if present
-                const active = (data.sprints || []).find(s => s.status === 'active');
-                setSelectedSprint(active ? String(active.id) : '');
-                setFilters(prev => ({
-                    ...prev,
-                    sprint: active ? String(active.id) : ''
-                }));
+                // Only set default to active sprint on initial load
+                if (sprints.length === 0) {
+                    const active = (data.sprints || []).find(s => s.status === 'active');
+                    setSelectedSprint(active ? String(active.id) : '');
+                    setFilters(prev => ({
+                        ...prev,
+                        sprint: active ? String(active.id) : ''
+                    }));
+                }
             } catch (err) {
                 setSprints([]);
             }

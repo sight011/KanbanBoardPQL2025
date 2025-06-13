@@ -71,12 +71,20 @@ const TaskCard = memo(({ task, index }) => {
                                 {task.description}
                             </p>
                             <div className="task-meta">
-                                <span className={`priority ${task.priority}`}>
-                                    {task.priority}
+                                <span className={`priority-badge priority-${task.priority}`}>
+                                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                                 </span>
-                                {task.ticket_number && (
-                                    <span className="task-ticket-number">
-                                        {task.ticket_number}
+                                <span className="task-ticket-number">
+                                    {task.ticket_number}
+                                </span>
+                                {task.effort && (
+                                    <span className="task-effort">
+                                        EE: {task.effort}
+                                    </span>
+                                )}
+                                {task.timespent && (
+                                    <span className="task-timespent">
+                                        TS: {task.timespent}
                                     </span>
                                 )}
                                 {task.assignee_id ? (

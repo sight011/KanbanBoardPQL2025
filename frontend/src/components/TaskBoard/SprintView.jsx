@@ -455,48 +455,48 @@ const SprintView = () => {
                                                     <h3 style={{ margin: 0 }}>{sprint.name}</h3>
                                                     <span className="sprint-dates" style={{ marginLeft: 16 }}>{formatDateRange(sprint.start_date, sprint.end_date)}</span>
                                                     <span className="sprint-status-badge" style={{ marginLeft: 16 }}>Status: {sprint.status}</span>
-                                                </div>
-                                                <div className="sprint-actions">
-                                                    {sprint.status === 'planned' && (
+                                                    <div className="sprint-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                                                        {sprint.status === 'planned' && (
+                                                            <button 
+                                                                className={classNames('sprint-action-button', 'start', isDarkMode ? 'dark' : 'light')}
+                                                                onClick={() => handleSprintAction(sprint)} 
+                                                                disabled={actionLoading === sprint.id}
+                                                            >
+                                                                {actionLoading === sprint.id ? 'Starting...' : 'Start'}
+                                                            </button>
+                                                        )}
+                                                        {sprint.status === 'active' && (
+                                                            <button 
+                                                                className={classNames('sprint-action-button', 'complete', isDarkMode ? 'dark' : 'light')}
+                                                                onClick={() => handleSprintAction(sprint)} 
+                                                                disabled={actionLoading === sprint.id}
+                                                            >
+                                                                {actionLoading === sprint.id ? 'Completing...' : 'Complete'}
+                                                            </button>
+                                                        )}
+                                                        {sprint.status === 'completed' && (
+                                                            <button 
+                                                                className={classNames('sprint-action-button', 'reactivate', isDarkMode ? 'dark' : 'light')}
+                                                                onClick={() => handleReactivate(sprint)} 
+                                                                disabled={actionLoading === sprint.id}
+                                                            >
+                                                                {actionLoading === sprint.id ? 'Reactivating...' : 'Reactivate'}
+                                                            </button>
+                                                        )}
                                                         <button 
-                                                            className={classNames('sprint-action-button', 'start', isDarkMode ? 'dark' : 'light')}
-                                                            onClick={() => handleSprintAction(sprint)} 
-                                                            disabled={actionLoading === sprint.id}
+                                                            className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
+                                                            onClick={() => { setModalOpen(true); setEditSprint(sprint); }}
                                                         >
-                                                            {actionLoading === sprint.id ? 'Starting...' : 'Start'}
+                                                            Edit
                                                         </button>
-                                                    )}
-                                                    {sprint.status === 'active' && (
                                                         <button 
-                                                            className={classNames('sprint-action-button', 'complete', isDarkMode ? 'dark' : 'light')}
-                                                            onClick={() => handleSprintAction(sprint)} 
-                                                            disabled={actionLoading === sprint.id}
+                                                            className={classNames('sprint-action-button', 'delete', isDarkMode ? 'dark' : 'light')}
+                                                            onClick={() => handleDeleteSprint(sprint)} 
+                                                            disabled={deleteLoading === sprint.id}
                                                         >
-                                                            {actionLoading === sprint.id ? 'Completing...' : 'Complete'}
+                                                            {deleteLoading === sprint.id ? 'Deleting...' : 'Delete'}
                                                         </button>
-                                                    )}
-                                                    {sprint.status === 'completed' && (
-                                                        <button 
-                                                            className={classNames('sprint-action-button', 'reactivate', isDarkMode ? 'dark' : 'light')}
-                                                            onClick={() => handleReactivate(sprint)} 
-                                                            disabled={actionLoading === sprint.id}
-                                                        >
-                                                            {actionLoading === sprint.id ? 'Reactivating...' : 'Reactivate'}
-                                                        </button>
-                                                    )}
-                                                    <button 
-                                                        className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
-                                                        onClick={() => { setModalOpen(true); setEditSprint(sprint); }}
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button 
-                                                        className={classNames('sprint-action-button', 'delete', isDarkMode ? 'dark' : 'light')}
-                                                        onClick={() => handleDeleteSprint(sprint)} 
-                                                        disabled={deleteLoading === sprint.id}
-                                                    >
-                                                        {deleteLoading === sprint.id ? 'Deleting...' : 'Delete'}
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                             {!foldedSprints.has(sprint.id) && (
@@ -521,8 +521,20 @@ const SprintView = () => {
                                                                                 <path d="M4 14H20V16H4V14Z" fill="currentColor"></path>
                                                                             </svg>
                                                                         </span>
-                                                                        <span className="task-title">{task.title}</span>
-                                                                        <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
+                                                                        <div className="sprint-task">
+                                                                            <span className="task-icon">
+                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                    <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                    <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                </svg>
+                                                                            </span>
+                                                                            <span className="task-title">{task.title}</span>
+                                                                            <span className="task-effort">{task.effort ? `EE: ${task.effort}d` : '–'}</span>
+                                                                            <span className={`priority-badge priority-${task.priority}`}>
+                                                                                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                                                            </span>
+                                                                        </div>
                                                                     </li>
                                                                 )}
                                                             </Draggable>
@@ -568,8 +580,20 @@ const SprintView = () => {
                                                                         <path d="M4 14H20V16H4V14Z" fill="currentColor"></path>
                                                                     </svg>
                                                                 </span>
-                                                                <span className="task-title">{task.title}</span>
-                                                                <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
+                                                                <div className="sprint-task">
+                                                                    <span className="task-icon">
+                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                            <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                            <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                        </svg>
+                                                                    </span>
+                                                                    <span className="task-title">{task.title}</span>
+                                                                    <span className="task-effort">{task.effort ? `EE: ${task.effort}d` : '–'}</span>
+                                                                    <span className={`priority-badge priority-${task.priority}`}>
+                                                                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                                                    </span>
+                                                                </div>
                                                             </li>
                                                         )}
                                                     </Draggable>

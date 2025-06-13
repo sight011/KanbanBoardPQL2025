@@ -1,0 +1,112 @@
+.dna {
+  display: inline-block;
+  position: relative;
+}
+
+.nucleobase {
+  display: inline-block;
+  position: relative;
+  vertical-align: middle;
+}
+
+.nucleobase:not(:last-child) {
+  margin-right: 0.4px;
+}
+
+.nucleobase::before,
+.nucleobase::after {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  position: absolute;
+  left: 0;
+}
+
+/* Animation keyframes */
+@keyframes animBefore {
+  0% {
+    top: -8.8px;
+    z-index: 1;
+  }
+  25% {
+    transform: scale(1.2);
+    z-index: 1;
+  }
+  50% {
+    top: 8.8px;
+    z-index: -1;
+  }
+  75% {
+    transform: scale(0.8);
+    z-index: -1;
+  }
+  100% {
+    top: -8.8px;
+    z-index: -1;
+  }
+}
+
+@keyframes animAfter {
+  0% {
+    top: 8.8px;
+    z-index: -1;
+  }
+  25% {
+    transform: scale(0.8);
+    z-index: -1;
+  }
+  50% {
+    top: -8.8px;
+    z-index: 1;
+  }
+  75% {
+    transform: scale(1.2);
+    z-index: 1;
+  }
+  100% {
+    top: 8.8px;
+    z-index: 1;
+  }
+}
+
+.nucleobase {
+  /* Animation delays for each nucleobase */
+}
+
+.nucleobase {
+  /* Set up animation delays for each nucleobase */
+}
+
+/* Generate animation delays for each nucleobase (1-10) */
+.nucleobase:nth-child(1)::before,
+.nucleobase:nth-child(1)::after {
+  animation-delay: calc(1 * -1.869s);
+}
+.nucleobase:nth-child(2)::before,
+.nucleobase:nth-child(2)::after {
+  animation-delay: calc(2 * -1.869s);
+}
+.nucleobase:nth-child(3)::before,
+.nucleobase:nth-child(3)::after {
+  animation-delay: calc(3 * -1.869s);
+}
+.nucleobase:nth-child(4)::before,
+.nucleobase:nth-child(4)::after {
+  animation-delay: calc(4 * -1.869s);
+}
+.nucleobase:nth-child(5)::before,
+.nucleobase:nth-child(5)::after {
+  animation-delay: calc(5 * -1.869s);
+}
+
+.nucleobase::before {
+  animation: animBefore 2.1s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  background-color: #5982E2;
+}
+
+.nucleobase::after {
+  animation: animAfter 2.1s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  background-color: #A2B3DF;
+} 

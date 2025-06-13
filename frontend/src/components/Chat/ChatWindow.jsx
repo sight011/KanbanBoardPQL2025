@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ChatWindow.css';
 import api from '../../api/axios';
+import DNA from './DNA';
+import DNASimple from './DNASimple';
 
 const defaultQuestions = [
     "How many items are \"in progress\"?",
@@ -127,10 +129,11 @@ const ChatWindow = ({ isOpen, onClose, onSendMessage }) => {
                 />
                 <button id="send-message-button" onClick={handleSendMessage} disabled={isLoading}>
                     {isLoading ? (
-                        <div className="spinner"></div>
+                        <DNASimple />
                     ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="send-chat-icon">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                         </svg>
                     )}
                 </button>

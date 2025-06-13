@@ -74,7 +74,7 @@ const taskController = {
         console.log('User:', req.user);
         
         try {
-            const { title, description, status, priority, effort } = req.body;
+            const { title, description, status, priority, effort, timespent } = req.body;
             
             if (!req.user || !req.user.id) {
                 console.log('❌ No authenticated user found');
@@ -106,8 +106,8 @@ const taskController = {
             console.log('New position will be:', position);
 
             const result = await pool.query(
-                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()) RETURNING *',
-                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort]
+                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()) RETURNING *',
+                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent]
             );
 
             console.log('✅ Task created successfully:', result.rows[0]);
@@ -130,7 +130,7 @@ const taskController = {
         
         try {
             const { id } = req.params;
-            const { title, description, status, priority, effort, assignee_id, sprint_id, sprint_order } = req.body;
+            const { title, description, status, priority, effort, timespent, assignee_id, sprint_id, sprint_order } = req.body;
 
             // Validate required fields
             if (!title || !status || !priority) {
@@ -140,8 +140,8 @@ const taskController = {
                 });
             }
 
-            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, assignee_id = $6, sprint_id = $7, sprint_order = $8, updated_at = NOW() WHERE id = $9 RETURNING *';
-            const params = [title, description, status, priority, effort, assignee_id || null, sprint_id || null, sprint_order || null, id];
+            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, updated_at = NOW() WHERE id = $10 RETURNING *';
+            const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, id];
             console.log('Executing SQL:', sql);
             console.log('With parameters:', params);
 
