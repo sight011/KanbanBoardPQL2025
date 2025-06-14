@@ -73,7 +73,9 @@ const TaskCard = memo(({ task, index }) => {
                         </p>
                         <div className="task-meta">
                             <span className={`priority-badge priority-${task.priority}`}>
-                                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                {task.priority === 'medium'
+                                    ? 'Med'
+                                    : task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                             </span>
                             <span className="task-ticket-number">
                                 {task.ticket_number}

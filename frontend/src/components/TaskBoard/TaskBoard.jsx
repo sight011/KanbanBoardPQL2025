@@ -78,6 +78,12 @@ const TaskBoard = () => {
         3: 'Bob Johnson'
     };
 
+    // Add toggleTheme function
+    const toggleTheme = () => {
+        document.documentElement.classList.toggle('dark-mode');
+        setIsDarkMode(prev => !prev);
+    };
+
     // Add toggleViewMode function
     const toggleViewMode = () => {
         setViewMode(prevMode => {
@@ -472,6 +478,28 @@ const TaskBoard = () => {
                         </svg>
                         <span>Burn Down</span>
                     </button>
+                    <button
+                        className="theme-toggle-button"
+                        onClick={toggleTheme}
+                        title="Toggle Theme"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            {isDarkMode ? (
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
+                            ) : (
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
+                            )}
+                        </svg>
+                    </button>
+                    <button
+                        className="settings-button"
+                        onClick={() => {/* TODO: Navigate to settings page */}}
+                        title="Settings"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="currentColor"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -524,7 +552,6 @@ const TaskBoard = () => {
                         <thead>
                             <tr>
                                 <th>Title</th>
-                                <th>Description</th>
                                 <th>Priority</th>
                                 <th>Assignee</th>
                                 <th>Status</th>
@@ -534,7 +561,6 @@ const TaskBoard = () => {
                             {sortedTasks.map(task => (
                                 <tr key={task.id} onClick={() => handleTaskClick(task)}>
                                     <td>{task.title}</td>
-                                    <td>{task.description}</td>
                                     <td>
                                         <span className={`priority-badge priority-${task.priority}`}>
                                             {task.priority}
@@ -560,73 +586,27 @@ const TaskBoard = () => {
                     </table>
                 </div>
             ) : viewMode === 'diagram' ? (
-                <div className="diagram-view">
-                    <div className="chart-container">
-                        <div className="chart-wrapper">
-                            <h3>Priority Distribution</h3>
-                            <div style={{ 
-                                height: '400px', 
-                                width: '100%',
-                                position: 'relative', 
-                                backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center'
-                            }}>
-                                <div style={{ width: '350px', height: '350px' }}>
-                                    <Pie data={priorityData} options={chartOptions} />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="chart-wrapper">
-                            <h3>Status Distribution</h3>
-                            <div style={{ 
-                                height: '400px', 
-                                width: '100%',
-                                position: 'relative', 
-                                backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center'
-                            }}>
-                                <div style={{ width: '350px', height: '350px' }}>
-                                    <Pie data={statusData} options={chartOptions} />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="chart-wrapper">
-                            <h3>Assignment Distribution</h3>
-                            <div style={{ 
-                                height: '400px', 
-                                width: '100%',
-                                position: 'relative', 
-                                backgroundColor: isDarkMode ? 'rgb(114, 129, 154)' : '#ffffff',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center'
-                            }}>
-                                <div style={{ width: '350px', height: '350px' }}>
-                                    <Pie data={assigneeData} options={chartOptions} />
-                                </div>
-                            </div>
-                        </div>
+                <div className="diagram-view chart-container">
+                    <div className="chart-wrapper">
+                        <h3>Priority Distribution</h3>
+                        <Pie data={priorityData} options={chartOptions} />
+                    </div>
+                    <div className="chart-wrapper">
+                        <h3>Status Distribution</h3>
+                        <Pie data={statusData} options={chartOptions} />
+                    </div>
+                    <div className="chart-wrapper">
+                        <h3>Assignment Distribution</h3>
+                        <Pie data={assigneeData} options={chartOptions} />
                     </div>
                 </div>
-            ) : viewMode === 'burndown' ? (
+            ) : (
                 <div className="burndown-view">
                     <BurndownChart sprintId={selectedSprint} />
                 </div>
-            ) : null}
-
-            {isModalOpen && (
-                <TaskModal
-                    onClose={handleCloseModal}
-                    onUpdate={handleUpdateTask}
-                    onDelete={handleDeleteTask}
-                />
             )}
         </div>
     );
 };
 
-export default TaskBoard; 
+export default TaskBoard;
