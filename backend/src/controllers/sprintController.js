@@ -116,13 +116,25 @@ const sprintController = {
 
             // Get all tasks in the sprint
             const tasksResult = await pool.query(
-                'SELECT id, status, completed_at FROM tasks WHERE sprint_id = $1',
+                'SELECT id, status, completed_at, effort FROM tasks WHERE sprint_id = $1',
                 [id]
             );
             const tasks = tasksResult.rows;
 
-            // Calculate total points
-            const totalPoints = tasks.length;
+            // Helper to parse effort string to days
+            function parseEffort(effort) {
+                if (!effort) return 0;
+                const match = effort.match(/^(\d+(?:\.\d+)?)([hd])$/);
+                if (!match) return 0;
+                const value = parseFloat(match[1]);
+                const unit = match[2];
+                if (unit === 'd') return value;
+                if (unit === 'h') return value / 8; // 8 hours = 1 day
+                return 0;
+            }
+
+            // Calculate total points (sum of effort)
+            const totalPoints = tasks.reduce((sum, task) => sum + parseEffort(task.effort), 0);
 
             // Generate dates between sprint start and end
             const startDate = new Date(sprint.start_date);
@@ -136,15 +148,19 @@ const sprintController = {
 
             // Calculate burndown data
             const burndownData = dates.map(date => {
-                const completedTasks = tasks.filter(task => {
-                    if (!task.completed_at) return false;
+                // Sum effort for completed tasks up to this date
+                const completedEffort = tasks.reduce((sum, task) => {
+                    if (!task.completed_at) return sum;
                     const completedDate = new Date(task.completed_at);
-                    return completedDate <= date;
-                });
+                    if (completedDate <= date) {
+                        return sum + parseEffort(task.effort);
+                    }
+                    return sum;
+                }, 0);
 
                 return {
                     date: date.toISOString().split('T')[0],
-                    remainingPoints: totalPoints - completedTasks.length,
+                    remainingPoints: Math.max(0, totalPoints - completedEffort),
                     idealBurndown: totalPoints * (1 - (date - startDate) / (endDate - startDate))
                 };
             });
