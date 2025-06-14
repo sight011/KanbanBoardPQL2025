@@ -130,7 +130,7 @@ const taskController = {
         
         try {
             const { id } = req.params;
-            const { title, description, status, priority, effort, timespent, assignee_id, sprint_id, sprint_order } = req.body;
+            const { title, description, status, priority, effort, timespent, assignee_id, sprint_id, sprint_order, completed_at } = req.body;
 
             // Validate required fields
             if (!title || !status || !priority) {
@@ -140,8 +140,8 @@ const taskController = {
                 });
             }
 
-            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, updated_at = NOW() WHERE id = $10 RETURNING *';
-            const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, id];
+            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, completed_at = $10, updated_at = NOW() WHERE id = $11 RETURNING *';
+            const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, completed_at || null, id];
             console.log('Executing SQL:', sql);
             console.log('With parameters:', params);
 
@@ -291,9 +291,10 @@ const taskController = {
                     }
                 }
 
-                // Update the task's position and status
+                // Update the task's position, status, and completed_at
+                const completed_at = newStatus === 'done' ? 'NOW()' : 'NULL';
                 const updatedTask = await client.query(
-                    'UPDATE tasks SET position = $1, status = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+                    `UPDATE tasks SET position = $1, status = $2, completed_at = ${completed_at}, updated_at = NOW() WHERE id = $3 RETURNING *`,
                     [newPosition, newStatus, id]
                 );
 

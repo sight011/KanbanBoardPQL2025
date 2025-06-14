@@ -59,7 +59,7 @@ const textPlugin = {
 ChartJS.register(textPlugin);
 
 const TaskBoard = () => {
-    const { tasks, updateTaskPosition, loading, error, updateTaskStatus, openTaskModal, isModalOpen } = useTaskContext();
+    const { tasks, updateTaskPosition, loading, error, updateTaskStatus, openTaskModal, isModalOpen, updateTask } = useTaskContext();
     const [viewMode, setViewMode] = useState('sprint'); // 'sprint', 'kanban', 'list', or 'diagram'
     const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark-mode'));
     const [filters, setFilters] = useState({
@@ -234,6 +234,13 @@ const TaskBoard = () => {
 
         try {
             await updateTaskPosition(taskId, newPosition, newStatus);
+            // If moved to 'done', set completed_at
+            if (newStatus === 'done') {
+                await updateTask(taskId, { status: 'done', completed_at: new Date().toISOString() });
+            } else if (source.droppableId === 'done') {
+                // If moved out of 'done', clear completed_at
+                await updateTask(taskId, { status: newStatus, completed_at: null });
+            }
         } catch (error) {
             console.error('Error updating task position:', error);
         }
@@ -477,19 +484,6 @@ const TaskBoard = () => {
                             <path d="M4 20h16v-2H4v2zm0-4h10v-2H4v2zm0-4h7V6h3l-4-4-4 4h3v6z" fill="currentColor"/>
                         </svg>
                         <span>Burn Down</span>
-                    </button>
-                    <button
-                        className="theme-toggle-button"
-                        onClick={toggleTheme}
-                        title="Toggle Theme"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            {isDarkMode ? (
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
-                            ) : (
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
-                            )}
-                        </svg>
                     </button>
                     <button
                         className="settings-button"
