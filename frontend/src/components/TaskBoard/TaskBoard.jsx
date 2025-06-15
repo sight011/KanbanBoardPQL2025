@@ -139,15 +139,29 @@ const TaskBoard = () => {
             try {
                 const res = await fetch('/api/sprints');
                 const data = await res.json();
-                setSprints(data.sprints || []);
+                const newSprints = data.sprints || [];
+                setSprints(newSprints);
+                
                 // Only set default to active sprint on initial load
                 if (sprints.length === 0) {
-                    const active = (data.sprints || []).find(s => s.status === 'active');
+                    const active = newSprints.find(s => s.status === 'active');
                     setSelectedSprint(active ? String(active.id) : '');
                     setFilters(prev => ({
                         ...prev,
                         sprint: active ? String(active.id) : ''
                     }));
+                } else {
+                    // Check if active sprint has changed
+                    const currentActive = sprints.find(s => s.status === 'active');
+                    const newActive = newSprints.find(s => s.status === 'active');
+                    
+                    if (currentActive?.id !== newActive?.id) {
+                        setSelectedSprint(newActive ? String(newActive.id) : '');
+                        setFilters(prev => ({
+                            ...prev,
+                            sprint: newActive ? String(newActive.id) : ''
+                        }));
+                    }
                 }
             } catch (err) {
                 setSprints([]);
@@ -620,7 +634,7 @@ const TaskBoard = () => {
                 </div>
             ) : (
                 <div className="burndown-view">
-                    <BurndownChart sprintId={selectedSprint} />
+                    <BurndownChart sprintId={selectedSprint} filters={filters} />
                 </div>
             )}
         </div>

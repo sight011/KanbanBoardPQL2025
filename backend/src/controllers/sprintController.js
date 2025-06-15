@@ -106,6 +106,7 @@ const sprintController = {
     getSprintBurndown: async (req, res) => {
         try {
             const { id } = req.params;
+            const { priority, assignee } = req.query;
             
             // Get sprint details
             const sprintResult = await pool.query('SELECT * FROM sprints WHERE id = $1', [id]);
@@ -114,11 +115,25 @@ const sprintController = {
             }
             const sprint = sprintResult.rows[0];
 
-            // Get all tasks in the sprint
-            const tasksResult = await pool.query(
-                'SELECT id, status, completed_at, effort FROM tasks WHERE sprint_id = $1',
-                [id]
-            );
+            // Build the query with filters
+            let query = 'SELECT id, status, completed_at, effort FROM tasks WHERE sprint_id = $1';
+            const queryParams = [id];
+            let paramIndex = 2;
+
+            if (priority) {
+                query += ` AND priority = $${paramIndex}`;
+                queryParams.push(priority);
+                paramIndex++;
+            }
+
+            if (assignee) {
+                query += ` AND assignee_id = $${paramIndex}`;
+                queryParams.push(assignee);
+                paramIndex++;
+            }
+
+            // Get filtered tasks in the sprint
+            const tasksResult = await pool.query(query, queryParams);
             const tasks = tasksResult.rows;
 
             // Helper to parse effort string to days

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     LineChart,
     Line,
@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import './BurndownChart.css';
 
-const BurndownChart = ({ sprintId }) => {
+const BurndownChart = ({ sprintId, filters }) => {
     const [burndownData, setBurndownData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -20,11 +20,21 @@ const BurndownChart = ({ sprintId }) => {
         document.body.classList.contains('dark-mode')
     );
 
+    // Memoize the query parameters to prevent unnecessary re-renders
+    const queryParams = useMemo(() => {
+        const params = new URLSearchParams();
+        if (filters) {
+            if (filters.priority) params.append('priority', filters.priority);
+            if (filters.assignee) params.append('assignee', filters.assignee);
+        }
+        return params.toString();
+    }, [filters]);
+
     useEffect(() => {
         const fetchBurndownData = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`/api/sprints/${sprintId}/burndown`);
+                const response = await fetch(`/api/sprints/${sprintId}/burndown?${queryParams}`);
                 const data = await response.json();
                 if (data.success) {
                     setBurndownData(data);
@@ -41,7 +51,7 @@ const BurndownChart = ({ sprintId }) => {
         if (sprintId) {
             fetchBurndownData();
         }
-    }, [sprintId]);
+    }, [sprintId, queryParams]);
 
     useEffect(() => {
         const observer = new MutationObserver(() => {
@@ -55,6 +65,12 @@ const BurndownChart = ({ sprintId }) => {
         return () => observer.disconnect();
     }, []);
 
+    // Memoize the chart data to prevent unnecessary re-renders
+    const chartData = useMemo(() => {
+        if (!burndownData) return null;
+        return burndownData.burndownData;
+    }, [burndownData]);
+
     if (loading) {
         return <div className={`burndown-loading${isDarkMode ? ' dark' : ''}`}>Loading burndown data...</div>;
     }
@@ -67,7 +83,7 @@ const BurndownChart = ({ sprintId }) => {
         return <div className={`burndown-no-data${isDarkMode ? ' dark' : ''}`}>No burndown data available</div>;
     }
 
-    const { burndownData: data, sprint } = burndownData;
+    const { sprint } = burndownData;
 
     return (
         <div className={`burndown-chart-container${isDarkMode ? ' dark' : ''}`}>
@@ -80,7 +96,7 @@ const BurndownChart = ({ sprintId }) => {
             <div className="burndown-chart">
                 <ResponsiveContainer width="100%" height={400}>
                     <LineChart
-                        data={data}
+                        data={chartData}
                         margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                     >
                         <CartesianGrid strokeDasharray="3 3" />
