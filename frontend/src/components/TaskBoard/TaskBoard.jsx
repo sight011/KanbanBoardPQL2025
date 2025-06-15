@@ -412,8 +412,9 @@ const TaskBoard = () => {
 
     const assigneeData = useMemo(() => {
         const counts = filteredTasks.reduce((acc, task) => {
-            const assignee = task.assignee_id ? 
-                users.find(u => u.id === task.assignee_id)?.firstName + ' ' + users.find(u => u.id === task.assignee_id)?.lastName : 
+            const assigneeId = task.assignee_id;
+            const assignee = assigneeId ? 
+                users.find(u => u.id === assigneeId)?.firstName + ' ' + users.find(u => u.id === assigneeId)?.lastName : 
                 'Unassigned';
             acc[assignee] = (acc[assignee] || 0) + 1;
             return acc;
@@ -423,14 +424,14 @@ const TaskBoard = () => {
             labels: Object.keys(counts),
             datasets: [{
                 data: Object.values(counts),
-                backgroundColor: Object.keys(counts).map((_, index) => {
-                    if (_ === 'Unassigned') return '#e0e0e0';
-                    const userId = users.find(u => `${u.firstName} ${u.lastName}` === _)?.id;
+                backgroundColor: Object.keys(counts).map((assignee) => {
+                    if (assignee === 'Unassigned') return '#e0e0e0';
+                    const userId = users.find(u => `${u.firstName} ${u.lastName}` === assignee)?.id;
                     return userId ? getAssigneeColor(userId) : '#e0e0e0';
                 }),
-                borderColor: Object.keys(counts).map((_, index) => {
-                    if (_ === 'Unassigned') return '#e0e0e0';
-                    const userId = users.find(u => `${u.firstName} ${u.lastName}` === _)?.id;
+                borderColor: Object.keys(counts).map((assignee) => {
+                    if (assignee === 'Unassigned') return '#e0e0e0';
+                    const userId = users.find(u => `${u.firstName} ${u.lastName}` === assignee)?.id;
                     return userId ? getAssigneeColor(userId) : '#e0e0e0';
                 }),
                 borderWidth: 1

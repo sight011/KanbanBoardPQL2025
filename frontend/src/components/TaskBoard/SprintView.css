@@ -635,4 +635,18 @@
 .folded {
     height: 35px;
     padding-top: 6px;
+}
+
+.sprint-effort-sum {
+    font-size: 0.95rem;
+    color: #3182ce;
+    font-weight: 500;
+    background-color: #ebf8ff;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.dark-mode .sprint-effort-sum {
+    color: #63b3ed;
+    background-color: #2c5282;
 } 

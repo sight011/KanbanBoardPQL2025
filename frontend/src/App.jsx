@@ -7,6 +7,7 @@ import CreateTaskButton from './components/CreateTaskButton';
 import ChatBubble from './components/Chat/ChatBubble';
 import ChatWindow from './components/Chat/ChatWindow';
 import ThemeToggle from './components/ThemeToggle';
+import Settings from './components/Settings';
 import api from './api/axios'; // Import axios for API calls
 import './App.css';
 
@@ -58,6 +59,7 @@ Based on the tasks above, please answer the user's question following the respon
                         </div>
                         <div className="header-actions">
                             <ThemeToggle />
+                            <Settings />
                             <CreateTaskButton />
                         </div>
                     </header>

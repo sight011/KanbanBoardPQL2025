@@ -1,0 +1,24 @@
+.settings-button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.settings-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.settings-button svg {
+    transition: transform 0.3s ease;
+}
+
+.settings-button:hover svg {
+    transform: rotate(30deg);
+} 

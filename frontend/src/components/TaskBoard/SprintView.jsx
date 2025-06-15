@@ -437,6 +437,27 @@ const SprintView = () => {
         openTaskModal(task);
     };
 
+    const calculateTotalEffort = (tasks) => {
+        if (!tasks || tasks.length === 0) return '0d';
+        
+        // Filter tasks that have effort values
+        const tasksWithEffort = tasks.filter(task => task.effort !== null && task.effort !== undefined);
+        
+        if (tasksWithEffort.length === 0) return '0d';
+        
+        const totalHours = tasksWithEffort.reduce((sum, task) => {
+            return sum + (task.effort * 8); // Convert days to hours (assuming 8 hours per day)
+        }, 0);
+        
+        const days = Math.floor(totalHours / 8);
+        const hours = totalHours % 8;
+        
+        if (hours === 0) {
+            return `${days}d`;
+        }
+        return `${days}d ${hours}h`;
+    };
+
     return (
         <div className={`sprint-view ${isDarkMode ? 'dark' : 'light'}`}>
             <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
@@ -500,12 +521,15 @@ const SprintView = () => {
                                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                     >
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: foldedSprints.has(sprint.id) ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                                                            <path d="M19 9l-7 7-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                            <path d="M19 9l-7 7-7-7" stroke={isDarkMode ? '#DDD' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                                         </svg>
                                                     </button>
                                                     <h3 style={{ margin: 0 }}>{sprint.name}</h3>
                                                     <span className="sprint-dates" style={{ marginLeft: 16 }}>{formatDateRange(sprint.start_date, sprint.end_date)}</span>
                                                     <span className="sprint-status-badge" style={{ marginLeft: 16 }}>Status: {sprint.status}</span>
+                                                    <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
+                                                        Total Effort: {calculateTotalEffort(tasksBySprint[sprint.id])}
+                                                    </span>
                                                     <div className="sprint-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                                                         {sprint.status === 'planned' && (
                                                             <button 
