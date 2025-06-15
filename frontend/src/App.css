@@ -55,18 +55,19 @@
 }
 
 .app-header {
-    background-color: #0052cc;
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
     color: white;
     padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     height: 60px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
 }
 
 .dark-mode .app-header {
-    background-color: #1f2937;
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
 }
 
 .app-logo-container {
@@ -92,7 +93,7 @@
 }
 
 .create-task-button {
-    background-color: #36b37e;
+    background-color: #016dff;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -103,15 +104,15 @@
 }
 
 .create-task-button:hover {
-    background-color: #2d9d6b;
+    background-color: #0057cc;
 }
 
 .dark-mode .create-task-button {
-    background-color: #059669;
+    background-color: #016dff;
 }
 
 .dark-mode .create-task-button:hover {
-    background-color: #047857;
+    background-color: #0057cc;
 }
 
 .app-main {
@@ -124,7 +125,9 @@
 }
 
 :root {
-    --primary-color: #0052cc;
+    --primary: #016dff;
+    --secondary: #0097ff;
+    --primary-color: #016dff;
     --secondary-color: #0747a6;
     --background-color: #f8f9fa;
     --text-color: #172b4d;
@@ -134,6 +137,8 @@
 }
 
 .dark-mode {
+    --primary: #0066ff;
+    --secondary: #0097ff;
     --primary-color: #3182ce;
     --secondary-color: #2b6cb0;
     --background-color: #1a202c;

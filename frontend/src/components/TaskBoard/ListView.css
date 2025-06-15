@@ -50,18 +50,18 @@
 }
 
 .priority-low {
-    background-color: #e8f5e9;
-    color: #2e7d32;
+    background-color: #5DBF69;
+    color: white;
 }
 
 .priority-medium {
-    background-color: #fff3e0;
-    color: #f57c00;
+    background-color: #F3B23F;
+    color: white;
 }
 
 .priority-high {
-    background-color: #ffebee;
-    color: #d32f2f;
+    background-color: #E35348;
+    color: white;
 }
 
 .task-actions {

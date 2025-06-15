@@ -137,32 +137,32 @@ body.dragging .task-card:hover {
 
 .priority.high {
     background: #ffebe6;
-    color: #de350b;
+    color: #E35348;
 }
 
 .dark-mode .priority.high {
     background: #742a2a;
-    color: #feb2b2;
+    color: #E35348;
 }
 
 .priority.medium {
     background: #fffae6;
-    color: #ffab00;
+    color: #F3B23F;
 }
 
 .dark-mode .priority.medium {
     background: #744210;
-    color: #fbd38d;
+    color: #F3B23F;
 }
 
 .priority.low {
     background: #e6fcff;
-    color: #00b8d9;
+    color: #5DBF69;
 }
 
 .dark-mode .priority.low {
     background: #2c5282;
-    color: #90cdf4;
+    color: #5DBF69;
 }
 
 .task-ticket-number {

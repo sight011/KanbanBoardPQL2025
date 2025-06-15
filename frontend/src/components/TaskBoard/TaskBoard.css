@@ -214,17 +214,17 @@
 }
 
 .list-view .priority-high {
-    background-color: #ff5630;
+    background-color: #E35348;
     color: white;
 }
 
 .list-view .priority-medium {
-    background-color: #ffab00;
+    background-color: #F3B23F;
     color: white;
 }
 
 .list-view .priority-low {
-    background-color: #00b8d9;
+    background-color: #5DBF69;
     color: white;
 }
 
@@ -517,25 +517,4 @@ border-bottom: 2px solid #6a7685;
 
 .dark-mode .chart-wrapper div {
     background-color: #97a4ba!important;
-  }
-
-.settings-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 4px;
-    transition: background-color 0.2s ease;
-}
-
-.settings-button:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-.settings-button svg {
-    transition: transform 0.3s ease;
-}
-
-.settings-button:hover svg {
-    transform: rotate(30deg);
 }

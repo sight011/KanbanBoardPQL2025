@@ -272,7 +272,7 @@
 
 .sprint-task.light,
 .backlog-task.light {
-    background-color: white;
+    background-color: #fff;
     border: 1px solid #e2e8f0;
     color: #2d3748;
 }
@@ -313,36 +313,36 @@
 }
 
 .priority-badge.high {
-    background-color: #fed7d7;
-    color: #c53030;
+    background-color: #E35348;
+    color: white;
 }
 
 .priority-badge.medium {
-    background-color: #fefcbf;
-    color: #975a16;
+    background-color: #F3B23F;
+    color: white;
 }
 
 .priority-badge.low {
-    background-color: #c6f6d5;
-    color: #2f855a;
+    background-color: #5DBF69;
+    color: white;
 }
 
 .sprint-task.dark .priority-badge.high,
 .backlog-task.dark .priority-badge.high {
-    background-color: #742a2a;
-    color: #feb2b2;
+    background-color: #E35348;
+    color: white;
 }
 
 .sprint-task.dark .priority-badge.medium,
 .backlog-task.dark .priority-badge.medium {
-    background-color: #744210;
-    color: #faf089;
+    background-color: #F3B23F;
+    color: white;
 }
 
 .sprint-task.dark .priority-badge.low,
 .backlog-task.dark .priority-badge.low {
-    background-color: #22543d;
-    color: #9ae6b4;
+    background-color: #5DBF69;
+    color: white;
 }
 
 .sprint-task .priority-badge {
@@ -567,7 +567,6 @@
     padding: 4px 8px;
     height: 32px;
     margin-bottom: 4px;
-    background-color: var(--bg-secondary);
     border-radius: 4px;
     width: 100%;
 }
@@ -578,6 +577,7 @@
     gap: 8px;
     flex: 1;
     min-width: 0;
+    margin-top: 5px;
 }
 
 .task-right {
