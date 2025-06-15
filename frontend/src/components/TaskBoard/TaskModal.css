@@ -99,6 +99,7 @@
     background-color: white;
     color: #2d3748;
     transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    font-family: sans-serif !important;
 }
 
 .dark-mode .form-group input,
@@ -230,6 +231,7 @@ label {
 
 .task-description {
     text-align: left;
+    font-family: sans-serif !important;
 }
 
 
@@ -283,6 +285,7 @@ label {
     text-align: left;
     width: 100%;
     padding-left: 0;
+    font-family: sans-serif !important;
 }
 
 .dark-mode .modal-description {

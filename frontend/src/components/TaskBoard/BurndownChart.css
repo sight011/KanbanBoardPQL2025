@@ -88,12 +88,17 @@
 }
 
 .burndown-chart .recharts-text {
-    fill: #000000;
+    fill: #f7f7f7;
+    font-weight: 500;
+}
+
+.burndown-chart.dark .recharts-text {
+    fill: #DDD;
     font-weight: 500;
 }
 
 .burndown-chart .recharts-legend-item-text {
-    color: #000000 !important;
+    color:rgb(255, 255, 255) !important;
     font-weight: 500;
 }
 
