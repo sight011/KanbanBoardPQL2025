@@ -1,20 +1,30 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskCard.css';
 
 const TaskCard = memo(({ task, index }) => {
     const { openTaskModal } = useTaskContext();
+    const [users, setUsers] = useState([]);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch('/api/users');
+                const data = await res.json();
+                setUsers(data.users || []);
+            } catch (err) {
+                console.error('Error fetching users:', err);
+                setUsers([]);
+            }
+        };
+        fetchUsers();
+    }, []);
 
     const getAssigneeInitials = (assigneeId) => {
-        // For now, we'll use a simple mapping
-        const userMap = {
-            1: { firstName: 'John', lastName: 'Doe' },
-            2: { firstName: 'Jane', lastName: 'Smith' },
-            3: { firstName: 'Bob', lastName: 'Johnson' }
-        };
+        if (!assigneeId) return 'UA';
         
-        const user = userMap[assigneeId];
+        const user = users.find(u => u.id === assigneeId);
         if (!user) return '?';
         
         return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();

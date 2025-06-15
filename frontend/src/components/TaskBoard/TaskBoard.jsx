@@ -70,6 +70,21 @@ const TaskBoard = () => {
     });
     const [sprints, setSprints] = useState([]);
     const [selectedSprint, setSelectedSprint] = useState('');
+    const [users, setUsers] = useState([]);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch('/api/users');
+                const data = await res.json();
+                setUsers(data.users || []);
+            } catch (err) {
+                console.error('Error fetching users:', err);
+                setUsers([]);
+            }
+        };
+        fetchUsers();
+    }, []);
 
     // Define userMap at component level
     const userMap = {
@@ -269,13 +284,14 @@ const TaskBoard = () => {
 
     const getAssigneeInitials = (assigneeId) => {
         if (!assigneeId) return 'UA';
-        const user = userMap[assigneeId];
+        
+        const user = users.find(u => u.id === assigneeId);
         if (!user) return '?';
-        return user.split(' ').map(n => n[0]).join('').toUpperCase();
+        
+        return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     };
 
     const getAssigneeColor = (assigneeId) => {
-        // Array of visually distinct colors
         const colors = [
             '#0052cc', // Blue
             '#36b37e', // Green
@@ -288,8 +304,6 @@ const TaskBoard = () => {
             '#57d9a3', // Mint
             '#00a3bf'  // Teal
         ];
-        
-        // Use assigneeId to consistently map to a color
         return colors[(assigneeId - 1) % colors.length];
     };
 
@@ -381,7 +395,9 @@ const TaskBoard = () => {
 
     const assigneeData = useMemo(() => {
         const counts = filteredTasks.reduce((acc, task) => {
-            const assignee = task.assignee_id ? userMap[task.assignee_id] : 'Unassigned';
+            const assignee = task.assignee_id ? 
+                users.find(u => u.id === task.assignee_id)?.firstName + ' ' + users.find(u => u.id === task.assignee_id)?.lastName : 
+                'Unassigned';
             acc[assignee] = (acc[assignee] || 0) + 1;
             return acc;
         }, {});
@@ -390,12 +406,20 @@ const TaskBoard = () => {
             labels: Object.keys(counts),
             datasets: [{
                 data: Object.values(counts),
-                backgroundColor: ['#0052cc', '#36b37e', '#ff5630', '#ffab00'],
-                borderColor: ['#0052cc', '#36b37e', '#ff5630', '#ffab00'],
+                backgroundColor: Object.keys(counts).map((_, index) => {
+                    if (_ === 'Unassigned') return '#e0e0e0';
+                    const userId = users.find(u => `${u.firstName} ${u.lastName}` === _)?.id;
+                    return userId ? getAssigneeColor(userId) : '#e0e0e0';
+                }),
+                borderColor: Object.keys(counts).map((_, index) => {
+                    if (_ === 'Unassigned') return '#e0e0e0';
+                    const userId = users.find(u => `${u.firstName} ${u.lastName}` === _)?.id;
+                    return userId ? getAssigneeColor(userId) : '#e0e0e0';
+                }),
                 borderWidth: 1
             }]
         };
-    }, [filteredTasks]);
+    }, [filteredTasks, users]);
 
     // Effect to set root width for all views
     useEffect(() => {

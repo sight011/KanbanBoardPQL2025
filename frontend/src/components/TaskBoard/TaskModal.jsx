@@ -12,13 +12,7 @@ const TaskModal = () => {
         deleteTask
     } = useTaskContext();
 
-    // User mapping for consistent display across components
-    const userMap = {
-        1: { firstName: 'John', lastName: 'Doe' },
-        2: { firstName: 'Jane', lastName: 'Smith' },
-        3: { firstName: 'Bob', lastName: 'Johnson' }
-    };
-
+    const [users, setUsers] = useState([]);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -35,6 +29,21 @@ const TaskModal = () => {
     const [sprints, setSprints] = useState([]);
     const [sprintsLoading, setSprintsLoading] = useState(false);
     const [sprintsError, setSprintsError] = useState(null);
+
+    // Fetch users from the database
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch('/api/users');
+                const data = await res.json();
+                setUsers(data.users || []);
+            } catch (err) {
+                console.error('Error fetching users:', err);
+                setUsers([]);
+            }
+        };
+        fetchUsers();
+    }, []);
 
     useEffect(() => {
         console.log('selectedTask in modal:', selectedTask);
@@ -258,8 +267,8 @@ const TaskModal = () => {
                             onChange={handleInputChange}
                         >
                             <option value="">Unassigned</option>
-                            {Object.entries(userMap).map(([id, user]) => (
-                                <option key={id} value={id}>
+                            {users.map((user) => (
+                                <option key={user.id} value={user.id}>
                                     {user.firstName} {user.lastName}
                                 </option>
                             ))}
