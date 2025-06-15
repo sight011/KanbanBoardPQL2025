@@ -3,6 +3,7 @@ import { useTaskContext } from '../../context/TaskContext';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './SprintView.css';
 import classNames from 'classnames';
+import TaskFilters from './TaskFilters';
 
 const formatDateInput = (date) => {
     if (!date) return '';
@@ -154,6 +155,7 @@ const SprintView = () => {
     );
     const [users, setUsers] = useState([]);
     const [filters, setFilters] = useState({
+        text: '',
         assignee: '',
         priority: '',
         sprint: ''
@@ -221,9 +223,35 @@ const SprintView = () => {
         fetchSprints();
     }, []);
 
+    // Filter tasks based on filters
+    const filteredTasks = tasks.filter(task => {
+        // Text filter
+        if (filters.text && !task.title.toLowerCase().includes(filters.text.toLowerCase())) {
+            return false;
+        }
+        // Assignee filter
+        if (filters.assignee && task.assignee_id !== parseInt(filters.assignee)) {
+            return false;
+        }
+        // Priority filter
+        if (filters.priority && task.priority !== filters.priority) {
+            return false;
+        }
+        // Sprint filter
+        if (filters.sprint) {
+            if (filters.sprint === 'backlog' && task.sprint_id !== null) {
+                return false;
+            }
+            if (filters.sprint !== 'backlog' && task.sprint_id !== parseInt(filters.sprint)) {
+                return false;
+            }
+        }
+        return true;
+    });
+
     // Group tasks by sprint_id
     const tasksBySprint = {};
-    tasks.forEach(task => {
+    filteredTasks.forEach(task => {
         const sid = task.sprint_id || 'backlog';
         if (!tasksBySprint[sid]) tasksBySprint[sid] = [];
         tasksBySprint[sid].push(task);
@@ -397,8 +425,16 @@ const SprintView = () => {
         }
     };
 
+    const handleFilterChange = (filterType, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [filterType]: value
+        }));
+    };
+
     return (
         <div className={`sprint-view ${isDarkMode ? 'dark' : 'light'}`}>
+            <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
             <SprintModal
                 open={modalOpen}
                 onClose={() => { setModalOpen(false); setEditSprint(null); }}
