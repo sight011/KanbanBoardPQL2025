@@ -43,7 +43,7 @@
 }
 
 .clear-filters-button:hover {
-    background-color: var(--danger-color-hover);
+    background-color: #016dff;
 }
 
 /* Dark mode styles */

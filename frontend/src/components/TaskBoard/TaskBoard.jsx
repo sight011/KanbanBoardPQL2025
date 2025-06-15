@@ -66,7 +66,8 @@ const TaskBoard = () => {
         text: '',
         sprint: '',
         priority: '',
-        assignee: ''
+        assignee: '',
+        status: ''
     });
     const [sprints, setSprints] = useState([]);
     const [selectedSprint, setSelectedSprint] = useState('');
@@ -181,7 +182,8 @@ const TaskBoard = () => {
             const matchesPriority = !filters.priority || task.priority === filters.priority;
             const matchesAssignee = !filters.assignee || task.assignee_id === parseInt(filters.assignee);
             const matchesSprint = !filters.sprint || String(task.sprint_id) === filters.sprint;
-            return matchesText && matchesPriority && matchesAssignee && matchesSprint;
+            const matchesStatus = !filters.status || task.status === filters.status;
+            return matchesText && matchesPriority && matchesAssignee && matchesSprint && matchesStatus;
         });
     }, [tasks, filters]);
 
@@ -193,7 +195,8 @@ const TaskBoard = () => {
             text: '',
             sprint: prev.sprint === (active ? String(active.id) : '') ? prev.sprint : (active ? String(active.id) : ''),
             priority: '',
-            assignee: ''
+            assignee: '',
+            status: ''
         }));
     };
 

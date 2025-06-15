@@ -47,6 +47,10 @@ const TaskFilters = ({ filters, onFilterChange }) => {
         onFilterChange('priority', e.target.value);
     };
 
+    const handleStatusChange = (e) => {
+        onFilterChange('status', e.target.value);
+    };
+
     const handleAssigneeChange = (e) => {
         onFilterChange('assignee', e.target.value);
     };
@@ -55,6 +59,7 @@ const TaskFilters = ({ filters, onFilterChange }) => {
         onFilterChange('text', '');
         onFilterChange('sprint', '');
         onFilterChange('priority', '');
+        onFilterChange('status', '');
         onFilterChange('assignee', '');
     };
 
@@ -91,6 +96,17 @@ const TaskFilters = ({ filters, onFilterChange }) => {
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
+                </select>
+                <select
+                    className="filter-select"
+                    value={filters.status || ''}
+                    onChange={handleStatusChange}
+                >
+                    <option value="">Status</option>
+                    <option value="todo">To Do</option>
+                    <option value="inProgress">In Progress</option>
+                    <option value="review">Review</option>
+                    <option value="done">Done</option>
                 </select>
                 <select
                     className="filter-select"
