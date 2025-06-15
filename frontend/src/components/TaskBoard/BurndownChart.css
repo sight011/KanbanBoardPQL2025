@@ -8,8 +8,9 @@
 
 .burndown-chart-container h3 {
     margin: 0 0 20px 0;
-    color: #333;
+    color: #000000;
     font-size: 1.5rem;
+    font-weight: 600;
 }
 
 .burndown-info {
@@ -23,7 +24,8 @@
 
 .burndown-info p {
     margin: 0;
-    color: #666;
+    color: #000000;
+    font-weight: 500;
 }
 
 .chart-wrapper {
@@ -37,10 +39,11 @@
 .burndown-no-data {
     padding: 20px;
     text-align: center;
-    color: #666;
+    color: #000000;
     background: #f5f5f5;
     border-radius: 4px;
     margin: 20px 0;
+    font-weight: 500;
 }
 
 .burndown-error {
@@ -81,11 +84,27 @@
 
 .burndown-chart .recharts-cartesian-grid-horizontal line,
 .burndown-chart .recharts-cartesian-grid-vertical line {
-    stroke: #4a5568;
+    stroke: #e2e8f0;
 }
 
 .burndown-chart .recharts-text {
-    fill: #e2e8f0;
+    fill: #000000;
+    font-weight: 500;
+}
+
+.burndown-chart .recharts-legend-item-text {
+    color: #000000 !important;
+    font-weight: 500;
+}
+
+.burndown-chart .recharts-tooltip-label {
+    color: #000000;
+    font-weight: 600;
+}
+
+.burndown-chart .recharts-tooltip-item {
+    color: #000000;
+    font-weight: 500;
 }
 
 /* Responsive adjustments */
