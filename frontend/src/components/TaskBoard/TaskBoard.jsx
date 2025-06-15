@@ -324,6 +324,35 @@ const TaskBoard = () => {
         return colors[(assigneeId - 1) % colors.length];
     };
 
+    const assignmentData = useMemo(() => {
+        const assignments = tasks.reduce((acc, task) => {
+            const assignee = task.assignee_name || 'Unassigned';
+            acc[assignee] = (acc[assignee] || 0) + 1;
+            return acc;
+        }, {});
+
+        return {
+            labels: Object.keys(assignments),
+            datasets: [{
+                data: Object.values(assignments),
+                backgroundColor: [
+                    '#8884d8',
+                    '#82ca9d',
+                    '#ffc658',
+                    '#ff8042',
+                    '#0088fe',
+                    '#00c49f',
+                    '#ffbb28',
+                    '#ff8042',
+                    '#a4de6c',
+                    '#d0ed57'
+                ],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        };
+    }, [tasks]);
+
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -348,12 +377,16 @@ const TaskBoard = () => {
                     label: function(context) {
                         const label = context.label || '';
                         const value = context.raw || 0;
-                        return `${label}: ${value}`;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return `${label}: ${value} (${percentage}%)`;
                     }
-                }
-            },
-            textPlugin: {
-                enabled: true
+                },
+                titleColor: isDarkMode ? '#e2e8f0' : '#2d3748',
+                bodyColor: isDarkMode ? '#e2e8f0' : '#2d3748',
+                backgroundColor: isDarkMode ? '#2d3748' : '#ffffff',
+                borderColor: isDarkMode ? '#4a5568' : '#e2e8f0',
+                borderWidth: 1
             }
         },
         elements: {
@@ -624,7 +657,7 @@ const TaskBoard = () => {
                     </div>
                     <div className="chart-wrapper">
                         <h3>Assignment Distribution</h3>
-                        <Pie data={assigneeData} options={chartOptions} />
+                        <Pie data={assignmentData} options={chartOptions} />
                     </div>
                 </div>
             ) : (

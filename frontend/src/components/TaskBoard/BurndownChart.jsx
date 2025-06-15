@@ -99,17 +99,31 @@ const BurndownChart = ({ sprintId, filters }) => {
                         data={chartData}
                         margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#4a5568' : '#e2e8f0'} />
                         <XAxis
                             dataKey="date"
                             tickFormatter={date => new Date(date).toLocaleDateString()}
+                            stroke={isDarkMode ? '#e2e8f0' : '#2d3748'}
+                            tick={{ fill: isDarkMode ? '#e2e8f0' : '#2d3748' }}
                         />
-                        <YAxis />
+                        <YAxis
+                            stroke={isDarkMode ? '#e2e8f0' : '#2d3748'}
+                            tick={{ fill: isDarkMode ? '#e2e8f0' : '#2d3748' }}
+                        />
                         <Tooltip
                             labelFormatter={date => new Date(date).toLocaleDateString()}
                             formatter={(value, name) => [value, name === 'remainingPoints' ? 'Remaining Points' : 'Ideal Burndown']}
+                            contentStyle={{
+                                backgroundColor: isDarkMode ? '#2d3748' : '#ffffff',
+                                borderColor: isDarkMode ? '#4a5568' : '#e2e8f0',
+                                color: isDarkMode ? '#e2e8f0' : '#2d3748'
+                            }}
                         />
-                        <Legend />
+                        <Legend
+                            wrapperStyle={{
+                                color: isDarkMode ? '#e2e8f0' : '#2d3748'
+                            }}
+                        />
                         <Line
                             type="monotone"
                             dataKey="remainingPoints"
