@@ -10,13 +10,16 @@ import ThemeToggle from './components/ThemeToggle';
 import Settings from './components/Settings';
 import api from './api/axios'; // Import axios for API calls
 import './App.css';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 
 const App = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [viewMode, setViewMode] = useState('sprint');
+    const navigate = useNavigate();
 
     const handleLogoClick = () => {
         setViewMode('sprint');
+        navigate('/');
     };
 
     const handleSendMessage = async (message, setBotResponse) => {
@@ -64,7 +67,10 @@ Based on the tasks above, please answer the user's question following the respon
                         </div>
                     </header>
                     <main className="app-main">
-                        <TaskBoard viewMode={viewMode} setViewMode={setViewMode} />
+                        <Routes>
+                            <Route path="/" element={<TaskBoard viewMode={viewMode} setViewMode={setViewMode} />} />
+                            <Route path="/settings" element={<Settings />} />
+                        </Routes>
                     </main>
                     <TaskModal />
                     <ChatBubble

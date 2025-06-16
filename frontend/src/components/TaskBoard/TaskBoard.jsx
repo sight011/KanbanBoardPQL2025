@@ -167,8 +167,8 @@ const TaskBoard = () => {
             }
         };
         fetchSprints();
-        // Poll for active sprint changes every 2 seconds
-        const interval = setInterval(fetchSprints, 2000);
+        // Poll for active sprint changes every 10 seconds
+        const interval = setInterval(fetchSprints, 10000); // 10 seconds
         return () => clearInterval(interval);
     }, []);
 

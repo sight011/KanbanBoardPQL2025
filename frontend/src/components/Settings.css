@@ -21,4 +21,18 @@
 
 .settings-button:hover svg {
     transform: rotate(30deg);
+}
+
+.settings-page {
+    padding: 32px 40px;
+    background: none;
+    min-height: 60vh;
+    color: var(--text-color);
+}
+
+.settings-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+    text-align: left;
 } 
