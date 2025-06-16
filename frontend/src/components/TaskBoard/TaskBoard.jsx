@@ -142,7 +142,6 @@ const TaskBoard = () => {
                 const data = await res.json();
                 const newSprints = data.sprints || [];
                 setSprints(newSprints);
-                
                 // Only set default to active sprint on initial load
                 if (sprints.length === 0) {
                     const active = newSprints.find(s => s.status === 'active');
@@ -155,7 +154,6 @@ const TaskBoard = () => {
                     // Check if active sprint has changed
                     const currentActive = sprints.find(s => s.status === 'active');
                     const newActive = newSprints.find(s => s.status === 'active');
-                    
                     if (currentActive?.id !== newActive?.id) {
                         setSelectedSprint(newActive ? String(newActive.id) : '');
                         setFilters(prev => ({
@@ -325,28 +323,33 @@ const TaskBoard = () => {
     };
 
     const assignmentData = useMemo(() => {
+        if (!tasks || tasks.length === 0) {
+            return {
+                labels: ['No Tasks'],
+                datasets: [{
+                    data: [1],
+                    backgroundColor: ['#e2e8f0'],
+                    borderWidth: 0
+                }]
+            };
+        }
+
         const assignments = tasks.reduce((acc, task) => {
             const assignee = task.assignee_name || 'Unassigned';
             acc[assignee] = (acc[assignee] || 0) + 1;
             return acc;
         }, {});
 
+        const colors = [
+            '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe',
+            '#00c49f', '#ffbb28', '#ff8042', '#a4de6c', '#d0ed57'
+        ];
+
         return {
             labels: Object.keys(assignments),
             datasets: [{
                 data: Object.values(assignments),
-                backgroundColor: [
-                    '#8884d8',
-                    '#82ca9d',
-                    '#ffc658',
-                    '#ff8042',
-                    '#0088fe',
-                    '#00c49f',
-                    '#ffbb28',
-                    '#ff8042',
-                    '#a4de6c',
-                    '#d0ed57'
-                ],
+                backgroundColor: Object.keys(assignments).map((_, index) => colors[index % colors.length]),
                 borderWidth: 0,
                 hoverOffset: 4
             }]
@@ -444,33 +447,112 @@ const TaskBoard = () => {
     }, [filteredTasks]);
 
     const assigneeData = useMemo(() => {
-        const counts = filteredTasks.reduce((acc, task) => {
-            const assigneeId = task.assignee_id;
-            const assignee = assigneeId ? 
-                users.find(u => u.id === assigneeId)?.firstName + ' ' + users.find(u => u.id === assigneeId)?.lastName : 
-                'Unassigned';
-            acc[assignee] = (acc[assignee] || 0) + 1;
+        if (!tasks || tasks.length === 0) {
+            return {
+                labels: ['No Tasks'],
+                datasets: [{
+                    data: [1],
+                    backgroundColor: ['#e2e8f0'],
+                    borderWidth: 0
+                }]
+            };
+        }
+
+        // Group tasks by assignee
+        const assigneeGroups = tasks.reduce((acc, task) => {
+            const assignee = task.assignee_name || 'Unassigned';
+            if (!acc[assignee]) {
+                acc[assignee] = {
+                    total: 0,
+                    completed: 0
+                };
+            }
+            acc[assignee].total += 1;
+            if (task.status === 'done') {
+                acc[assignee].completed += 1;
+            }
             return acc;
         }, {});
 
+        // Sort assignees by total tasks
+        const sortedAssignees = Object.entries(assigneeGroups)
+            .sort(([, a], [, b]) => b.total - a.total)
+            .slice(0, 5); // Take top 5 assignees
+
         return {
-            labels: Object.keys(counts),
-            datasets: [{
-                data: Object.values(counts),
-                backgroundColor: Object.keys(counts).map((assignee) => {
-                    if (assignee === 'Unassigned') return '#e0e0e0';
-                    const userId = users.find(u => `${u.firstName} ${u.lastName}` === assignee)?.id;
-                    return userId ? getAssigneeColor(userId) : '#e0e0e0';
-                }),
-                borderColor: Object.keys(counts).map((assignee) => {
-                    if (assignee === 'Unassigned') return '#e0e0e0';
-                    const userId = users.find(u => `${u.firstName} ${u.lastName}` === assignee)?.id;
-                    return userId ? getAssigneeColor(userId) : '#e0e0e0';
-                }),
-                borderWidth: 1
-            }]
+            labels: sortedAssignees.map(([name]) => name),
+            datasets: [
+                {
+                    label: 'Completed Tasks',
+                    data: sortedAssignees.map(([, data]) => data.completed),
+                    backgroundColor: '#82ca9d',
+                    borderWidth: 0
+                },
+                {
+                    label: 'Total Tasks',
+                    data: sortedAssignees.map(([, data]) => data.total),
+                    backgroundColor: '#8884d8',
+                    borderWidth: 0
+                }
+            ]
         };
-    }, [filteredTasks, users]);
+    }, [tasks]);
+
+    const assigneeChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: isDarkMode ? '#e2e8f0' : '#2d3748',
+                    font: {
+                        size: 12,
+                        weight: '500'
+                    },
+                    padding: 15,
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    boxWidth: 8,
+                    boxHeight: 8
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const label = context.dataset.label || '';
+                        const value = context.raw || 0;
+                        return `${label}: ${value}`;
+                    }
+                },
+                titleColor: isDarkMode ? '#e2e8f0' : '#2d3748',
+                bodyColor: isDarkMode ? '#e2e8f0' : '#2d3748',
+                backgroundColor: isDarkMode ? '#2d3748' : '#ffffff',
+                borderColor: isDarkMode ? '#4a5568' : '#e2e8f0',
+                borderWidth: 1
+            }
+        },
+        scales: {
+            x: {
+                stacked: true,
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    color: isDarkMode ? '#e2e8f0' : '#2d3748'
+                }
+            },
+            y: {
+                stacked: true,
+                grid: {
+                    color: isDarkMode ? '#4a5568' : '#e2e8f0'
+                },
+                ticks: {
+                    color: isDarkMode ? '#e2e8f0' : '#2d3748'
+                }
+            }
+        }
+    };
 
     // Effect to set root width for all views
     useEffect(() => {
