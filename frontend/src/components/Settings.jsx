@@ -294,8 +294,22 @@ const Settings = () => {
                     <div className="settings-section">
                         <h2 className="settings-headline">Time Range Settings</h2>
                         <div className="settings-section-content">
-                            {/* Add your time range settings content here */}
-                            <p>Configure sprint and task time ranges</p>
+                            <div className="time-range-settings">
+                                <div className="setting-group">
+                                    <label htmlFor="hours-per-day">Hours per day</label>
+                                    <div className="input-with-unit">
+                                        <input
+                                            type="number"
+                                            id="hours-per-day"
+                                            min="1"
+                                            max="24"
+                                            defaultValue="8"
+                                            className="settings-input"
+                                        />
+                                        <span className="unit">hours</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );
