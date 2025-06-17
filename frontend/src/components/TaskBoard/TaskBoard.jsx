@@ -76,23 +76,23 @@ const TaskBoard = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const res = await fetch('/api/users');
-                const data = await res.json();
-                setUsers(data.users || []);
+                const response = await fetch('/api/users');
+                const data = await response.json();
+                if (data.users) {
+                    // Create a map of user IDs to user data for faster lookup
+                    const usersMap = data.users.reduce((acc, user) => {
+                        acc[user.id] = user;
+                        return acc;
+                    }, {});
+                    setUsers(usersMap);
+                }
             } catch (err) {
                 console.error('Error fetching users:', err);
-                setUsers([]);
+                setUsers({});
             }
         };
         fetchUsers();
     }, []);
-
-    // Define userMap at component level
-    const userMap = {
-        1: 'John Doe',
-        2: 'Jane Smith',
-        3: 'Bob Johnson'
-    };
 
     // Add toggleTheme function
     const toggleTheme = () => {
@@ -300,7 +300,7 @@ const TaskBoard = () => {
     const getAssigneeInitials = (assigneeId) => {
         if (!assigneeId) return 'UA';
         
-        const user = users.find(u => u.id === assigneeId);
+        const user = users[assigneeId];
         if (!user) return '?';
         
         return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
@@ -322,6 +322,12 @@ const TaskBoard = () => {
         return colors[(assigneeId - 1) % colors.length];
     };
 
+    const getAssigneeName = (assigneeId) => {
+        if (!assigneeId) return 'Unassigned';
+        const user = users[assigneeId];
+        return user ? `${user.firstName} ${user.lastName}` : `User ${assigneeId}`;
+    };
+
     const assignmentData = useMemo(() => {
         if (!tasks || tasks.length === 0) {
             return {
@@ -334,27 +340,36 @@ const TaskBoard = () => {
             };
         }
 
+        // Group tasks by assignee_id
         const assignments = tasks.reduce((acc, task) => {
-            const assignee = task.assignee_name || 'Unassigned';
-            acc[assignee] = (acc[assignee] || 0) + 1;
+            const assigneeId = task.assignee_id;
+            const key = assigneeId || 'unassigned';
+            
+            if (!acc[key]) {
+                acc[key] = {
+                    name: getAssigneeName(assigneeId),
+                    count: 0,
+                    color: assigneeId ? getAssigneeColor(assigneeId) : '#e2e8f0'
+                };
+            }
+            acc[key].count += 1;
             return acc;
         }, {});
 
-        const colors = [
-            '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe',
-            '#00c49f', '#ffbb28', '#ff8042', '#a4de6c', '#d0ed57'
-        ];
+        // Sort by task count and convert to arrays for chart
+        const sortedAssignees = Object.entries(assignments)
+            .sort(([, a], [, b]) => b.count - a.count);
 
         return {
-            labels: Object.keys(assignments),
+            labels: sortedAssignees.map(([key, data]) => data.name),
             datasets: [{
-                data: Object.values(assignments),
-                backgroundColor: Object.keys(assignments).map((_, index) => colors[index % colors.length]),
+                data: sortedAssignees.map(([, data]) => data.count),
+                backgroundColor: sortedAssignees.map(([, data]) => data.color),
                 borderWidth: 0,
                 hoverOffset: 4
             }]
         };
-    }, [tasks]);
+    }, [tasks, users]);
 
     const chartOptions = {
         responsive: true,
