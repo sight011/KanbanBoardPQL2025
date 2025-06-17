@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import TaskColumn from './TaskColumn';
-import TaskModal from './TaskModal';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { toast } from 'react-hot-toast';
 
@@ -165,14 +164,6 @@ const KanbanBoard = () => {
                     />
                 </div>
             </DragDropContext>
-
-            {isModalOpen && (
-                <TaskModal
-                    task={selectedTask}
-                    onClose={closeTaskModal}
-                    onSubmit={selectedTask ? handleUpdateTask : handleCreateTask}
-                />
-            )}
         </div>
     );
 };

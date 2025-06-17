@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { TaskProvider } from './context/TaskContext';
 import { ThemeProvider } from './context/ThemeContext';
 import TaskBoard from './components/TaskBoard/TaskBoard';
-import TaskModal from './components/TaskBoard/TaskModal';
 import CreateTaskButton from './components/CreateTaskButton';
 import ChatBubble from './components/Chat/ChatBubble';
 import ChatWindow from './components/Chat/ChatWindow';
@@ -73,7 +72,6 @@ Based on the tasks above, please answer the user's question following the respon
                             <Route path="/settings" element={<Settings />} />
                         </Routes>
                     </main>
-                    <TaskModal />
                     <ChatBubble
                         onClick={() => setIsChatOpen(!isChatOpen)}
                         isChatOpen={isChatOpen}

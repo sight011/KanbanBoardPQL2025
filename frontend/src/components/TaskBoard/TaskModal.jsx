@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskModal.css';
 
-const TaskModal = () => {
+const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     const {
         selectedTask,
         isModalOpen,
@@ -46,7 +46,8 @@ const TaskModal = () => {
     }, []);
 
     useEffect(() => {
-        console.log('selectedTask in modal:', selectedTask);
+        // Debug log for viewMode and activeSprintId
+        console.log('[TaskModal] viewMode:', viewMode, 'activeSprintId:', activeSprintId);
         if (selectedTask) {
             setFormData({
                 title: selectedTask.title,
@@ -59,7 +60,11 @@ const TaskModal = () => {
                 sprint_id: selectedTask.sprint_id ?? ''
             });
         } else {
-            // Reset form data when creating a new task
+            // Set default sprint_id based on viewMode and activeSprintId
+            let defaultSprintId = '';
+            if (["kanban", "list", "diagram", "burndown"].includes(viewMode) && activeSprintId) {
+                defaultSprintId = String(activeSprintId); // Ensure it's a string for select value
+            }
             setFormData({
                 title: '',
                 description: '',
@@ -68,10 +73,10 @@ const TaskModal = () => {
                 assignee_id: '',
                 effort: '',
                 timespent: '',
-                sprint_id: ''
+                sprint_id: defaultSprintId
             });
         }
-    }, [selectedTask, isModalOpen]);
+    }, [selectedTask, isModalOpen, viewMode, activeSprintId]);
 
     useEffect(() => {
         console.log('formData in modal:', formData);
@@ -94,6 +99,45 @@ const TaskModal = () => {
         };
         fetchSprints();
     }, []);
+
+    // Force sprint_id to active sprint if not valid after sprints load
+    useEffect(() => {
+        if (!selectedTask && isModalOpen && sprints.length > 0) {
+            const validIds = sprints.map(s => String(s.id));
+            if (["kanban", "list", "diagram", "burndown"].includes(viewMode) && activeSprintId) {
+                if (!formData.sprint_id || !validIds.includes(formData.sprint_id)) {
+                    setFormData(prev => ({ ...prev, sprint_id: String(activeSprintId) }));
+                }
+            }
+        }
+    }, [sprints, selectedTask, isModalOpen, viewMode, activeSprintId, formData.sprint_id]);
+
+    // Always set default sprint_id on modal open in create mode
+    useEffect(() => {
+        console.log('[TaskModal] useEffect triggered:', {
+            isModalOpen,
+            selectedTask,
+            sprints,
+            viewMode,
+            activeSprintId
+        });
+        if (isModalOpen && !selectedTask && sprints.length > 0) {
+            let defaultSprintId = '';
+            if (["kanban", "list", "diagram", "burndown"].includes(viewMode) && activeSprintId) {
+                defaultSprintId = String(activeSprintId);
+            }
+            setFormData({
+                title: '',
+                description: '',
+                status: 'todo',
+                priority: 'medium',
+                assignee_id: '',
+                effort: '',
+                timespent: '',
+                sprint_id: defaultSprintId
+            });
+        }
+    }, [isModalOpen, selectedTask, sprints, viewMode, activeSprintId]);
 
     const validateTimeInput = (value) => {
         if (!value) return true;
@@ -127,6 +171,7 @@ const TaskModal = () => {
         try {
             const payload = {
                 ...formData,
+                sprint_id: formData.sprint_id === '' ? null : Number(formData.sprint_id),
                 timespent: formData.timespent === '' ? null : formData.timespent
             };
             if (selectedTask) {
@@ -189,6 +234,7 @@ const TaskModal = () => {
                     <div className="form-group">
                         <label htmlFor="sprint_id"><b>Sprint/Backlog</b></label>
                         <select
+                            key={sprints.map(s => s.id).join('-')}
                             id="sprint_id"
                             name="sprint_id"
                             value={formData.sprint_id ?? ''}
@@ -197,10 +243,9 @@ const TaskModal = () => {
                         >
                             <option value="">Backlog</option>
                             {sprints.map(sprint => (
-                                <option key={sprint.id} value={sprint.id}>{sprint.name}</option>
+                                <option key={sprint.id} value={String(sprint.id)}>{sprint.name}</option>
                             ))}
                         </select>
-                        {sprintsError && <div style={{ color: 'red', marginTop: 4 }}>{sprintsError}</div>}
                     </div>
                     <div className="form-row">
                         <div className="form-group">

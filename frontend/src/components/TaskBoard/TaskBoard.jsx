@@ -762,6 +762,8 @@ const TaskBoard = () => {
                     <BurndownChart sprintId={selectedSprint} filters={filters} />
                 </div>
             )}
+
+            <TaskModal viewMode={viewMode} activeSprintId={selectedSprint} />
         </div>
     );
 };

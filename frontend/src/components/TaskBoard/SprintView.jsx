@@ -484,7 +484,7 @@ const SprintView = () => {
                 activeSprint={activeSprint}
                 isDarkMode={isDarkMode}
             />
-            <TaskModal />
+            <TaskModal viewMode="sprint" activeSprintId="" />
             <div className="sprint-header">
                 <h2>Sprints</h2>
                 <button 
