@@ -140,7 +140,7 @@
 
 .modal-footer {
     display: flex;
-    justify-content: space-between;
+    flex-direction: row-reverse;
     gap: 12px;
     margin-top: 24px;
 }
@@ -327,4 +327,20 @@ label {
     background-color: #2d3748;
     border-color: #4a5568;
     color: #e2e8f0;
+}
+
+.modal-footer.row {
+    flex-direction: row;
+}
+
+.modal-footer.row-reverse {
+    flex-direction: row-reverse;
+}
+
+.create-task-modal .modal-footer {
+    flex-direction: row-reverse;
+}
+
+.edit-task-modal .modal-footer {
+    flex-direction: row-reverse;
 }

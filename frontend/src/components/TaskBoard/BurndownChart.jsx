@@ -98,30 +98,35 @@ const BurndownChart = ({ sprintId, filters }) => {
                     <LineChart
                         data={chartData}
                         margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                        className={isDarkMode ? 'dark' : ''}
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#4a5568' : '#e2e8f0'} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#ffffff' : '#0e64d5'} opacity={isDarkMode ? 0.1 : 0.2} />
                         <XAxis
                             dataKey="date"
                             tickFormatter={date => new Date(date).toLocaleDateString()}
-                            stroke={isDarkMode ? '#e2e8f0' : '#2d3748'}
-                            tick={{ fill: isDarkMode ? '#e2e8f0' : '#2d3748' }}
+                            stroke={isDarkMode ? '#ffffff' : '#0e64d5'}
+                            tick={{ fill: isDarkMode ? '#ffffff' : '#0e64d5' }}
                         />
                         <YAxis
-                            stroke={isDarkMode ? '#e2e8f0' : '#2d3748'}
-                            tick={{ fill: isDarkMode ? '#e2e8f0' : '#2d3748' }}
+                            stroke={isDarkMode ? '#ffffff' : '#0e64d5'}
+                            tick={{ fill: isDarkMode ? '#ffffff' : '#0e64d5' }}
                         />
                         <Tooltip
                             labelFormatter={date => new Date(date).toLocaleDateString()}
                             formatter={(value, name) => [value, name === 'remainingPoints' ? 'Remaining Points' : 'Ideal Burndown']}
                             contentStyle={{
-                                backgroundColor: isDarkMode ? '#2d3748' : '#ffffff',
-                                borderColor: isDarkMode ? '#4a5568' : '#e2e8f0',
-                                color: isDarkMode ? '#e2e8f0' : '#2d3748'
+                                backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                                borderColor: isDarkMode ? '#ffffff' : '#0e64d5',
+                                color: isDarkMode ? '#ffffff' : '#0e64d5',
+                                fontSize: '12px',
+                                fontWeight: 500
                             }}
                         />
                         <Legend
                             wrapperStyle={{
-                                color: isDarkMode ? '#e2e8f0' : '#2d3748'
+                                color: isDarkMode ? '#ffffff' : '#0e64d5',
+                                fontSize: '12px',
+                                fontWeight: 500
                             }}
                         />
                         <Line
@@ -130,6 +135,7 @@ const BurndownChart = ({ sprintId, filters }) => {
                             stroke="#8884d8"
                             name="Actual Burndown"
                             dot={true}
+                            strokeWidth={2}
                         />
                         <Line
                             type="monotone"
@@ -137,6 +143,7 @@ const BurndownChart = ({ sprintId, filters }) => {
                             stroke="#82ca9d"
                             name="Ideal Burndown"
                             strokeDasharray="5 5"
+                            strokeWidth={2}
                         />
                     </LineChart>
                 </ResponsiveContainer>

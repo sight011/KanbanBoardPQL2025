@@ -82,34 +82,70 @@
     background: #4a2323;
 }
 
-.burndown-chart .recharts-cartesian-grid-horizontal line,
-.burndown-chart .recharts-cartesian-grid-vertical line {
-    stroke: #e2e8f0;
-}
-
 .burndown-chart .recharts-text {
-    fill: #f7f7f7;
+    fill: #333333;
     font-weight: 500;
+    font-size: 12px;
 }
 
 .burndown-chart.dark .recharts-text {
-    fill: #DDD;
+    fill: #e2e8f0;
     font-weight: 500;
+    font-size: 12px;
 }
 
 .burndown-chart .recharts-legend-item-text {
-    color:rgb(255, 255, 255) !important;
+    color: #0e64d5 !important;
+    font-weight: 500;
+}
+
+.burndown-chart.dark .recharts-legend-item-text {
+    color: #ffffff !important;
     font-weight: 500;
 }
 
 .burndown-chart .recharts-tooltip-label {
-    color: #000000;
+    color: #0e64d5;
+    font-weight: 600;
+}
+
+.burndown-chart.dark .recharts-tooltip-label {
+    color: #ffffff;
     font-weight: 600;
 }
 
 .burndown-chart .recharts-tooltip-item {
-    color: #000000;
+    color: #0e64d5;
     font-weight: 500;
+}
+
+.burndown-chart.dark .recharts-tooltip-item {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+/* Axis labels */
+.burndown-chart .recharts-cartesian-axis-tick-value {
+    fill: #0e64d5;
+    font-size: 12px;
+}
+
+.burndown-chart.dark .recharts-cartesian-axis-tick-value {
+    fill: #ffffff;
+    font-size: 12px;
+}
+
+/* Grid lines */
+.burndown-chart .recharts-cartesian-grid-horizontal line,
+.burndown-chart .recharts-cartesian-grid-vertical line {
+    stroke: #0e64d5;
+    opacity: 0.2;
+}
+
+.burndown-chart.dark .recharts-cartesian-grid-horizontal line,
+.burndown-chart.dark .recharts-cartesian-grid-vertical line {
+    stroke: #ffffff;
+    opacity: 0.1;
 }
 
 /* Responsive adjustments */
@@ -122,4 +158,10 @@
     .chart-wrapper {
         height: 300px;
     }
+}
+
+.burndown-chart.dark .recharts-legend-item-text {
+    color: #fff !important;
+    font-weight: 600;
+    text-shadow: 0 0 2px #222;
 } 

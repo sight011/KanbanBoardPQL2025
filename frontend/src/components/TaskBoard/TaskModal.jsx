@@ -160,7 +160,7 @@ const TaskModal = () => {
             onKeyPress={handleInputChange}
             tabIndex={0}
         >
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className={`modal-content ${selectedTask ? 'edit-task-modal' : 'create-task-modal'}`} onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2>{selectedTask ? 'Edit Task' : 'Create New Task'}</h2>
                     <button className="close-button" onClick={closeTaskModal}>×</button>
@@ -274,28 +274,19 @@ const TaskModal = () => {
                             ))}
                         </select>
                     </div>
-                    <div className="modal-footer">
+                    <div className={`modal-footer ${selectedTask ? 'row' : 'row-reverse'}`}>
+                        <button type="submit" className="save-button">
+                            {selectedTask ? 'Save Changes' : 'Create Task'}
+                        </button>
+                        <button type="button" className="cancel-button" onClick={closeTaskModal}>
+                            Cancel
+                        </button>
                         {selectedTask && (
-                            <button
-                                type="button"
-                                className="delete-button"
-                                onClick={handleDelete}
-                            >
-                                Delete Task
+                            <button type="button" className="delete-button" onClick={handleDelete}>
+                                Delete
                             </button>
                         )}
-                        <div className="right-buttons">
-                            <button type="button" className="cancel-button" onClick={closeTaskModal}>
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="save-button"
-                                disabled={!!effortError || !!timeSpentError}
-                            >
-                                {selectedTask ? 'Update Task' : 'Create Task'}
-                            </button>
-                        </div>
+                       
                     </div>
                 </form>
             </div>

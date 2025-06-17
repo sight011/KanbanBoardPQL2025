@@ -157,7 +157,7 @@ const Settings = () => {
                         <h2 className="settings-headline">General Settings</h2>
                         <div className="settings-section-content">
                             {/* Add your general settings content here */}
-                            <p>Configure general application settings</p>
+                            <p>Welcome to FlexFlex!</p>
                         </div>
                     </div>
                 );
@@ -219,7 +219,7 @@ const Settings = () => {
                                                 className="update-button"
                                                 disabled={updateStatus === 'updating'}
                                             >
-                                                {updateStatus === 'updating' ? 'Updating...' : 'Update'}
+                                                {updateStatus === 'updating' ? 'Updating...' : 'Update Name'}
                                             </button>
                                         </div>
                                         {updateStatus === 'success' && (
