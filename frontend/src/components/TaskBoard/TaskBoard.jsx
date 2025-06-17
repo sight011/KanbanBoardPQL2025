@@ -329,7 +329,7 @@ const TaskBoard = () => {
     };
 
     const assignmentData = useMemo(() => {
-        if (!tasks || tasks.length === 0) {
+        if (!filteredTasks || filteredTasks.length === 0) {
             return {
                 labels: ['No Tasks'],
                 datasets: [{
@@ -341,7 +341,7 @@ const TaskBoard = () => {
         }
 
         // Group tasks by assignee_id
-        const assignments = tasks.reduce((acc, task) => {
+        const assignments = filteredTasks.reduce((acc, task) => {
             const assigneeId = task.assignee_id;
             const key = assigneeId || 'unassigned';
             
@@ -369,7 +369,7 @@ const TaskBoard = () => {
                 hoverOffset: 4
             }]
         };
-    }, [tasks, users]);
+    }, [filteredTasks, users]);
 
     const chartOptions = {
         responsive: true,
