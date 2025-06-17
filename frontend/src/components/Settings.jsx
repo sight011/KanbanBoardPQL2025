@@ -9,13 +9,63 @@ const Settings = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [updatingUserId, setUpdatingUserId] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [nameForm, setNameForm] = useState({ firstName: '', lastName: '' });
+    const [updateStatus, setUpdateStatus] = useState('');
     const fileInputRef = useRef(null);
 
     useEffect(() => {
         if (activeTab === 'users') {
             fetchUsers();
+        } else if (activeTab === 'profile') {
+            fetchProfile();
         }
     }, [activeTab]);
+
+    const fetchProfile = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get('/api/users/profile');
+            setProfile(response.data.user);
+            setNameForm({
+                firstName: response.data.user.firstName,
+                lastName: response.data.user.lastName
+            });
+            setError(null);
+        } catch (err) {
+            setError('Failed to load profile');
+            console.error('Error fetching profile:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleNameChange = (e) => {
+        const { name, value } = e.target;
+        setNameForm(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleNameSubmit = async (e) => {
+        e.preventDefault();
+        setUpdateStatus('updating');
+        try {
+            const response = await api.patch('/api/users/profile/names', nameForm);
+            setProfile(prev => ({
+                ...prev,
+                firstName: response.data.user.firstName,
+                lastName: response.data.user.lastName
+            }));
+            setUpdateStatus('success');
+            setTimeout(() => setUpdateStatus(''), 3000);
+        } catch (err) {
+            setError('Failed to update names');
+            setUpdateStatus('error');
+            console.error('Error updating names:', err);
+        }
+    };
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -49,9 +99,11 @@ const Settings = () => {
         setUpdatingUserId(userId);
         try {
             await api.patch(`/api/users/${userId}/role`, { role: newRole });
+            // Update the local state with the new role
             setUsers(users.map(user => 
                 user.id === userId ? { ...user, role: newRole } : user
             ));
+            setError(null);
         } catch (err) {
             setError('Failed to update user role');
             console.error('Error updating user role:', err);
@@ -134,26 +186,58 @@ const Settings = () => {
                                     <p className="file-requirements">Maximum file size: 2MB</p>
                                 </div>
                             </div>
-                            <div className="profile-info">
-                                <div className="info-group">
-                                    <label>First Name</label>
-                                    <input 
-                                        type="text" 
-                                        className="profile-input" 
-                                        value="John" // Replace with actual user data
-                                        readOnly 
-                                    />
+                            {loading ? (
+                                <div className="loading-spinner">Loading profile...</div>
+                            ) : error ? (
+                                <div className="error-message">{error}</div>
+                            ) : profile && (
+                                <div className="profile-info">
+                                    <form onSubmit={handleNameSubmit} className="name-form">
+                                        <div className="info-group">
+                                            <label>First Name</label>
+                                            <input 
+                                                type="text" 
+                                                name="firstName"
+                                                className="profile-input" 
+                                                value={nameForm.firstName}
+                                                onChange={handleNameChange}
+                                            />
+                                        </div>
+                                        <div className="info-group">
+                                            <label>Last Name</label>
+                                            <input 
+                                                type="text" 
+                                                name="lastName"
+                                                className="profile-input" 
+                                                value={nameForm.lastName}
+                                                onChange={handleNameChange}
+                                            />
+                                        </div>
+                                        <div className="name-actions">
+                                            <button 
+                                                type="submit" 
+                                                className="update-button"
+                                                disabled={updateStatus === 'updating'}
+                                            >
+                                                {updateStatus === 'updating' ? 'Updating...' : 'Update'}
+                                            </button>
+                                        </div>
+                                        {updateStatus === 'success' && (
+                                            <div className="success-box">
+                                                <div className="checkmark">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                </div>
+                                                <span className="message">Names updated successfully!</span>
+                                            </div>
+                                        )}
+                                        {updateStatus === 'error' && (
+                                            <p className="error-message">{error}</p>
+                                        )}
+                                    </form>
                                 </div>
-                                <div className="info-group">
-                                    <label>Last Name</label>
-                                    <input 
-                                        type="text" 
-                                        className="profile-input" 
-                                        value="Doe" // Replace with actual user data
-                                        readOnly 
-                                    />
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 );

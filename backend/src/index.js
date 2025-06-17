@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const taskRoutes = require('./routes/taskRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const sprintRoutes = require('./routes/sprintRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -35,6 +36,7 @@ app.use(express.json());
 app.use('/api/tasks', taskRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/sprints', sprintRoutes);
+app.use('/api/users', userRoutes);
 
 // Add /api/users endpoint
 const db = require('./db');
