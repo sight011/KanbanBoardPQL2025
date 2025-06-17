@@ -174,6 +174,7 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
                 sprint_id: formData.sprint_id === '' ? null : Number(formData.sprint_id),
                 timespent: formData.timespent === '' ? null : formData.timespent
             };
+            console.log('Submitting payload:', payload);
             if (selectedTask) {
                 await updateTask(selectedTask.id, payload);
             } else {

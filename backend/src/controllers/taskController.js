@@ -106,8 +106,8 @@ const taskController = {
             console.log('New position will be:', position);
 
             const result = await pool.query(
-                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()) RETURNING *',
-                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent]
+                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING *',
+                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent, req.body.sprint_id || null]
             );
 
             console.log('✅ Task created successfully:', result.rows[0]);
