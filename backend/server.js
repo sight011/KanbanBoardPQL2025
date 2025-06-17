@@ -3,6 +3,7 @@ require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const cors = require('cors');
 const taskController = require('./src/controllers/taskController');
+const userRoutes = require('./src/routes/userRoutes');
 
 const app = express();
 const port = process.env.SERVER_PORT || 4000;
@@ -24,6 +25,9 @@ app.get('/', (req, res, next) => {
   console.log('hello pern!');
   res.status(200).send('hello pern');
 });
+
+// User routes
+app.use('/api/users', userRoutes);
 
 // Task routes
 app.get('/api/tasks', taskController.getAllTasks);
