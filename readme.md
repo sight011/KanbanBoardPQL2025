@@ -13,9 +13,27 @@
 
 
 
+
+
+
 ## Running
 
 1. designed for [node.js lts v20](https://nodejs.org/en) and above
+
+
+**On a Mac (for example)**
+
+cd ~/Documents/New_Projects_2025/
+
+
+git clone https://github.com/sight011/KanbanBoardPQL2025.git
+
+
+cd KanbanBoardPQL2025
+
+
+cat README.md
+
 
 ### Frontend
 
