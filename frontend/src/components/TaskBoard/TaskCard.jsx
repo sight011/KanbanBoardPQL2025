@@ -2,10 +2,12 @@ import React, { memo, useState, useEffect } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskCard.css';
+import { formatHours } from '../../utils/timeFormat';
 
 const TaskCard = memo(({ task, index }) => {
     const { openTaskModal } = useTaskContext();
     const [users, setUsers] = useState([]);
+    const [hoursPerDay, setHoursPerDay] = useState(8);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -19,6 +21,15 @@ const TaskCard = memo(({ task, index }) => {
             }
         };
         fetchUsers();
+    }, []);
+
+    useEffect(() => {
+        fetch('/api/settings/hoursperday')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.hours) setHoursPerDay(Number(data.hours));
+            })
+            .catch(() => {});
     }, []);
 
     const getAssigneeInitials = (assigneeId) => {
@@ -98,12 +109,12 @@ const TaskCard = memo(({ task, index }) => {
                             </span>
                             {task.effort && (
                                 <span className="task-effort">
-                                    EE: {task.effort}
+                                    EE: {task.effort ? formatHours(task.effort, hoursPerDay) : '–'}
                                 </span>
                             )}
                             {task.timespent && (
                                 <span className="task-timespent">
-                                    TS: {task.timespent ? task.timespent : '–'}
+                                    TS: {task.timespent ? formatHours(task.timespent, hoursPerDay) : '–'}
                                 </span>
                             )}
                             {task.assignee_id ? (

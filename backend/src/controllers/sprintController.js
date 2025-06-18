@@ -107,7 +107,6 @@ const sprintController = {
         try {
             const { id } = req.params;
             const { priority, assignee } = req.query;
-            
             // Get sprint details
             const sprintResult = await pool.query('SELECT * FROM sprints WHERE id = $1', [id]);
             if (sprintResult.rows.length === 0) {
@@ -115,41 +114,35 @@ const sprintController = {
             }
             const sprint = sprintResult.rows[0];
 
+            // Fetch hoursPerDay from settings (fallback to 8)
+            let hoursPerDay = 8;
+            try {
+                const settingsResult = await pool.query('SELECT hours FROM settings_hoursperday ORDER BY id DESC LIMIT 1');
+                if (settingsResult.rows.length > 0 && settingsResult.rows[0].hours) {
+                    hoursPerDay = parseFloat(settingsResult.rows[0].hours);
+                }
+            } catch (e) { /* fallback to 8 */ }
+
             // Build the query with filters
             let query = 'SELECT id, status, completed_at, effort FROM tasks WHERE sprint_id = $1';
             const queryParams = [id];
             let paramIndex = 2;
-
             if (priority) {
                 query += ` AND priority = $${paramIndex}`;
                 queryParams.push(priority);
                 paramIndex++;
             }
-
             if (assignee) {
                 query += ` AND assignee_id = $${paramIndex}`;
                 queryParams.push(assignee);
                 paramIndex++;
             }
-
             // Get filtered tasks in the sprint
             const tasksResult = await pool.query(query, queryParams);
             const tasks = tasksResult.rows;
 
-            // Helper to parse effort string to days
-            function parseEffort(effort) {
-                if (!effort) return 0;
-                const match = effort.match(/^(\d+(?:\.\d+)?)([hd])$/);
-                if (!match) return 0;
-                const value = parseFloat(match[1]);
-                const unit = match[2];
-                if (unit === 'd') return value;
-                if (unit === 'h') return value / 8; // 8 hours = 1 day
-                return 0;
-            }
-
-            // Calculate total points (sum of effort)
-            const totalPoints = tasks.reduce((sum, task) => sum + parseEffort(task.effort), 0);
+            // Calculate total points (sum of effort in hours)
+            const totalHours = tasks.reduce((sum, task) => sum + (typeof task.effort === 'number' ? task.effort : Number(task.effort) || 0), 0);
 
             // Generate dates between sprint start and end
             const startDate = new Date(sprint.start_date);
@@ -161,22 +154,21 @@ const sprintController = {
                 currentDate.setDate(currentDate.getDate() + 1);
             }
 
-            // Calculate burndown data
+            // Calculate burndown data (in hours)
             const burndownData = dates.map(date => {
                 // Sum effort for completed tasks up to this date
-                const completedEffort = tasks.reduce((sum, task) => {
+                const completedHours = tasks.reduce((sum, task) => {
                     if (!task.completed_at) return sum;
                     const completedDate = new Date(task.completed_at);
                     if (completedDate <= date) {
-                        return sum + parseEffort(task.effort);
+                        return sum + (typeof task.effort === 'number' ? task.effort : Number(task.effort) || 0);
                     }
                     return sum;
                 }, 0);
-
                 return {
                     date: date.toISOString().split('T')[0],
-                    remainingPoints: Math.max(0, totalPoints - completedEffort),
-                    idealBurndown: totalPoints * (1 - (date - startDate) / (endDate - startDate))
+                    remainingPoints: Math.max(0, totalHours - completedHours), // in hours
+                    idealBurndown: totalHours * (1 - (date - startDate) / (endDate - startDate))
                 };
             });
 
@@ -188,7 +180,8 @@ const sprintController = {
                     name: sprint.name,
                     start_date: sprint.start_date,
                     end_date: sprint.end_date,
-                    totalPoints
+                    totalPoints: totalHours, // in hours
+                    hoursPerDay
                 }
             });
         } catch (error) {

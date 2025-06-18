@@ -5,6 +5,7 @@ import './SprintView.css';
 import classNames from 'classnames';
 import TaskFilters from './TaskFilters';
 import TaskModal from './TaskModal';
+import { formatHours } from '../../utils/timeFormat';
 
 const formatDateInput = (date) => {
     if (!date) return '';
@@ -167,6 +168,7 @@ const SprintView = () => {
     const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
     const [sprintToReactivate, setSprintToReactivate] = useState(null);
     const [activeSprint, setActiveSprint] = useState(null);
+    const [hoursPerDay, setHoursPerDay] = useState(8);
 
     useEffect(() => {
         const observer = new MutationObserver(() => {
@@ -192,6 +194,15 @@ const SprintView = () => {
             }
         };
         fetchUsers();
+    }, []);
+
+    useEffect(() => {
+        fetch('/api/settings/hoursperday')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.hours) setHoursPerDay(Number(data.hours));
+            })
+            .catch(() => {});
     }, []);
 
     const fetchSprints = async () => {
@@ -438,24 +449,11 @@ const SprintView = () => {
     };
 
     const calculateTotalEffort = (tasks) => {
-        if (!tasks || tasks.length === 0) return '0d';
-        
-        // Filter tasks that have effort values
+        if (!tasks || tasks.length === 0) return formatHours(0, hoursPerDay);
         const tasksWithEffort = tasks.filter(task => task.effort !== null && task.effort !== undefined);
-        
-        if (tasksWithEffort.length === 0) return '0d';
-        
-        const totalHours = tasksWithEffort.reduce((sum, task) => {
-            return sum + (task.effort * 8); // Convert days to hours (assuming 8 hours per day)
-        }, 0);
-        
-        const days = Math.floor(totalHours / 8);
-        const hours = totalHours % 8;
-        
-        if (hours === 0) {
-            return `${days}d`;
-        }
-        return `${days}d ${hours}h`;
+        if (tasksWithEffort.length === 0) return formatHours(0, hoursPerDay);
+        const totalHours = tasksWithEffort.reduce((sum, task) => sum + Number(task.effort), 0);
+        return formatHours(totalHours, hoursPerDay);
     };
 
     return (
@@ -602,22 +600,7 @@ const SprintView = () => {
                                                                         </div>
                                                                         <div className="task-right">
                                                                             <span className="task-effort">
-                                                                                {task.effort
-                                                                                    ? (() => {
-                                                                                        if (typeof task.effort === 'string') {
-                                                                                            // If effort ends with 'h' or 'd', show as is
-                                                                                            if (/\d+(\.\d+)?[hd]$/.test(task.effort)) {
-                                                                                                return `EE: ${task.effort}`;
-                                                                                            } else {
-                                                                                                return `EE: ${task.effort}d`;
-                                                                                            }
-                                                                                        } else if (typeof task.effort === 'number') {
-                                                                                            return `EE: ${task.effort}d`;
-                                                                                        } else {
-                                                                                            return 'EE: –';
-                                                                                        }
-                                                                                    })()
-                                                                                    : '–'}
+                                                                                {task.effort ? `EE: ${formatHours(task.effort, hoursPerDay)}` : '–'}
                                                                             </span>
                                                                             <span className={`priority-badge priority-${task.priority}`}>
                                                                                 {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
@@ -672,22 +655,7 @@ const SprintView = () => {
                                                                 </div>
                                                                 <div className="task-right">
                                                                     <span className="task-effort">
-                                                                        {task.effort
-                                                                            ? (() => {
-                                                                                if (typeof task.effort === 'string') {
-                                                                                    // If effort ends with 'h' or 'd', show as is
-                                                                                    if (/\d+(\.\d+)?[hd]$/.test(task.effort)) {
-                                                                                        return `EE: ${task.effort}`;
-                                                                                    } else {
-                                                                                        return `EE: ${task.effort}d`;
-                                                                                    }
-                                                                                } else if (typeof task.effort === 'number') {
-                                                                                    return `EE: ${task.effort}d`;
-                                                                                } else {
-                                                                                    return 'EE: –';
-                                                                                }
-                                                                            })()
-                                                                            : '–'}
+                                                                        {task.effort ? `EE: ${formatHours(task.effort, hoursPerDay)}` : '–'}
                                                                     </span>
                                                                     <span className={`priority-badge priority-${task.priority}`}>
                                                                         {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}

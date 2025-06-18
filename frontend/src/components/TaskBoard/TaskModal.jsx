@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskModal.css';
+import { formatHours } from '../../utils/timeFormat';
 
 const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     const {
@@ -29,6 +30,7 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     const [sprints, setSprints] = useState([]);
     const [sprintsLoading, setSprintsLoading] = useState(false);
     const [sprintsError, setSprintsError] = useState(null);
+    const [hoursPerDay, setHoursPerDay] = useState(8);
 
     // Fetch users from the database
     useEffect(() => {
@@ -139,29 +141,74 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
         }
     }, [isModalOpen, selectedTask, sprints, viewMode, activeSprintId]);
 
-    const validateTimeInput = (value) => {
-        if (!value) return true;
-        const regex = /^\d+(\.\d+)?[hd]$/;
-        if (!regex.test(value)) return false;
-        
-        const number = parseFloat(value);
-        const unit = value.slice(-1);
-        
-        if (unit === 'h' && number < 0.5) return false;
-        if (unit === 'd' && number < 1) return false;
-        
-        return true;
-    };
+    useEffect(() => {
+        // Fetch hours per day from backend settings
+        fetch('/api/settings/hoursperday')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.hours) setHoursPerDay(Number(data.hours));
+            })
+            .catch(() => {});
+    }, []);
+
+    // Utility to parse and validate time input
+    function parseEffortInput(value, hoursPerDay = 8) {
+        if (!value) return null;
+        const trimmed = value.trim().toLowerCase();
+        if (/^\d+(\.\d+)?$/.test(trimmed)) {
+            // Pure hours
+            const val = parseFloat(trimmed);
+            if (!isHalfHourStep(val)) throw new Error('Value must be in 0.5 hour steps');
+            return val;
+        }
+        if (/^\d+(\.\d+)?h$/.test(trimmed)) {
+            // e.g. 4h, 2.5h
+            const val = parseFloat(trimmed.replace('h', ''));
+            if (!isHalfHourStep(val)) throw new Error('Value must be in 0.5 hour steps');
+            return val;
+        }
+        if (/^0\.5d$/.test(trimmed)) {
+            // Only allow 0.5d as a decimal day
+            return 0.5 * hoursPerDay;
+        }
+        if (/^\d+d$/.test(trimmed)) {
+            // e.g. 1d, 2d
+            const days = parseInt(trimmed.replace('d', ''), 10);
+            return days * hoursPerDay;
+        }
+        if (/^\d+d \d+(\.\d+)?h$/.test(trimmed)) {
+            // e.g. 1d 4h
+            const [dPart, hPart] = trimmed.split(' ');
+            const days = parseInt(dPart.replace('d', ''), 10);
+            const hours = parseFloat(hPart.replace('h', ''));
+            const total = days * hoursPerDay + hours;
+            if (!isHalfHourStep(total)) throw new Error('Value must be in 0.5 hour steps');
+            return total;
+        }
+        throw new Error('Invalid format. Use numbers with h (hours) or d (days).');
+    }
+    function isHalfHourStep(val) {
+        return typeof val === 'number' && Math.abs(val * 2 - Math.round(val * 2)) < 1e-8;
+    }
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-
         if (name === 'effort') {
-            setEffortError(validateTimeInput(value) ? '' : 'Invalid effort format. Use numbers with h (hours) or d (days). Minimum 0.5h or 1d.');
+            try {
+                parseEffortInput(value, hoursPerDay);
+                setEffortError('');
+            } catch (err) {
+                setEffortError(err.message);
+            }
         }
         if (name === 'timespent') {
-            setTimeSpentError(validateTimeInput(value) ? '' : 'Invalid time spent format. Use numbers with h (hours) or d (days). Minimum 0.5h or 1d.');
+            try {
+                parseEffortInput(value, hoursPerDay);
+                setTimeSpentError('');
+            } catch (err) {
+                setTimeSpentError(err.message);
+            }
         }
     };
 
@@ -196,6 +243,20 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
             }
         }
     };
+
+    // Add a helper/info icon component
+    function InfoIcon({ message }) {
+        return (
+            <span style={{ marginLeft: 6, cursor: 'pointer' }} title={message}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </span>
+        );
+    }
+
+    function formatPreviewNumber(val) {
+        if (typeof val !== 'number') return val;
+        return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
+    }
 
     if (!isModalOpen) return null;
 
@@ -280,28 +341,40 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
                     </div>
                     <div className="form-row">
                         <div className="form-group">
-                            <label htmlFor="effort">Effort</label>
+                            <label htmlFor="effort">
+                                Effort
+                                <InfoIcon message="Allowed: 4, 2.5, 1d, 0.5d, 1d 4h. All values are saved in hours. Display adapts to your hours/day setting." />
+                            </label>
                             <input
                                 type="text"
                                 id="effort"
                                 name="effort"
                                 value={formData.effort}
                                 onChange={handleInputChange}
-                                placeholder="e.g., 2h, 1d"
+                                placeholder="e.g., 2h, 1d, 1d 4h, 4 (hours)"
                             />
                             {effortError && <span className="error-message">{effortError}</span>}
+                            {formData.effort && !effortError && (
+                                <span className="live-preview">Will display as: <b>{formatPreviewNumber(parseEffortInput(formData.effort, hoursPerDay))}h</b></span>
+                            )}
                         </div>
                         <div className="form-group">
-                            <label htmlFor="timespent">Time Spent</label>
+                            <label htmlFor="timespent">
+                                Time Spent
+                                <InfoIcon message="Allowed: 4, 2.5, 1d, 0.5d, 1d 4h. All values are saved in hours. Display adapts to your hours/day setting." />
+                            </label>
                             <input
                                 type="text"
                                 id="timespent"
                                 name="timespent"
                                 value={formData.timespent}
                                 onChange={handleInputChange}
-                                placeholder="e.g., 2h, 1d"
+                                placeholder="e.g., 2h, 1d, 1d 4h, 4 (hours)"
                             />
                             {timeSpentError && <span className="error-message">{timeSpentError}</span>}
+                            {formData.timespent && !timeSpentError && (
+                                <span className="live-preview">Will display as: <b>{formatPreviewNumber(parseEffortInput(formData.timespent, hoursPerDay))}h</b></span>
+                            )}
                         </div>
                     </div>
                     <div className="form-group">

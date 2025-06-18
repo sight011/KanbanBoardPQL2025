@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import './ListView.css';
+import { formatHours } from '../../utils/timeFormat';
 
 const ListView = ({ tasks, onEdit, onDelete }) => {
     const [users, setUsers] = useState([]);
+    const [hoursPerDay, setHoursPerDay] = useState(8);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -17,6 +19,15 @@ const ListView = ({ tasks, onEdit, onDelete }) => {
             }
         };
         fetchUsers();
+    }, []);
+
+    useEffect(() => {
+        fetch('/api/settings/hoursperday')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.hours) setHoursPerDay(Number(data.hours));
+            })
+            .catch(() => {});
     }, []);
 
     const getAssigneeInitials = (assigneeId) => {
@@ -83,8 +94,8 @@ const ListView = ({ tasks, onEdit, onDelete }) => {
                                     <div className="assignee-bubble unassigned">UA</div>
                                 )}
                             </td>
-                            <td>{task.effort ? `${task.effort}d` : '–'}</td>
-                            <td>{task.timespent ? `${task.timespent}d` : '–'}</td>
+                            <td>{task.effort ? formatHours(task.effort, hoursPerDay) : '–'}</td>
+                            <td>{task.timespent ? formatHours(task.timespent, hoursPerDay) : '–'}</td>
                             <td>
                                 <div className="task-actions">
                                     <button onClick={() => onEdit(task)} className="edit-button">

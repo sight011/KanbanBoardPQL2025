@@ -1,5 +1,6 @@
 const pool = require('../db');
 const { validationResult } = require('express-validator');
+const { parseHours } = require('../utils');
 
 // Test database connection on startup
 pool.query('SELECT NOW()', (err, res) => {
@@ -74,13 +75,35 @@ const taskController = {
         console.log('User:', req.user);
         
         try {
-            const { title, description, status, priority, effort, timespent } = req.body;
-            
+            const { title, description, status, priority } = req.body;
+            let { effort, timespent } = req.body;
+
             if (!req.user || !req.user.id) {
                 console.log('❌ No authenticated user found');
                 return res.status(401).json({ error: 'User not authenticated' });
             }
             
+            // Fetch hoursPerDay from settings (fallback to 8)
+            let hoursPerDay = 8;
+            try {
+                const settingsResult = await pool.query('SELECT hours FROM settings_hoursperday ORDER BY id DESC LIMIT 1');
+                if (settingsResult.rows.length > 0 && settingsResult.rows[0].hours) {
+                    hoursPerDay = parseFloat(settingsResult.rows[0].hours);
+                }
+            } catch (e) { console.warn('Could not fetch hoursPerDay from settings, using default 8'); }
+
+            // Parse and validate effort and timespent
+            try {
+                effort = parseHours(effort, hoursPerDay);
+            } catch (err) {
+                return res.status(400).json({ error: 'Invalid effort: ' + err.message });
+            }
+            try {
+                timespent = parseHours(timespent, hoursPerDay);
+            } catch (err) {
+                return res.status(400).json({ error: 'Invalid time spent: ' + err.message });
+            }
+
             const reporter_id = req.user.id;
             console.log('Creating task for user ID:', reporter_id);
 
@@ -130,7 +153,8 @@ const taskController = {
         
         try {
             const { id } = req.params;
-            const { title, description, status, priority, effort, timespent, assignee_id, sprint_id, sprint_order, completed_at } = req.body;
+            const { title, description, status, priority, assignee_id, sprint_id, sprint_order, completed_at } = req.body;
+            let { effort, timespent } = req.body;
 
             // Validate required fields
             if (!title || !status || !priority) {
@@ -138,6 +162,27 @@ const taskController = {
                     error: 'Missing required fields',
                     message: 'Title, status, and priority are required'
                 });
+            }
+
+            // Fetch hoursPerDay from settings (fallback to 8)
+            let hoursPerDay = 8;
+            try {
+                const settingsResult = await pool.query('SELECT hours FROM settings_hoursperday ORDER BY id DESC LIMIT 1');
+                if (settingsResult.rows.length > 0 && settingsResult.rows[0].hours) {
+                    hoursPerDay = parseFloat(settingsResult.rows[0].hours);
+                }
+            } catch (e) { console.warn('Could not fetch hoursPerDay from settings, using default 8'); }
+
+            // Parse and validate effort and timespent
+            try {
+                effort = parseHours(effort, hoursPerDay);
+            } catch (err) {
+                return res.status(400).json({ error: 'Invalid effort: ' + err.message });
+            }
+            try {
+                timespent = parseHours(timespent, hoursPerDay);
+            } catch (err) {
+                return res.status(400).json({ error: 'Invalid time spent: ' + err.message });
             }
 
             const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, completed_at = $10, updated_at = NOW() WHERE id = $11 RETURNING *';
