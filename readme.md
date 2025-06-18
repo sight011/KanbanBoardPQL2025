@@ -21,6 +21,8 @@
 1. designed for [node.js lts v20](https://nodejs.org/en) and above
 
 
+**On a Mac (for example)**
+
 cd ~/Documents/New_Projects_2025/
 
 
