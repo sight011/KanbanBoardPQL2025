@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const bcrypt = require('bcrypt');
 
 // POST /api/login
 router.post('/login', async (req, res) => {
@@ -17,8 +18,9 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
         const user = result.rows[0];
-        // For now, compare plain text password
-        if (user.password_hash !== password) {
+        // Use bcrypt to compare password
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
             return res.status(401).json({ error: 'Invalid email or password.' });
         }
         // Store user info in session

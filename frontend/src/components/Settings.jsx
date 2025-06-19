@@ -13,7 +13,7 @@ const Settings = ({ onLogout }) => {
     const [nameForm, setNameForm] = useState({ firstName: '', lastName: '' });
     const [updateStatus, setUpdateStatus] = useState('');
     const fileInputRef = useRef(null);
-    const [addUserForm, setAddUserForm] = useState({ firstName: '', lastName: '', email: '' });
+    const [addUserForm, setAddUserForm] = useState({ firstName: '', lastName: '', email: '', password: '' });
     const [addUserError, setAddUserError] = useState('');
     const [addUserLoading, setAddUserLoading] = useState(false);
 
@@ -162,13 +162,13 @@ const Settings = ({ onLogout }) => {
         setAddUserError('');
         setAddUserLoading(true);
         try {
-            if (!addUserForm.firstName || !addUserForm.lastName || !addUserForm.email) {
+            if (!addUserForm.firstName || !addUserForm.lastName || !addUserForm.email || !addUserForm.password) {
                 setAddUserError('All fields are required.');
                 setAddUserLoading(false);
                 return;
             }
             await api.post('/api/users', addUserForm);
-            setAddUserForm({ firstName: '', lastName: '', email: '' });
+            setAddUserForm({ firstName: '', lastName: '', email: '', password: '' });
             fetchUsers();
         } catch (err) {
             setAddUserError(err.response?.data?.error || 'Failed to add user');
@@ -303,6 +303,17 @@ const Settings = ({ onLogout }) => {
                                         type="email"
                                         name="email"
                                         value={addUserForm.email}
+                                        onChange={handleAddUserChange}
+                                        required
+                                        className="profile-input"
+                                    />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label>Password</label>
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={addUserForm.password}
                                         onChange={handleAddUserChange}
                                         required
                                         className="profile-input"

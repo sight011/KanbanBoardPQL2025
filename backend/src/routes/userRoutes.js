@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { requireLogin } = require('../middleware/auth');
+const bcrypt = require('bcrypt');
+const SALT_ROUNDS = 10;
 
 // Get all users
 router.get('/', requireLogin, async (req, res) => {
@@ -97,7 +99,7 @@ router.patch('/:userId/role', requireLogin, async (req, res) => {
 // Add user
 router.post('/', async (req, res) => {
     try {
-        const { firstName, lastName, email } = req.body;
+        const { firstName, lastName, email, password } = req.body;
         if (!firstName || !lastName || !email) {
             return res.status(400).json({ error: 'First name, last name, and email are required.' });
         }
@@ -108,8 +110,9 @@ router.post('/', async (req, res) => {
         }
         // Generate username from first and last name (lowercase, no spaces)
         const username = `${firstName}${lastName}`.replace(/\s+/g, '').toLowerCase();
-        // Set a standard password hash (for now, not secure!)
-        const password_hash = 'longpassword1';
+        // Hash the password (use provided or default)
+        const plainPassword = password || 'longpassword1';
+        const password_hash = await bcrypt.hash(plainPassword, SALT_ROUNDS);
         // Set default role
         const role = 'User';
         const result = await db.query(
