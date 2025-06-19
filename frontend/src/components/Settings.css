@@ -49,7 +49,7 @@
 
 .settings-nav {
     width: 220px;
-    height: 750px;;
+    height: 640px;;
     background: rgba(0,0,0,0.10);
     padding: 32px 0 32px 0;
     display: flex;
@@ -139,7 +139,7 @@
 
 .logout-nav-item {
     margin-top: auto !important;
-    color: #e53e3e !important;
+    color: #ffffff !important;
 }
 
 .logout-nav-item:hover,
