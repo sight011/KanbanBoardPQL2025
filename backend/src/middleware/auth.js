@@ -26,4 +26,12 @@ const auth = (req, res, next) => {
     }
 };
 
-module.exports = auth; 
+// Authentication middleware to require login
+function requireLogin(req, res, next) {
+    if (!req.session || !req.session.userId) {
+        return res.status(401).json({ error: 'Unauthorized: Please log in.' });
+    }
+    next();
+}
+
+module.exports = { auth, requireLogin }; 

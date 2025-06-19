@@ -60,12 +60,6 @@ const TaskCard = memo(({ task, index }) => {
         return colors[(assigneeId - 1) % colors.length];
     };
 
-    const MAX_TITLE_LENGTH = 20;
-    const getDisplayTitle = (title) =>
-        title.length > MAX_TITLE_LENGTH
-            ? title.slice(0, MAX_TITLE_LENGTH) + '…'
-            : title;
-
     return (
         <Draggable draggableId={task.id.toString()} index={index}>
             {(provided, snapshot) => {
@@ -93,7 +87,7 @@ const TaskCard = memo(({ task, index }) => {
                                     <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                             </span>
-                            <h4 className="task-title" title={task.title}>{getDisplayTitle(task.title)}</h4>
+                            <h4 className="task-title" title={task.title}>{task.title}</h4>
                         </div>
                         <p className="task-description" title={task.description}>
                             {task.description}

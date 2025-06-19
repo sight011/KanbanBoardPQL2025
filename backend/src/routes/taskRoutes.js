@@ -1,27 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
-const auth = require('../middleware/auth');
+const { requireLogin } = require('../middleware/auth');
 
 // Get all tasks
-router.get('/', auth, taskController.getAllTasks);
+router.get('/', requireLogin, taskController.getAllTasks);
 
 // Get task by ID
-router.get('/:id', auth, taskController.getTaskById);
+router.get('/:id', requireLogin, taskController.getTaskById);
 
 // Create new task
-router.post('/', auth, taskController.createTask);
+router.post('/', requireLogin, taskController.createTask);
 
 // Update task
-router.put('/:id', auth, taskController.updateTask);
+router.put('/:id', requireLogin, taskController.updateTask);
 
 // Delete task
-router.delete('/:id', auth, taskController.deleteTask);
+router.delete('/:id', requireLogin, taskController.deleteTask);
 
 // Update task position
-router.patch('/:id/position', auth, taskController.updateTaskPosition);
+router.patch('/:id/position', requireLogin, taskController.updateTaskPosition);
 
 // Get tasks by status
-router.get('/status/:status', auth, taskController.getTasksByStatus);
+router.get('/status/:status', requireLogin, taskController.getTasksByStatus);
 
 module.exports = router; 

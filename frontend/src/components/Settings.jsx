@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import './Settings.css';
 import api from '../api/axios';
 
-const Settings = () => {
-    const [activeTab, setActiveTab] = useState('general');
+const Settings = ({ onLogout }) => {
+    const [activeTab, setActiveTab] = useState('profile');
     const [imageError, setImageError] = useState('');
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -13,6 +13,9 @@ const Settings = () => {
     const [nameForm, setNameForm] = useState({ firstName: '', lastName: '' });
     const [updateStatus, setUpdateStatus] = useState('');
     const fileInputRef = useRef(null);
+    const [addUserForm, setAddUserForm] = useState({ firstName: '', lastName: '', email: '' });
+    const [addUserError, setAddUserError] = useState('');
+    const [addUserLoading, setAddUserLoading] = useState(false);
 
     useEffect(() => {
         if (activeTab === 'users') {
@@ -149,18 +152,43 @@ const Settings = () => {
         </svg>
     );
 
+    const handleAddUserChange = (e) => {
+        const { name, value } = e.target;
+        setAddUserForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleAddUserSubmit = async (e) => {
+        e.preventDefault();
+        setAddUserError('');
+        setAddUserLoading(true);
+        try {
+            if (!addUserForm.firstName || !addUserForm.lastName || !addUserForm.email) {
+                setAddUserError('All fields are required.');
+                setAddUserLoading(false);
+                return;
+            }
+            await api.post('/api/users', addUserForm);
+            setAddUserForm({ firstName: '', lastName: '', email: '' });
+            fetchUsers();
+        } catch (err) {
+            setAddUserError(err.response?.data?.error || 'Failed to add user');
+        } finally {
+            setAddUserLoading(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await api.post('/api/logout');
+            if (onLogout) onLogout();
+            else window.location.reload();
+        } catch (err) {
+            alert('Failed to log out.');
+        }
+    };
+
     const renderContent = () => {
         switch (activeTab) {
-            case 'general':
-                return (
-                    <div className="settings-section">
-                        <h2 className="settings-headline">General Settings</h2>
-                        <div className="settings-section-content">
-                            {/* Add your general settings content here */}
-                            <p>Welcome to FlexFlex!</p>
-                        </div>
-                    </div>
-                );
             case 'profile':
                 return (
                     <div className="settings-section">
@@ -244,14 +272,54 @@ const Settings = () => {
             case 'users':
                 return (
                     <div className="settings-section">
-                        <h2 className="settings-headline">User Management</h2>
-                        <div className="settings-section-content">
+                        <h2 className="settings-headline" style={{ marginBottom: 24 }}>User Management</h2>
+                        <div className="user-management-card" style={{ maxWidth: 800, margin: '0 auto', background: 'rgba(0,0,0,0.04)', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: 32 }}>
+                            <form onSubmit={handleAddUserSubmit} className="add-user-form" style={{ display: 'flex', gap: 24, marginBottom: 32, alignItems: 'flex-end', padding: 16, background: 'rgba(255,255,255,0.08)', borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                                <div style={{ flex: 1 }}>
+                                    <label>First Name</label>
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        value={addUserForm.firstName}
+                                        onChange={handleAddUserChange}
+                                        required
+                                        className="profile-input"
+                                    />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <label>Last Name</label>
+                                    <input
+                                        type="text"
+                                        name="lastName"
+                                        value={addUserForm.lastName}
+                                        onChange={handleAddUserChange}
+                                        required
+                                        className="profile-input"
+                                    />
+                                </div>
+                                <div style={{ flex: 2 }}>
+                                    <label>Email</label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={addUserForm.email}
+                                        onChange={handleAddUserChange}
+                                        required
+                                        className="profile-input"
+                                    />
+                                </div>
+                                <button type="submit" disabled={addUserLoading} className="update-button" style={{ height: 42, minWidth: 120, marginLeft: 8 }}>
+                                    {addUserLoading ? 'Adding...' : 'Add User'}
+                                </button>
+                            </form>
+                            {addUserError && <div className="error-message" style={{ marginBottom: 16 }}>{addUserError}</div>}
+                            <div style={{ borderTop: '1px solid var(--border-color)', margin: '24px 0' }} />
                             {loading ? (
                                 <div className="loading-spinner">Loading users...</div>
                             ) : error ? (
                                 <div className="error-message">{error}</div>
                             ) : (
-                                <div className="users-list">
+                                <div className="users-list" style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
                                     <div className="users-list-header">
                                         <span>Name</span>
                                         <span>Email</span>
@@ -319,7 +387,7 @@ const Settings = () => {
                         <h2 className="settings-headline">Log Out</h2>
                         <div className="settings-section-content">
                             <p>Are you sure you want to log out?</p>
-                            <button className="logout-button" onClick={() => {/* Add logout logic here */}}>
+                            <button className="logout-button" onClick={handleLogout}>
                                 Confirm Log Out
                             </button>
                         </div>
@@ -334,12 +402,6 @@ const Settings = () => {
         <div className="settings-layout">
             <nav className="settings-nav">
                 <ul>
-                    <li 
-                        className={activeTab === 'general' ? 'active' : ''} 
-                        onClick={() => setActiveTab('general')}
-                    >
-                        General
-                    </li>
                     <li 
                         className={activeTab === 'profile' ? 'active' : ''} 
                         onClick={() => setActiveTab('profile')}
@@ -358,13 +420,10 @@ const Settings = () => {
                     >
                         Time Range
                     </li>
-                    <li 
-                        className={`${activeTab === 'logout' ? 'active' : ''} logout-nav-item`}
-                        onClick={() => setActiveTab('logout')}
-                    >
-                        Log Out
-                    </li>
                 </ul>
+                <button className="logout-nav-item" onClick={handleLogout} style={{ marginTop: 32, background: '#e53e3e', color: 'white', border: 'none', borderRadius: 6, padding: '12px 0', fontWeight: 600, fontSize: '1.1rem', cursor: 'pointer' }}>
+                    Log Out
+                </button>
             </nav>
             <section className="settings-content">
                 {renderContent()}

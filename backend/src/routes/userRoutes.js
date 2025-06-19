@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { requireLogin } = require('../middleware/auth');
 
 // Get all users
-router.get('/', async (req, res) => {
+router.get('/', requireLogin, async (req, res) => {
     try {
         const result = await db.query('SELECT id, username, first_name as "firstName", last_name as "lastName", email, role, created_at FROM users');
         res.json({ users: result.rows });
@@ -14,7 +15,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get current user profile
-router.get('/profile', async (req, res) => {
+router.get('/profile', requireLogin, async (req, res) => {
     try {
         // TODO: Get actual user ID from session/token
         const userId = 1; // Temporary: using a default user ID
@@ -35,7 +36,7 @@ router.get('/profile', async (req, res) => {
 });
 
 // Update user names
-router.patch('/profile/names', async (req, res) => {
+router.patch('/profile/names', requireLogin, async (req, res) => {
     try {
         const { firstName, lastName } = req.body;
         // TODO: Get actual user ID from session/token
@@ -65,7 +66,7 @@ router.patch('/profile/names', async (req, res) => {
 });
 
 // Update user role
-router.patch('/:userId/role', async (req, res) => {
+router.patch('/:userId/role', requireLogin, async (req, res) => {
     const { userId } = req.params;
     const { role } = req.body;
 
@@ -90,6 +91,35 @@ router.patch('/:userId/role', async (req, res) => {
     } catch (error) {
         console.error('Error updating user role:', error);
         res.status(500).json({ error: 'Failed to update user role' });
+    }
+});
+
+// Add user
+router.post('/', async (req, res) => {
+    try {
+        const { firstName, lastName, email } = req.body;
+        if (!firstName || !lastName || !email) {
+            return res.status(400).json({ error: 'First name, last name, and email are required.' });
+        }
+        // Check if email already exists
+        const exists = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+        if (exists.rows.length > 0) {
+            return res.status(400).json({ error: 'A user with this email already exists.' });
+        }
+        // Generate username from first and last name (lowercase, no spaces)
+        const username = `${firstName}${lastName}`.replace(/\s+/g, '').toLowerCase();
+        // Set a standard password hash (for now, not secure!)
+        const password_hash = 'longpassword1';
+        // Set default role
+        const role = 'User';
+        const result = await db.query(
+            'INSERT INTO users (first_name, last_name, email, username, password_hash, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, username, first_name as "firstName", last_name as "lastName", email, role, created_at',
+            [firstName, lastName, email, username, password_hash, role]
+        );
+        res.status(201).json({ user: result.rows[0] });
+    } catch (error) {
+        console.error('Error creating user:', error);
+        res.status(500).json({ error: 'Failed to create user' });
     }
 });
 

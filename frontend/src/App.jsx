@@ -11,8 +11,10 @@ import Settings from './components/Settings';
 import api from './api/axios'; // Import axios for API calls
 import './App.css';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import Login from './components/Login';
 
 const App = () => {
+    const [user, setUser] = useState(null);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [viewMode, setViewMode] = useState('sprint');
     const navigate = useNavigate();
@@ -51,6 +53,10 @@ Based on the tasks above, please answer the user's question following the respon
             setBotResponse('Sorry, I could not process your request. Please try again later.');
         }
     };
+
+    if (!user) {
+        return <Login onLogin={setUser} />;
+    }
 
     return (
         <ThemeProvider>

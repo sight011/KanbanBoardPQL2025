@@ -2,8 +2,10 @@ require('dotenv').config(); // Load environment variables from .env file
 
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
 const taskController = require('./src/controllers/taskController');
 const userRoutes = require('./src/routes/userRoutes');
+const authRoutes = require('./src/routes/authRoutes');
 
 const app = express();
 const port = process.env.SERVER_PORT || 4000;
@@ -20,6 +22,19 @@ console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '***hidden***' : 'NOT SET'
 app.use(cors()); // Enable CORS for frontend requests
 app.use(express.json()); // Parse JSON bodies
 
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev_secret_key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true if using HTTPS in production
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 // 1 day
+  }
+  // For production, use a persistent session store (e.g., connect-pg-simple)
+}));
+
 // Test route
 app.get('/', (req, res, next) => {
   console.log('hello pern!');
@@ -28,6 +43,8 @@ app.get('/', (req, res, next) => {
 
 // User routes
 app.use('/api/users', userRoutes);
+// Auth routes
+app.use('/api', authRoutes);
 
 // Task routes
 app.get('/api/tasks', taskController.getAllTasks);

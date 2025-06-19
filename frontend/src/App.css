@@ -1,5 +1,5 @@
 #root {
-  max-width: 1420px;
+  max-width: 1380px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
@@ -55,7 +55,10 @@
 }
 
 .app-header {
-    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+    background-size: 200% 100%;
+    background-position-x: 0%;
+    animation: gradient-move 8s ease-in-out infinite alternate;
     color: white;
     padding: 12px 20px;
     display: flex;
@@ -67,10 +70,22 @@
     margin: 0 auto;
 }
 
+@keyframes gradient-move {
+    0% {
+        background-position-x: 0%;
+    }
+    50% {
+        background-position-x: 85.2223%;
+    }
+    100% {
+        background-position-x: 100%;
+    }
+}
+
 .dark-mode .app-header {
     background: linear-gradient(45deg, var(--primary), var(--secondary));
     box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
-    width: 1420px;
+    width: 1380px;
     margin: 0 auto;
 }
 
@@ -121,7 +136,7 @@
 
 .app-main {
     display: flex;
-    width: 100%;
+    width: 103%;
     min-height: 100vh;
     background-color: var(--bg-primary);
     color: var(--text-primary);

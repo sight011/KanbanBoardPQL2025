@@ -341,9 +341,14 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
                     </div>
                     <div className="form-row">
                         <div className="form-group">
-                            <label htmlFor="effort">
-                                Effort
+                            <label htmlFor="effort" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                Effort (in hours)
                                 <InfoIcon message="Allowed: 4, 2.5, 1d, 0.5d, 1d 4h. All values are saved in hours. Display adapts to your hours/day setting." />
+                                {formData.effort && !effortError && (
+                                    <span style={{ fontStyle: 'italic', color: '#aaa', fontSize: '0.95em' }}>
+                                        {formatPreviewNumber(parseEffortInput(formData.effort, hoursPerDay))}h
+                                    </span>
+                                )}
                             </label>
                             <input
                                 type="text"
@@ -354,14 +359,16 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
                                 placeholder="e.g., 2h, 1d, 1d 4h, 4 (hours)"
                             />
                             {effortError && <span className="error-message">{effortError}</span>}
-                            {formData.effort && !effortError && (
-                                <span className="live-preview">Will display as: <b>{formatPreviewNumber(parseEffortInput(formData.effort, hoursPerDay))}h</b></span>
-                            )}
                         </div>
                         <div className="form-group">
-                            <label htmlFor="timespent">
-                                Time Spent
+                            <label htmlFor="timespent" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                Time Spent (in hours)
                                 <InfoIcon message="Allowed: 4, 2.5, 1d, 0.5d, 1d 4h. All values are saved in hours. Display adapts to your hours/day setting." />
+                                {formData.timespent && !timeSpentError && (
+                                    <span style={{ fontStyle: 'italic', color: '#aaa', fontSize: '0.95em' }}>
+                                        {formatPreviewNumber(parseEffortInput(formData.timespent, hoursPerDay))}h
+                                    </span>
+                                )}
                             </label>
                             <input
                                 type="text"
@@ -372,9 +379,6 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
                                 placeholder="e.g., 2h, 1d, 1d 4h, 4 (hours)"
                             />
                             {timeSpentError && <span className="error-message">{timeSpentError}</span>}
-                            {formData.timespent && !timeSpentError && (
-                                <span className="live-preview">Will display as: <b>{formatPreviewNumber(parseEffortInput(formData.timespent, hoursPerDay))}h</b></span>
-                            )}
                         </div>
                     </div>
                     <div className="form-group">

@@ -92,9 +92,7 @@ body.dragging .task-card:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
+    display: block;
 }
 
 .dark-mode .task-title {
