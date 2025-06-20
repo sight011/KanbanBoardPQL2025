@@ -6,6 +6,7 @@ const chatRoutes = require('./routes/chatRoutes');
 const sprintRoutes = require('./routes/sprintRoutes');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 const session = require('express-session');
 
 // Load environment variables
@@ -57,6 +58,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/settings', settingsRoutes);
 app.use('/api', authRoutes);
 
 // Add /api/users endpoint
