@@ -2,7 +2,7 @@
 ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'User';
 
 -- Create type check constraint
-ALTER TABLE users ADD CONSTRAINT valid_role CHECK (role IN ('Admin', 'Project/Product', 'User'));
+ALTER TABLE users ADD CONSTRAINT valid_role CHECK (role IN ('Admin', 'Project/Product', 'User', 'Checker'));
 
 -- Update existing users with default roles
 UPDATE users SET role = 'Admin' WHERE id = 1;  -- Set first user as Admin

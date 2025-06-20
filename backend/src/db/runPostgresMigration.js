@@ -7,7 +7,7 @@ async function runMigration() {
         console.log('Running PostgreSQL migration...');
         
         // Read the migration file
-        const migrationPath = path.join(__dirname, 'migrations', 'add_deleted_column_postgres.sql');
+        const migrationPath = path.join(__dirname, '../../db/migrations', 'rebuild_roles.sql');
         const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
         
         // Execute the migration

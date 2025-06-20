@@ -58,9 +58,8 @@ const textPlugin = {
 // Register the custom plugin
 ChartJS.register(textPlugin);
 
-const TaskBoard = () => {
+const TaskBoard = ({ viewMode, setViewMode }) => {
     const { tasks, updateTaskPosition, loading, error, updateTaskStatus, openTaskModal, isModalOpen, updateTask } = useTaskContext();
-    const [viewMode, setViewMode] = useState('sprint'); // 'sprint', 'kanban', 'list', or 'diagram'
     const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark-mode'));
     const [filters, setFilters] = useState({
         text: '',

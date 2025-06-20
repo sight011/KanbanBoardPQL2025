@@ -17,7 +17,7 @@ const App = () => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [viewMode, setViewMode] = useState('sprint');
+    const [viewMode, setViewMode] = useState('kanban');
     const navigate = useNavigate();
 
     // Check session on app startup
@@ -29,6 +29,8 @@ const App = () => {
                     // Fetch user details if session is valid
                     const userResponse = await api.get('/api/users/profile', { withCredentials: true });
                     setUser(userResponse.data.user);
+                    // Reset view mode to kanban when user logs in
+                    setViewMode('kanban');
                 }
             } catch (error) {
                 console.log('No valid session found');
@@ -40,8 +42,15 @@ const App = () => {
         checkSession();
     }, []);
 
+    // Reset view mode to kanban when user logs in
+    useEffect(() => {
+        if (user) {
+            setViewMode('kanban');
+        }
+    }, [user]);
+
     const handleLogoClick = () => {
-        setViewMode('sprint');
+        setViewMode('kanban');
         navigate('/');
     };
 

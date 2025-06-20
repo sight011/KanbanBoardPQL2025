@@ -124,6 +124,8 @@ const Settings = ({ onLogout }) => {
                 return '#2563EB'; // blue
             case 'User':
                 return '#059669'; // green
+            case 'Checker':
+                return '#ca8a04'; // yellow
             default:
                 return 'inherit';
         }
@@ -368,15 +370,16 @@ const Settings = ({ onLogout }) => {
                                             </div>
                                             <div className="user-role">
                                                 <select
-                                                    value={user.role || 'User'}
+                                                    className="role-select"
+                                                    value={user.role || 'User'} 
                                                     onChange={(e) => handleRoleChange(user.id, e.target.value)}
                                                     disabled={updatingUserId === user.id}
                                                     style={{ color: getRoleColor(user.role || 'User') }}
-                                                    className="role-select"
                                                 >
                                                     <option value="Admin">Admin</option>
                                                     <option value="Project/Product">Project/Product</option>
                                                     <option value="User">User</option>
+                                                    <option value="Checker">Checker</option>
                                                 </select>
                                             </div>
                                             <div className="user-created">

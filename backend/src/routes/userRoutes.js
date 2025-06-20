@@ -78,7 +78,7 @@ router.patch('/:userId/role', requireLogin, async (req, res) => {
     const { userId } = req.params;
     const { role } = req.body;
 
-    if (!['Admin', 'Project/Product', 'User'].includes(role)) {
+    if (!['Admin', 'Project/Product', 'User', 'Checker'].includes(role)) {
         return res.status(400).json({ error: 'Invalid role' });
     }
 
