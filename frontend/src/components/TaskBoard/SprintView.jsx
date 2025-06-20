@@ -7,6 +7,7 @@ import TaskFilters from './TaskFilters';
 import TaskModal from './TaskModal';
 import ContextMenu from './ContextMenu';
 import { formatHours } from '../../utils/timeFormat';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 const formatDateInput = (date) => {
     if (!date) return '';
@@ -178,6 +179,10 @@ const SprintView = () => {
         y: 0,
         taskId: null
     });
+
+    // Delete confirmation modal state
+    const [deleteTaskModalOpen, setDeleteTaskModalOpen] = useState(false);
+    const [taskToDelete, setTaskToDelete] = useState(null);
 
     useEffect(() => {
         const observer = new MutationObserver(() => {
@@ -492,59 +497,115 @@ const SprintView = () => {
     const handleDuplicateTask = async () => {
         if (!contextMenu.taskId) return;
 
-        // Find the original task
+        // Find the original task to create an optimistic copy
         const originalTask = tasks.find(task => task.id === contextMenu.taskId);
-        if (!originalTask) {
-            console.error('Original task not found');
-            return;
+        if (!originalTask) return;
+
+        // Calculate a better sprint_order for the optimistic task
+        let optimisticSprintOrder;
+        if (originalTask.sprint_id) {
+            // Get all tasks in the same sprint
+            const sprintTasks = tasks.filter(task => task.sprint_id === originalTask.sprint_id);
+            const originalIndex = sprintTasks.findIndex(task => task.id === originalTask.id);
+            
+            if (originalIndex >= 0 && originalIndex < sprintTasks.length - 1) {
+                // Place it between the original and the next task
+                const originalOrder = originalTask.sprint_order || 0;
+                const nextTask = sprintTasks[originalIndex + 1];
+                const nextOrder = nextTask.sprint_order || 0;
+                optimisticSprintOrder = (originalOrder + nextOrder) / 2;
+            } else {
+                // Place it at the end
+                const maxOrder = Math.max(...sprintTasks.map(t => t.sprint_order || 0), 0);
+                optimisticSprintOrder = maxOrder + 1;
+            }
+        } else {
+            // For backlog tasks, place at the end
+            const backlogTasks = tasks.filter(task => !task.sprint_id);
+            const maxOrder = Math.max(...backlogTasks.map(t => t.sprint_order || 0), 0);
+            optimisticSprintOrder = maxOrder + 1;
         }
 
-        // Create optimistic duplicate task
         const optimisticTask = {
             ...originalTask,
-            id: `temp-${Date.now()}`, // Temporary ID
+            id: `temp-${Date.now()}`,
             title: `${originalTask.title} (Copy)`,
-            ticket_number: `PT-XXXX`, // Will be updated with real ticket number
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            isOptimistic: true // Flag to identify optimistic tasks
+            sprint_order: optimisticSprintOrder,
+            isOptimistic: true,
         };
 
-        // Add optimistic task to local state immediately
+        // Add optimistic task to the list
         addTask(optimisticTask);
-
-        // Close context menu immediately
         handleContextMenuClose();
 
         try {
             const response = await fetch(`/api/tasks/${contextMenu.taskId}/duplicate`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 credentials: 'include'
             });
 
             if (response.ok) {
                 const result = await response.json();
-                console.log('Task duplicated successfully:', result);
-                
-                // Replace optimistic task with real task
-                setTasks(prevTasks => 
-                    prevTasks.map(task => 
-                        task.id === optimisticTask.id ? result.task : task
-                    )
-                );
-                
+                // Replace optimistic task with the real one from the server
+                setTasks(prevTasks => {
+                    // Remove the optimistic task
+                    const tasksWithoutOptimistic = prevTasks.filter(t => t.id !== optimisticTask.id);
+                    // Add the real task from the server
+                    return [...tasksWithoutOptimistic, result.task];
+                });
             } else {
-                console.error('Failed to duplicate task');
-                // Remove optimistic task on error
+                // On failure, just remove the optimistic task
                 removeTask(optimisticTask.id);
             }
         } catch (error) {
             console.error('Error duplicating task:', error);
-            // Remove optimistic task on error
             removeTask(optimisticTask.id);
+        }
+    };
+
+    const handleDeleteTask = async () => {
+        if (!contextMenu.taskId) return;
+
+        // Find the task to delete
+        const taskToDelete = tasks.find(task => task.id === contextMenu.taskId);
+        if (!taskToDelete) {
+            console.error('Task to delete not found');
+            return;
+        }
+
+        // Set the task to delete and show confirmation modal
+        setTaskToDelete(taskToDelete);
+        setDeleteTaskModalOpen(true);
+        
+        // Close context menu
+        handleContextMenuClose();
+    };
+
+    const confirmDeleteTask = async () => {
+        if (!taskToDelete) return;
+
+        try {
+            const response = await fetch(`/api/tasks/${taskToDelete.id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                console.log('Task deleted successfully');
+                // Remove task from state
+                removeTask(taskToDelete.id);
+            } else {
+                console.error('Failed to delete task');
+                const errorData = await response.json();
+                console.error('Delete error:', errorData);
+            }
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        } finally {
+            // Close modal and reset state
+            setDeleteTaskModalOpen(false);
+            setTaskToDelete(null);
         }
     };
 
@@ -589,6 +650,17 @@ const SprintView = () => {
                 isVisible={contextMenu.isVisible}
                 onClose={handleContextMenuClose}
                 onDuplicate={handleDuplicateTask}
+                onDelete={handleDeleteTask}
+            />
+            <DeleteConfirmationModal
+                open={deleteTaskModalOpen}
+                onClose={() => {
+                    setDeleteTaskModalOpen(false);
+                    setTaskToDelete(null);
+                }}
+                onConfirm={confirmDeleteTask}
+                taskTitle={taskToDelete?.title || ''}
+                isDarkMode={isDarkMode}
             />
             <div className="sprint-header">
                 <h2>Sprints</h2>

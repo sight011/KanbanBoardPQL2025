@@ -400,22 +400,27 @@ const taskController = {
     // Duplicate task
     duplicateTask: async (req, res) => {
         console.log('🔍 duplicateTask endpoint hit for ID:', req.params.id);
-        
+        const client = await pool.connect(); // Rented a connection from the pool
+
         try {
+            await client.query('BEGIN'); // Start transaction
+
             const { id } = req.params;
 
             if (!req.user || !req.user.id) {
                 console.log('❌ No authenticated user found');
+                await client.query('ROLLBACK');
                 return res.status(401).json({ error: 'User not authenticated' });
             }
 
             // Get the original task
-            const originalTaskResult = await pool.query(
-                'SELECT * FROM tasks WHERE id = $1',
+            const originalTaskResult = await client.query(
+                'SELECT * FROM tasks WHERE id = $1 FOR UPDATE', // Lock the row for update
                 [id]
             );
 
             if (originalTaskResult.rows.length === 0) {
+                await client.query('ROLLBACK');
                 return res.status(404).json({
                     error: 'Task not found',
                     message: `No task found with ID ${id}`
@@ -425,7 +430,7 @@ const taskController = {
             const originalTask = originalTaskResult.rows[0];
 
             // Generate new ticket number
-            const lastTicketResult = await pool.query(
+            const lastTicketResult = await client.query(
                 'SELECT ticket_number FROM tasks WHERE ticket_number IS NOT NULL ORDER BY ticket_number DESC LIMIT 1'
             );
             let nextTicketNumber = 1;
@@ -436,39 +441,68 @@ const taskController = {
             }
             const formattedTicketNumber = `PT-${String(nextTicketNumber).padStart(4, '0')}`;
 
-            // Get the highest position in the status column
-            const positionResult = await pool.query(
-                'SELECT COALESCE(MAX(position), 0) + 1 as new_position FROM tasks WHERE status = $1',
-                [originalTask.status]
+            // === Start of new ordering logic ===
+            const originalSprintOrder = originalTask.sprint_order; // Can be null
+            let newSprintOrder;
+
+            if (originalTask.sprint_id !== null && originalSprintOrder !== null) {
+                // Task is in a sprint and has an order, shift subsequent tasks
+                await client.query(
+                    'UPDATE tasks SET sprint_order = sprint_order + 1 WHERE sprint_id = $1 AND sprint_order > $2',
+                    [originalTask.sprint_id, originalSprintOrder]
+                );
+                newSprintOrder = originalSprintOrder + 1;
+            } else if (originalTask.sprint_id !== null) {
+                // Task is in a sprint but has no order, place it at the end
+                const maxOrderResult = await client.query(
+                    'SELECT MAX(sprint_order) as max_order FROM tasks WHERE sprint_id = $1',
+                    [originalTask.sprint_id]
+                );
+                const maxOrder = maxOrderResult.rows[0].max_order || 0;
+                newSprintOrder = maxOrder + 1;
+            } else {
+                // Task is not in a sprint (in backlog), so no sprint order.
+                newSprintOrder = null;
+            }
+            
+            // For Kanban board position, place it immediately after the original
+            const originalPosition = originalTask.position;
+            // Shift all tasks that come after the original task
+            await client.query(
+                'UPDATE tasks SET position = position + 1 WHERE status = $1 AND position > $2',
+                [originalTask.status, originalPosition]
             );
-            const position = positionResult.rows[0].new_position;
+            const newPosition = originalPosition + 1;
+            // === End of new ordering logic ===
 
             // Create the duplicated task with "(Copy)" appended to title
             const duplicatedTitle = `${originalTask.title} (Copy)`;
             const reporter_id = req.user.id;
 
-            const result = await pool.query(
+            const result = await client.query(
                 `INSERT INTO tasks (
-                    title, description, status, priority, position, reporter_id, 
-                    ticket_number, effort, timespent, sprint_id, assignee_id, 
+                    title, description, status, priority, position, reporter_id,
+                    ticket_number, effort, timespent, sprint_id, assignee_id,
                     sprint_order, created_at, updated_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()) 
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
                 RETURNING *`,
                 [
                     duplicatedTitle,
                     originalTask.description,
                     originalTask.status,
                     originalTask.priority,
-                    position,
+                    newPosition,
                     reporter_id,
                     formattedTicketNumber,
                     originalTask.effort,
                     originalTask.timespent,
                     originalTask.sprint_id,
                     originalTask.assignee_id,
-                    originalTask.sprint_order
+                    newSprintOrder
                 ]
             );
+
+            await client.query('COMMIT'); // Commit transaction
 
             console.log('✅ Task duplicated successfully:', result.rows[0]);
             res.status(201).json({
@@ -477,6 +511,7 @@ const taskController = {
                 message: 'Task duplicated successfully'
             });
         } catch (err) {
+            await client.query('ROLLBACK'); // Rollback on error
             console.error('❌ Error in duplicateTask:', err.message);
             console.error('Full error stack:', err.stack);
             res.status(500).json({
@@ -485,6 +520,8 @@ const taskController = {
                 details: err.detail,
                 hint: err.hint
             });
+        } finally {
+            client.release(); // Release the client back to the pool
         }
     }
 };
