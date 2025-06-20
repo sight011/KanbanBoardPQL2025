@@ -8,7 +8,7 @@
     position: relative;
     will-change: transform;
     transform: translateZ(0);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .dark-mode .task-card {
@@ -17,14 +17,15 @@
 }
 
 .task-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+    transform: scale(1.03) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
     background: #f8f9fa;
 }
 
 .dark-mode .task-card:hover {
     background: #2d3748;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    transform: scale(1.03) !important;
 }
 
 /* When dragging is active on the body */
@@ -295,7 +296,7 @@ body.dragging .task-card:hover {
 }
 
 .priority-badge.priority-low {
-    background-color: #0067d9 !important
+    background-color: #0067d9 !important;
     color: white !important;
 }
 

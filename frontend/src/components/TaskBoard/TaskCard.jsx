@@ -67,7 +67,7 @@ const TaskCard = memo(({ task, index }) => {
                     ...provided.draggableProps.style,
                     transform: snapshot.isDragging 
                         ? provided.draggableProps.style?.transform 
-                        : 'translateZ(0)'
+                        : undefined
                 };
 
                 return (
