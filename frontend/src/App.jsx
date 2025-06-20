@@ -8,10 +8,12 @@ import ChatWindow from './components/Chat/ChatWindow';
 import ThemeToggle from './components/ThemeToggle';
 import SettingsButton from './components/SettingsButton';
 import Settings from './components/Settings';
+import Login from './components/Login';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import api from './api/axios'; // Import axios for API calls
 import './App.css';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import Login from './components/Login';
 
 const App = () => {
     const [user, setUser] = useState(null);
@@ -109,10 +111,19 @@ Based on the tasks above, please answer the user's question following the respon
         );
     }
 
+    // If user is not authenticated, show auth pages
     if (!user) {
-        return <Login onLogin={setUser} />;
+        return (
+            <Routes>
+                <Route path="/login" element={<Login onLogin={setUser} />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="*" element={<Login onLogin={setUser} />} />
+            </Routes>
+        );
     }
 
+    // If user is authenticated, show main app
     return (
         <ThemeProvider>
             <TaskProvider>

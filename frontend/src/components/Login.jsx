@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.body.classList.add('login-bg');
@@ -19,6 +21,7 @@ export default function Login({ onLogin }) {
     try {
       const res = await api.post('/api/login', { email, password }, { withCredentials: true });
       onLogin(res.data);
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
     }
@@ -46,6 +49,21 @@ export default function Login({ onLogin }) {
           <button type="submit">Login</button>
           {error && <div style={{ color: 'red', marginTop: '1rem' }}>{error}</div>}
         </form>
+        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+          <button 
+            onClick={() => navigate('/forgot-password')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#ffffff',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Forgot Password?
+          </button>
+        </div>
       </div>
     </div>
   );
