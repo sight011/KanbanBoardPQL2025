@@ -47,9 +47,24 @@ router.post('/logout', (req, res) => {
             console.error('Logout error:', err);
             return res.status(500).json({ error: 'Failed to logout.' });
         }
-        res.clearCookie('connect.sid');
+        res.clearCookie('kanban_session');
         res.json({ message: 'Logged out successfully.' });
     });
+});
+
+// GET /api/session - Check if user is logged in
+router.get('/session', (req, res) => {
+    if (req.session && req.session.userId) {
+        res.json({
+            isLoggedIn: true,
+            userId: req.session.userId,
+            role: req.session.role
+        });
+    } else {
+        res.json({
+            isLoggedIn: false
+        });
+    }
 });
 
 module.exports = router; 

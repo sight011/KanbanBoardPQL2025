@@ -40,13 +40,16 @@ app.use(express.json());
 // Session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev_secret_key',
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
+  rolling: true,
   cookie: {
-    secure: false, // Set to true if using HTTPS in production
+    secure: false,
     httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24 // 1 day
-  }
+    maxAge: 1000 * 60 * 60 * 24,
+    sameSite: 'lax'
+  },
+  name: 'kanban_session'
 }));
 
 // Routes
