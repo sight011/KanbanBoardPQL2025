@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import './TaskFilters.css';
 
-const TaskFilters = ({ filters, onFilterChange }) => {
+const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
     const [users, setUsers] = useState([]);
     const [sprints, setSprints] = useState([]);
-    const [activeSprintId, setActiveSprintId] = useState(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -25,11 +24,8 @@ const TaskFilters = ({ filters, onFilterChange }) => {
                 const res = await fetch('/api/sprints');
                 const data = await res.json();
                 setSprints(data.sprints || []);
-                const active = (data.sprints || []).find(s => s.status === 'active');
-                setActiveSprintId(active ? String(active.id) : null);
             } catch (err) {
                 setSprints([]);
-                setActiveSprintId(null);
             }
         };
         fetchSprints();
@@ -57,7 +53,7 @@ const TaskFilters = ({ filters, onFilterChange }) => {
 
     const handleClearFilters = () => {
         onFilterChange('text', '');
-        onFilterChange('sprint', '');
+        onFilterChange('sprint', activeSprintId || '');
         onFilterChange('priority', '');
         onFilterChange('status', '');
         onFilterChange('assignee', '');

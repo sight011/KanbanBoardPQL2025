@@ -619,7 +619,7 @@ const SprintView = () => {
 
     return (
         <div className={`sprint-view ${isDarkMode ? 'dark' : 'light'}`}>
-            <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
+            <TaskFilters filters={filters} onFilterChange={handleFilterChange} activeSprintId={activeSprint ? String(activeSprint.id) : ''} />
             <SprintModal
                 open={modalOpen}
                 onClose={() => { setModalOpen(false); setEditSprint(null); }}

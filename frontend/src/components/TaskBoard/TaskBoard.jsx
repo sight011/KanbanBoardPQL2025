@@ -184,19 +184,6 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         });
     }, [tasks, filters]);
 
-    // Add handleClearFilters function
-    const handleClearFilters = () => {
-        // Reset sprint filter to active sprint only if a different sprint is selected
-        const active = sprints.find(s => s.status === 'active');
-        setFilters(prev => ({
-            text: '',
-            sprint: prev.sprint === (active ? String(active.id) : '') ? prev.sprint : (active ? String(active.id) : ''),
-            priority: '',
-            assignee: '',
-            status: ''
-        }));
-    };
-
     const handleFilterChange = (filterType, value) => {
         setFilters(prev => ({
             ...prev,
@@ -663,6 +650,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 <TaskFilters 
                     filters={filters}
                     onFilterChange={handleFilterChange}
+                    activeSprintId={selectedSprint}
                 />
             )}
 
