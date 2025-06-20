@@ -4,4 +4,4 @@ UPDATE users SET role = 'Admin' WHERE role = 'admin';
 
 -- Drop and recreate the constraint to ensure only standardized values are allowed
 ALTER TABLE users DROP CONSTRAINT IF EXISTS valid_role;
-ALTER TABLE users ADD CONSTRAINT valid_role CHECK (role IN ('Admin', 'Project/Product', 'User')); 
+ALTER TABLE users ADD CONSTRAINT valid_role CHECK (role IN ('Admin', 'Project/Product', 'User', 'Checker')); 

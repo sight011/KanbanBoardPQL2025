@@ -2,7 +2,7 @@
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'role') THEN
-        ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'User';
+        ALTER TABLE users ADD COLUMN role VARCHAR(32) NOT NULL DEFAULT 'User';
         ALTER TABLE users ADD CONSTRAINT valid_role CHECK (role IN ('Admin', 'Project/Product', 'User'));
     END IF;
 END $$;
