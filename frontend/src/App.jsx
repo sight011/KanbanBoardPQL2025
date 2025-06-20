@@ -86,16 +86,6 @@ Based on the tasks above, please answer the user's question following the respon
         }
     };
 
-    const handleLogout = async () => {
-        try {
-            await api.post('/api/logout', {}, { withCredentials: true });
-            setUser(null);
-            navigate('/');
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
-    };
-
     // Show loading state while checking session
     if (isLoading) {
         return (
@@ -136,20 +126,6 @@ Based on the tasks above, please answer the user's question following the respon
                             <ThemeToggle />
                             <SettingsButton />
                             <CreateTaskButton />
-                            <button 
-                                onClick={handleLogout}
-                                style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: '#e53e3e',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px'
-                                }}
-                            >
-                                Logout
-                            </button>
                         </div>
                     </header>
                     <main className="app-main">
