@@ -5,10 +5,16 @@ const { requireLogin } = require('../middleware/auth');
 const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
 
-// Get all users
+// Get all users (excluding deleted)
 router.get('/', requireLogin, async (req, res) => {
     try {
-        const result = await db.query('SELECT id, username, first_name as "firstName", last_name as "lastName", email, role, created_at FROM users');
+        const result = await db.query(`
+            SELECT id, username, first_name as "firstName", last_name as "lastName", 
+                   email, role, created_at 
+            FROM users 
+            WHERE (deleted = false OR deleted IS NULL)
+            ORDER BY created_at DESC
+        `);
         res.json({ users: result.rows });
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -123,6 +129,27 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('Error creating user:', error);
         res.status(500).json({ error: 'Failed to create user' });
+    }
+});
+
+// Delete user (soft delete)
+router.delete('/:userId', requireLogin, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        // Check if user exists
+        const userExists = await db.query('SELECT id FROM users WHERE id = $1', [userId]);
+        if (userExists.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Soft delete by setting deleted flag
+        await db.query('UPDATE users SET deleted = true WHERE id = $1', [userId]);
+
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Failed to delete user' });
     }
 });
 

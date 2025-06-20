@@ -1,21 +1,25 @@
-const fs = require('fs');
-const path = require('path');
 const pool = require('./db');
+const fs = require('fs').promises;
+const path = require('path');
 
 async function runMigration() {
     try {
-        // Read the migration file
-        const migrationFile = path.join(__dirname, 'migrations', 'add_effort_column.sql');
-        const sql = fs.readFileSync(migrationFile, 'utf8');
-
-        // Execute the migration
-        await pool.query(sql);
-        console.log('✅ Migration completed successfully');
-    } catch (err) {
-        console.error('❌ Error running migration:', err);
-        throw err;
+        const migrationPath = path.join(__dirname, '../../db/migrations/add_deleted_column.sql');
+        const migration = await fs.readFile(migrationPath, 'utf8');
+        
+        await pool.query(migration);
+        console.log('Successfully added deleted column to users table');
+    } catch (error) {
+        console.error('Error running migration:', error);
     }
 }
+
+runMigration()
+    .then(() => process.exit(0))
+    .catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
 
 // Run if this file is executed directly
 if (require.main === module) {

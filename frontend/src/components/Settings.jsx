@@ -16,6 +16,7 @@ const Settings = ({ onLogout }) => {
     const [addUserForm, setAddUserForm] = useState({ firstName: '', lastName: '', email: '', password: '' });
     const [addUserError, setAddUserError] = useState('');
     const [addUserLoading, setAddUserLoading] = useState(false);
+    const [deletingUserId, setDeletingUserId] = useState(null);
 
     useEffect(() => {
         if (activeTab === 'users') {
@@ -187,6 +188,25 @@ const Settings = ({ onLogout }) => {
         }
     };
 
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            return;
+        }
+        
+        setDeletingUserId(userId);
+        try {
+            await api.delete(`/api/users/${userId}`);
+            // Update the local state to remove the deleted user
+            setUsers(users.filter(user => user.id !== userId));
+            setError(''); // Clear any existing errors
+        } catch (err) {
+            console.error('Error deleting user:', err);
+            setError('Failed to delete user');
+        } finally {
+            setDeletingUserId(null);
+        }
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case 'profile':
@@ -336,6 +356,7 @@ const Settings = ({ onLogout }) => {
                                         <span>Email</span>
                                         <span>Role</span>
                                         <span>Created</span>
+                                        <span>Actions</span>
                                     </div>
                                     {users.map(user => (
                                         <div key={user.id} className="user-item">
@@ -360,6 +381,15 @@ const Settings = ({ onLogout }) => {
                                             </div>
                                             <div className="user-created">
                                                 {new Date(user.created_at).toLocaleDateString()}
+                                            </div>
+                                            <div className="user-actions">
+                                                <button
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                    disabled={deletingUserId === user.id}
+                                                    className="delete-button"
+                                                >
+                                                    {deletingUserId === user.id ? 'Deleting...' : 'Delete'}
+                                                </button>
                                             </div>
                                         </div>
                                     ))}
