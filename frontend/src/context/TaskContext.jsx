@@ -217,6 +217,18 @@ export const TaskProvider = ({ children }) => {
         setIsModalOpen(false);
     };
 
+    // Add task to state (for optimistic updates)
+    const addTask = (task) => {
+        console.log('➕ Adding task optimistically:', task);
+        setTasks(prevTasks => [...prevTasks, task]);
+    };
+
+    // Remove task from state (for optimistic updates)
+    const removeTask = (taskId) => {
+        console.log('🗑️ Removing task optimistically:', taskId);
+        setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    };
+
     const value = {
         tasks,
         loading,
@@ -228,7 +240,10 @@ export const TaskProvider = ({ children }) => {
         deleteTask,
         updateTaskPosition,
         openTaskModal,
-        closeTaskModal
+        closeTaskModal,
+        addTask,
+        removeTask,
+        setTasks
     };
 
     return (

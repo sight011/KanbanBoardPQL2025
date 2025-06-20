@@ -395,6 +395,97 @@ const taskController = {
             console.error('Full error stack:', err.stack);
             res.status(500).json({ error: 'Server error', details: err.message });
         }
+    },
+
+    // Duplicate task
+    duplicateTask: async (req, res) => {
+        console.log('🔍 duplicateTask endpoint hit for ID:', req.params.id);
+        
+        try {
+            const { id } = req.params;
+
+            if (!req.user || !req.user.id) {
+                console.log('❌ No authenticated user found');
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            // Get the original task
+            const originalTaskResult = await pool.query(
+                'SELECT * FROM tasks WHERE id = $1',
+                [id]
+            );
+
+            if (originalTaskResult.rows.length === 0) {
+                return res.status(404).json({
+                    error: 'Task not found',
+                    message: `No task found with ID ${id}`
+                });
+            }
+
+            const originalTask = originalTaskResult.rows[0];
+
+            // Generate new ticket number
+            const lastTicketResult = await pool.query(
+                'SELECT ticket_number FROM tasks WHERE ticket_number IS NOT NULL ORDER BY ticket_number DESC LIMIT 1'
+            );
+            let nextTicketNumber = 1;
+            if (lastTicketResult.rows.length > 0) {
+                const lastTicket = lastTicketResult.rows[0].ticket_number;
+                const lastNumber = parseInt(lastTicket.replace('PT-', ''), 10);
+                nextTicketNumber = lastNumber + 1;
+            }
+            const formattedTicketNumber = `PT-${String(nextTicketNumber).padStart(4, '0')}`;
+
+            // Get the highest position in the status column
+            const positionResult = await pool.query(
+                'SELECT COALESCE(MAX(position), 0) + 1 as new_position FROM tasks WHERE status = $1',
+                [originalTask.status]
+            );
+            const position = positionResult.rows[0].new_position;
+
+            // Create the duplicated task with "(Copy)" appended to title
+            const duplicatedTitle = `${originalTask.title} (Copy)`;
+            const reporter_id = req.user.id;
+
+            const result = await pool.query(
+                `INSERT INTO tasks (
+                    title, description, status, priority, position, reporter_id, 
+                    ticket_number, effort, timespent, sprint_id, assignee_id, 
+                    sprint_order, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()) 
+                RETURNING *`,
+                [
+                    duplicatedTitle,
+                    originalTask.description,
+                    originalTask.status,
+                    originalTask.priority,
+                    position,
+                    reporter_id,
+                    formattedTicketNumber,
+                    originalTask.effort,
+                    originalTask.timespent,
+                    originalTask.sprint_id,
+                    originalTask.assignee_id,
+                    originalTask.sprint_order
+                ]
+            );
+
+            console.log('✅ Task duplicated successfully:', result.rows[0]);
+            res.status(201).json({
+                success: true,
+                task: result.rows[0],
+                message: 'Task duplicated successfully'
+            });
+        } catch (err) {
+            console.error('❌ Error in duplicateTask:', err.message);
+            console.error('Full error stack:', err.stack);
+            res.status(500).json({
+                error: 'Server error',
+                message: err.message,
+                details: err.detail,
+                hint: err.hint
+            });
+        }
     }
 };
 

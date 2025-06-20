@@ -1,0 +1,63 @@
+.context-menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+}
+
+.context-menu {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 4px 0;
+    min-width: 160px;
+    font-size: 14px;
+}
+
+.context-menu.dark {
+    background-color: #23272f;
+    border: 1px solid #333;
+    color: #e2e8f0;
+}
+
+.context-menu.light {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #2d3748;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    user-select: none;
+}
+
+.context-menu-item:hover {
+    background-color: #4a5568;
+}
+
+.context-menu.light .context-menu-item:hover {
+    background-color: #f7fafc;
+}
+
+.context-menu-item svg {
+    flex-shrink: 0;
+    color: #a0aec0;
+}
+
+.context-menu-item:hover svg {
+    color: #e2e8f0;
+}
+
+.context-menu.light .context-menu-item svg {
+    color: #6b7280;
+}
+
+.context-menu.light .context-menu-item:hover svg {
+    color: #374151;
+} 

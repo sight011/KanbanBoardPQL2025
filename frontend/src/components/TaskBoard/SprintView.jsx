@@ -5,6 +5,7 @@ import './SprintView.css';
 import classNames from 'classnames';
 import TaskFilters from './TaskFilters';
 import TaskModal from './TaskModal';
+import ContextMenu from './ContextMenu';
 import { formatHours } from '../../utils/timeFormat';
 
 const formatDateInput = (date) => {
@@ -143,7 +144,7 @@ const ReactivateModal = ({ open, onClose, onConfirm, activeSprint, isDarkMode })
 };
 
 const SprintView = () => {
-    const { tasks, updateTask, openTaskModal, isModalOpen, closeTaskModal } = useTaskContext();
+    const { tasks, updateTask, openTaskModal, isModalOpen, closeTaskModal, addTask, removeTask, setTasks } = useTaskContext();
     const [sprints, setSprints] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -169,6 +170,14 @@ const SprintView = () => {
     const [sprintToReactivate, setSprintToReactivate] = useState(null);
     const [activeSprint, setActiveSprint] = useState(null);
     const [hoursPerDay, setHoursPerDay] = useState(8);
+    
+    // Context menu state
+    const [contextMenu, setContextMenu] = useState({
+        isVisible: false,
+        x: 0,
+        y: 0,
+        taskId: null
+    });
 
     useEffect(() => {
         const observer = new MutationObserver(() => {
@@ -181,6 +190,18 @@ const SprintView = () => {
         observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
         return () => observer.disconnect();
     }, []);
+
+    // Global click handler to close context menu
+    useEffect(() => {
+        const handleGlobalClick = (e) => {
+            if (contextMenu.isVisible) {
+                handleContextMenuClose();
+            }
+        };
+
+        document.addEventListener('click', handleGlobalClick);
+        return () => document.removeEventListener('click', handleGlobalClick);
+    }, [contextMenu.isVisible]);
 
     // Fetch users for the assignee filter
     useEffect(() => {
@@ -448,6 +469,85 @@ const SprintView = () => {
         openTaskModal(task);
     };
 
+    // Context menu handlers
+    const handleTaskRightClick = (e, task) => {
+        e.preventDefault();
+        setContextMenu({
+            isVisible: true,
+            x: e.clientX,
+            y: e.clientY,
+            taskId: task.id
+        });
+    };
+
+    const handleContextMenuClose = () => {
+        setContextMenu({
+            isVisible: false,
+            x: 0,
+            y: 0,
+            taskId: null
+        });
+    };
+
+    const handleDuplicateTask = async () => {
+        if (!contextMenu.taskId) return;
+
+        // Find the original task
+        const originalTask = tasks.find(task => task.id === contextMenu.taskId);
+        if (!originalTask) {
+            console.error('Original task not found');
+            return;
+        }
+
+        // Create optimistic duplicate task
+        const optimisticTask = {
+            ...originalTask,
+            id: `temp-${Date.now()}`, // Temporary ID
+            title: `${originalTask.title} (Copy)`,
+            ticket_number: `PT-XXXX`, // Will be updated with real ticket number
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            isOptimistic: true // Flag to identify optimistic tasks
+        };
+
+        // Add optimistic task to local state immediately
+        addTask(optimisticTask);
+
+        // Close context menu immediately
+        handleContextMenuClose();
+
+        try {
+            const response = await fetch(`/api/tasks/${contextMenu.taskId}/duplicate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Task duplicated successfully:', result);
+                
+                // Replace optimistic task with real task
+                setTasks(prevTasks => 
+                    prevTasks.map(task => 
+                        task.id === optimisticTask.id ? result.task : task
+                    )
+                );
+                
+            } else {
+                console.error('Failed to duplicate task');
+                // Remove optimistic task on error
+                removeTask(optimisticTask.id);
+            }
+        } catch (error) {
+            console.error('Error duplicating task:', error);
+            // Remove optimistic task on error
+            removeTask(optimisticTask.id);
+        }
+    };
+
     const calculateTotalEffort = (tasks) => {
         if (!tasks || tasks.length === 0) return formatHours(0, hoursPerDay);
         const tasksWithEffort = tasks.filter(task => task.effort !== null && task.effort !== undefined);
@@ -483,6 +583,13 @@ const SprintView = () => {
                 isDarkMode={isDarkMode}
             />
             <TaskModal viewMode="sprint" activeSprintId="" />
+            <ContextMenu
+                x={contextMenu.x}
+                y={contextMenu.y}
+                isVisible={contextMenu.isVisible}
+                onClose={handleContextMenuClose}
+                onDuplicate={handleDuplicateTask}
+            />
             <div className="sprint-header">
                 <h2>Sprints</h2>
                 <button 
@@ -582,19 +689,29 @@ const SprintView = () => {
                                                                 {(provided, snapshot) => (
                                                                     <li
                                                                         id={`task-${task.id}`}
-                                                                        className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''}`}
+                                                                        className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''} ${task.isOptimistic ? 'optimistic' : ''}`}
                                                                         ref={provided.innerRef}
                                                                         {...provided.draggableProps}
                                                                         {...provided.dragHandleProps}
                                                                         onDoubleClick={() => handleTaskDoubleClick(task)}
+                                                                        onContextMenu={(e) => handleTaskRightClick(e, task)}
                                                                     >
                                                                         <div className="task-left">
                                                                             <span className="task-icon">
-                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                                    <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                                    <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                                </svg>
+                                                                                {task.isOptimistic ? (
+                                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="loading-spinner">
+                                                                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
+                                                                                            <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                                                                                            <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                                                                                        </circle>
+                                                                                    </svg>
+                                                                                ) : (
+                                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                        <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                        <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                    </svg>
+                                                                                )}
                                                                             </span>
                                                                             <span className="task-title">{task.title}</span>
                                                                         </div>
@@ -637,19 +754,29 @@ const SprintView = () => {
                                                         {(provided, snapshot) => (
                                                             <li
                                                                 id={`task-${task.id}`}
-                                                                className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''}`}
+                                                                className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''} ${task.isOptimistic ? 'optimistic' : ''}`}
                                                                 ref={provided.innerRef}
                                                                 {...provided.draggableProps}
                                                                 {...provided.dragHandleProps}
                                                                 onDoubleClick={() => handleTaskDoubleClick(task)}
+                                                                onContextMenu={(e) => handleTaskRightClick(e, task)}
                                                             >
                                                                 <div className="task-left">
                                                                     <span className="task-icon">
-                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                            <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                            <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                        </svg>
+                                                                        {task.isOptimistic ? (
+                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="loading-spinner">
+                                                                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
+                                                                                    <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                                                                                    <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                                                                                </circle>
+                                                                            </svg>
+                                                                        ) : (
+                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                            </svg>
+                                                                        )}
                                                                     </span>
                                                                     <span className="task-title">{task.title}</span>
                                                                 </div>

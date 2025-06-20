@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
-const { requireLogin } = require('../middleware/auth');
+const { requireLogin, auth } = require('../middleware/auth');
 
 // Get all tasks
 router.get('/', requireLogin, taskController.getAllTasks);
@@ -10,7 +10,7 @@ router.get('/', requireLogin, taskController.getAllTasks);
 router.get('/:id', requireLogin, taskController.getTaskById);
 
 // Create new task
-router.post('/', requireLogin, taskController.createTask);
+router.post('/', auth, taskController.createTask);
 
 // Update task
 router.put('/:id', requireLogin, taskController.updateTask);
@@ -23,5 +23,8 @@ router.patch('/:id/position', requireLogin, taskController.updateTaskPosition);
 
 // Get tasks by status
 router.get('/status/:status', requireLogin, taskController.getTasksByStatus);
+
+// Duplicate task
+router.post('/:id/duplicate', auth, taskController.duplicateTask);
 
 module.exports = router; 
