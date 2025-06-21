@@ -10,7 +10,7 @@ router.get('/', requireLogin, async (req, res) => {
     try {
         const result = await db.query(`
             SELECT id, username, first_name as "firstName", last_name as "lastName", 
-                   email, role, created_at 
+                   email, role, country, created_at 
             FROM users 
             WHERE (deleted = false OR deleted IS NULL)
             ORDER BY created_at DESC
@@ -28,7 +28,7 @@ router.get('/profile', requireLogin, async (req, res) => {
         // TODO: Get actual user ID from session/token
         const userId = 1; // Temporary: using a default user ID
         const result = await db.query(
-            'SELECT id, username, first_name as "firstName", last_name as "lastName", email, role, created_at FROM users WHERE id = $1',
+            'SELECT id, username, first_name as "firstName", last_name as "lastName", email, role, country, created_at FROM users WHERE id = $1',
             [userId]
         );
         
@@ -99,6 +99,31 @@ router.patch('/:userId/role', requireLogin, async (req, res) => {
     } catch (error) {
         console.error('Error updating user role:', error);
         res.status(500).json({ error: 'Failed to update user role' });
+    }
+});
+
+// Update user country
+router.patch('/:userId/country', requireLogin, async (req, res) => {
+    const { userId } = req.params;
+    const { country } = req.body;
+
+    try {
+        const result = await db.query(
+            'UPDATE users SET country = $1 WHERE id = $2 RETURNING *',
+            [country, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({ 
+            message: 'User country updated successfully',
+            user: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error updating user country:', error);
+        res.status(500).json({ error: 'Failed to update user country' });
     }
 });
 
