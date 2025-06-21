@@ -547,12 +547,24 @@ const SprintView = () => {
 
             if (response.ok) {
                 const result = await response.json();
-                // Replace optimistic task with the real one from the server
+                // The backend now returns the full updated list for the affected sprint/status.
+                // We use this list as the source of truth to avoid state inconsistencies.
                 setTasks(prevTasks => {
-                    // Remove the optimistic task
-                    const tasksWithoutOptimistic = prevTasks.filter(t => t.id !== optimisticTask.id);
-                    // Add the real task from the server
-                    return [...tasksWithoutOptimistic, result.task];
+                    const scopeSprintId = originalTask.sprint_id;
+
+                    // Filter out all tasks from the affected scope (sprint or status column).
+                    const unaffectedTasks = prevTasks.filter(task => {
+                        if (scopeSprintId) {
+                            // Keep tasks that are not in the affected sprint.
+                            return task.sprint_id !== scopeSprintId;
+                        } else {
+                            // Keep tasks that are in any sprint OR are not in the affected backlog status column.
+                            return task.sprint_id !== null || task.status !== originalTask.status;
+                        }
+                    });
+
+                    // Combine the unaffected tasks with the complete, re-ordered list from the server.
+                    return [...unaffectedTasks, ...result.tasks];
                 });
             } else {
                 // On failure, just remove the optimistic task

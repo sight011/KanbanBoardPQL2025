@@ -1,0 +1,88 @@
+.audit-trail-view {
+    padding: 2rem;
+    background-color: var(--background-color-light);
+    color: var(--text-color-light);
+    transition: background-color 0.3s, color 0.3s;
+    height: 100%;
+}
+
+.audit-trail-view.dark {
+    background-color: var(--background-color-dark);
+    color: var(--text-color-dark);
+}
+
+.audit-trail-view h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    border-bottom: 2px solid var(--border-color-light);
+    padding-bottom: 0.5rem;
+}
+
+.audit-trail-view.dark h2 {
+    border-bottom-color: var(--border-color-dark);
+}
+
+.audit-table-container {
+    overflow-x: auto;
+    max-height: 80vh;
+}
+
+.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.audit-table th,
+.audit-table td {
+    padding: 0.8rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.audit-trail-view.dark .audit-table th,
+.audit-trail-view.dark .audit-table td {
+    border-bottom: 1px solid var(--border-color-dark);
+}
+
+.audit-table thead th {
+    background-color: var(--table-header-bg-light);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+.audit-trail-view.dark .audit-table thead th {
+    background-color: var(--table-header-bg-dark);
+}
+
+.audit-table tbody tr:hover {
+    background-color: var(--table-row-hover-bg-light);
+}
+
+.audit-trail-view.dark .audit-table tbody tr:hover {
+    background-color: var(--table-row-hover-bg-dark);
+}
+
+.value-cell {
+    max-width: 300px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+.no-logs-message {
+    text-align: center;
+    padding: 2rem;
+    font-style: italic;
+    color: #888;
+}
+
+.loading-message, .error-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 1.5rem;
+} 

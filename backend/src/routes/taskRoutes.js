@@ -13,13 +13,13 @@ router.get('/:id', requireLogin, taskController.getTaskById);
 router.post('/', auth, taskController.createTask);
 
 // Update task
-router.put('/:id', requireLogin, taskController.updateTask);
+router.put('/:id', auth, taskController.updateTask);
 
 // Delete task
-router.delete('/:id', requireLogin, taskController.deleteTask);
+router.delete('/:id', auth, taskController.deleteTask);
 
 // Update task position
-router.patch('/:id/position', requireLogin, taskController.updateTaskPosition);
+router.patch('/:id/position', auth, taskController.updateTaskPosition);
 
 // Get tasks by status
 router.get('/status/:status', requireLogin, taskController.getTasksByStatus);

@@ -287,3 +287,30 @@ body.login-bg::after {
   margin-bottom: 1.5rem;
   color: #fff;
 }
+
+.header-actions .header-button {
+    background: none;
+    border: 1px solid var(--border-color-light);
+    color: var(--text-color-light);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.app.dark-mode .header-actions .header-button {
+    border-color: var(--border-color-dark);
+    color: var(--text-color-dark);
+}
+
+.header-actions .header-button:hover {
+    background-color: var(--button-hover-bg-light);
+}
+
+.app.dark-mode .header-actions .header-button:hover {
+    background-color: var(--button-hover-bg-dark);
+}

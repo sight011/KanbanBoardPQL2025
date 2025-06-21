@@ -1,6 +1,7 @@
 const pool = require('../db');
 const { validationResult } = require('express-validator');
 const { parseHours } = require('../utils');
+const historyService = require('../services/historyService');
 
 // Test database connection on startup
 pool.query('SELECT NOW()', (err, res) => {
@@ -74,11 +75,14 @@ const taskController = {
         console.log('Request body:', req.body);
         console.log('User:', req.user);
         
+        const client = await pool.connect();
         try {
+            await client.query('BEGIN');
             const { title, description, status, priority } = req.body;
             let { effort, timespent } = req.body;
 
             if (!req.user || !req.user.id) {
+                await client.query('ROLLBACK');
                 console.log('❌ No authenticated user found');
                 return res.status(401).json({ error: 'User not authenticated' });
             }
@@ -86,7 +90,7 @@ const taskController = {
             // Fetch hoursPerDay from settings (fallback to 8)
             let hoursPerDay = 8;
             try {
-                const settingsResult = await pool.query('SELECT hours FROM settings_hoursperday ORDER BY id DESC LIMIT 1');
+                const settingsResult = await client.query('SELECT hours FROM settings_hoursperday ORDER BY id DESC LIMIT 1');
                 if (settingsResult.rows.length > 0 && settingsResult.rows[0].hours) {
                     hoursPerDay = parseFloat(settingsResult.rows[0].hours);
                 }
@@ -96,11 +100,13 @@ const taskController = {
             try {
                 effort = parseHours(effort, hoursPerDay);
             } catch (err) {
+                await client.query('ROLLBACK');
                 return res.status(400).json({ error: 'Invalid effort: ' + err.message });
             }
             try {
                 timespent = parseHours(timespent, hoursPerDay);
             } catch (err) {
+                await client.query('ROLLBACK');
                 return res.status(400).json({ error: 'Invalid time spent: ' + err.message });
             }
 
@@ -108,7 +114,7 @@ const taskController = {
             console.log('Creating task for user ID:', reporter_id);
 
             // Generate ticket number
-            const lastTicketResult = await pool.query(
+            const lastTicketResult = await client.query(
                 'SELECT ticket_number FROM tasks WHERE ticket_number IS NOT NULL ORDER BY ticket_number DESC LIMIT 1'
             );
             let nextTicketNumber = 1;
@@ -121,28 +127,43 @@ const taskController = {
             console.log('Generated new ticket number:', formattedTicketNumber);
 
             // Get the highest position in the status column
-            const positionResult = await pool.query(
+            const positionResult = await client.query(
                 'SELECT COALESCE(MAX(position), 0) + 1 as new_position FROM tasks WHERE status = $1',
                 [status]
             );
             const position = positionResult.rows[0].new_position;
             console.log('New position will be:', position);
 
-            const result = await pool.query(
+            const result = await client.query(
                 'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING *',
                 [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent, req.body.sprint_id || null]
             );
 
-            console.log('✅ Task created successfully:', result.rows[0]);
+            const newTask = result.rows[0];
+
+            // Log this action to the history table
+            await historyService.logChange({
+                taskId: newTask.id,
+                userId: req.user.id,
+                fieldName: 'task',
+                oldValue: null,
+                newValue: `Task "${newTask.title}" was created.`
+            }, client);
+
+            await client.query('COMMIT');
+            console.log('✅ Task created successfully:', newTask);
             res.status(201).json({
                 success: true,
-                task: result.rows[0],
+                task: newTask,
                 message: 'Task created successfully'
             });
         } catch (err) {
+            await client.query('ROLLBACK');
             console.error('❌ Error in createTask:', err.message);
             console.error('Full error stack:', err.stack);
             res.status(500).json({ error: 'Server error', details: err.message });
+        } finally {
+            client.release();
         }
     },
 
@@ -151,13 +172,25 @@ const taskController = {
         console.log('🔍 updateTask endpoint hit for ID:', req.params.id);
         console.log('Request body:', req.body);
         
+        const client = await pool.connect();
         try {
+            await client.query('BEGIN');
             const { id } = req.params;
+
+            // Get the original task for comparison
+            const originalTaskResult = await client.query('SELECT * FROM tasks WHERE id = $1 FOR UPDATE', [id]);
+            if (originalTaskResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Task not found' });
+            }
+            const originalTask = originalTaskResult.rows[0];
+
             const { title, description, status, priority, assignee_id, sprint_id, sprint_order, completed_at } = req.body;
             let { effort, timespent } = req.body;
 
             // Validate required fields
             if (!title || !status || !priority) {
+                await client.query('ROLLBACK');
                 return res.status(400).json({
                     error: 'Missing required fields',
                     message: 'Title, status, and priority are required'
@@ -177,27 +210,48 @@ const taskController = {
             try {
                 effort = parseHours(effort, hoursPerDay);
             } catch (err) {
+                await client.query('ROLLBACK');
                 return res.status(400).json({ error: 'Invalid effort: ' + err.message });
             }
             try {
                 timespent = parseHours(timespent, hoursPerDay);
             } catch (err) {
+                await client.query('ROLLBACK');
                 return res.status(400).json({ error: 'Invalid time spent: ' + err.message });
             }
 
             const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, completed_at = $10, updated_at = NOW() WHERE id = $11 RETURNING *';
             const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, completed_at || null, id];
-            console.log('Executing SQL:', sql);
-            console.log('With parameters:', params);
+            
+            const result = await client.query(sql, params);
+            const updatedTask = result.rows[0];
 
-            const result = await pool.query(sql, params);
+            // Log changes
+            const changes = [
+                { field: 'title', oldValue: originalTask.title, newValue: updatedTask.title },
+                { field: 'description', oldValue: originalTask.description, newValue: updatedTask.description },
+                { field: 'status', oldValue: originalTask.status, newValue: updatedTask.status },
+                { field: 'priority', oldValue: originalTask.priority, newValue: updatedTask.priority },
+                { field: 'assignee_id', oldValue: originalTask.assignee_id, newValue: updatedTask.assignee_id },
+                { field: 'sprint_id', oldValue: originalTask.sprint_id, newValue: updatedTask.sprint_id },
+                { field: 'sprint_order', oldValue: originalTask.sprint_order, newValue: updatedTask.sprint_order },
+                { field: 'effort', oldValue: originalTask.effort, newValue: updatedTask.effort },
+                { field: 'timespent', oldValue: originalTask.timespent, newValue: updatedTask.timespent },
+            ];
 
-            if (result.rows.length === 0) {
-                return res.status(404).json({
-                    error: 'Task not found',
-                    message: `No task found with ID ${id}`
-                });
+            for (const change of changes) {
+                if (String(change.oldValue || '') !== String(change.newValue || '')) {
+                    await historyService.logChange({
+                        taskId: id,
+                        userId: req.user.id,
+                        fieldName: change.field,
+                        oldValue: change.oldValue,
+                        newValue: change.newValue
+                    }, client);
+                }
             }
+
+            await client.query('COMMIT');
 
             console.log('✅ Task updated successfully:', result.rows[0]);
             res.status(200).json({
@@ -206,6 +260,7 @@ const taskController = {
                 message: 'Task updated successfully'
             });
         } catch (err) {
+            await client.query('ROLLBACK');
             console.error('❌ Error in updateTask:', err.message);
             console.error('Full error stack:', err.stack);
             if (err.detail) console.error('Error detail:', err.detail);
@@ -216,35 +271,50 @@ const taskController = {
                 details: err.detail,
                 hint: err.hint
             });
+        } finally {
+            client.release();
         }
     },
 
     // Delete task
     deleteTask: async (req, res) => {
         console.log('🔍 deleteTask endpoint hit for ID:', req.params.id);
-        
+        const client = await pool.connect();
         try {
+            await client.query('BEGIN');
             const { id } = req.params;
 
             // First get the task to return it in the response
-            const taskResult = await pool.query(
+            const taskResult = await client.query(
                 'SELECT * FROM tasks WHERE id = $1',
                 [id]
             );
 
             if (taskResult.rows.length === 0) {
+                await client.query('ROLLBACK');
                 return res.status(404).json({
                     error: 'Task not found',
                     message: `No task found with ID ${id}`
                 });
             }
+            const taskToDelete = taskResult.rows[0];
+
+            // Log the deletion
+            await historyService.logChange({
+                taskId: id,
+                userId: req.user.id,
+                fieldName: 'task',
+                oldValue: taskToDelete.title,
+                newValue: "deleted"
+            }, client);
 
             // Then delete the task
-            const deleteResult = await pool.query(
+            await client.query(
                 'DELETE FROM tasks WHERE id = $1 RETURNING *',
                 [id]
             );
 
+            await client.query('COMMIT');
             console.log('✅ Task deleted successfully');
             res.status(200).json({
                 success: true,
@@ -252,6 +322,7 @@ const taskController = {
                 message: 'Task deleted successfully'
             });
         } catch (err) {
+            await client.query('ROLLBACK');
             console.error('❌ Error in deleteTask:', err.message);
             console.error('Full error stack:', err.stack);
             res.status(500).json({
@@ -260,6 +331,8 @@ const taskController = {
                 details: err.detail,
                 hint: err.hint
             });
+        } finally {
+            client.release();
         }
     },
 
@@ -299,41 +372,23 @@ const taskController = {
 
                 // Position update logic
                 if (oldStatus !== newStatus) {
-                    await client.query(
-                        `UPDATE tasks 
-                         SET position = position - 1 
-                         WHERE status = $1 
-                         AND position > $2`,
-                        [oldStatus, oldPosition]
-                    );
-
-                    await client.query(
-                        `UPDATE tasks 
-                         SET position = position + 1 
-                         WHERE status = $1 
-                         AND position >= $2`,
-                        [newStatus, newPosition]
-                    );
-                } else {
-                    if (oldPosition < newPosition) {
-                        await client.query(
-                            `UPDATE tasks 
-                             SET position = position - 1 
-                             WHERE status = $1 
-                             AND position > $2 
-                             AND position <= $3`,
-                            [newStatus, oldPosition, newPosition]
-                        );
-                    } else if (oldPosition > newPosition) {
-                        await client.query(
-                            `UPDATE tasks 
-                             SET position = position + 1 
-                             WHERE status = $1 
-                             AND position >= $2 
-                             AND position < $3`,
-                            [newStatus, newPosition, oldPosition]
-                        );
-                    }
+                    await historyService.logChange({
+                        taskId: id,
+                        userId: req.user.id,
+                        fieldName: 'status',
+                        oldValue: oldStatus,
+                        newValue: newStatus
+                    }, client);
+                }
+                
+                if (oldPosition !== newPosition) {
+                     await historyService.logChange({
+                        taskId: id,
+                        userId: req.user.id,
+                        fieldName: 'position',
+                        oldValue: oldPosition,
+                        newValue: newPosition
+                    }, client);
                 }
 
                 // Update the task's position, status, and completed_at
@@ -502,12 +557,38 @@ const taskController = {
                 ]
             );
 
+            const duplicatedTask = result.rows[0];
+            let updatedTasks = [];
+
+            if (duplicatedTask.sprint_id) {
+                const sprintTasksResult = await client.query(
+                    'SELECT * FROM tasks WHERE sprint_id = $1 ORDER BY sprint_order ASC',
+                    [duplicatedTask.sprint_id]
+                );
+                updatedTasks = sprintTasksResult.rows;
+            } else {
+                const boardTasksResult = await client.query(
+                    'SELECT * FROM tasks WHERE status = $1 ORDER BY position ASC',
+                    [duplicatedTask.status]
+                );
+                updatedTasks = boardTasksResult.rows;
+            }
+
+            await historyService.logChange({
+                taskId: duplicatedTask.id,
+                userId: req.user.id,
+                fieldName: 'task',
+                oldValue: originalTask.id,
+                newValue: `Task "${duplicatedTask.title}" was duplicated from task #${originalTask.ticket_number}.`
+            }, client);
+
             await client.query('COMMIT'); // Commit transaction
 
             console.log('✅ Task duplicated successfully:', result.rows[0]);
             res.status(201).json({
                 success: true,
                 task: result.rows[0],
+                tasks: updatedTasks,
                 message: 'Task duplicated successfully'
             });
         } catch (err) {

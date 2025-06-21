@@ -8,6 +8,7 @@ const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const passwordResetRoutes = require('./routes/passwordResetRoutes');
+const auditRoutes = require('./routes/auditRoutes');
 const session = require('express-session');
 const healthRoutes = require("./routes/healthRoutes");
 
@@ -64,6 +65,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/auth', passwordResetRoutes);
 app.use('/api', authRoutes);
+app.use('/api/audit', auditRoutes);
 
 // Add /api/users endpoint
 const db = require('./db');
