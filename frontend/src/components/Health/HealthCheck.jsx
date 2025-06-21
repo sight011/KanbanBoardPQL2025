@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/axios';
 import './HealthCheck.css';
+import { Link } from 'react-router-dom';
 
 const HealthCheck = () => {
     const [healthStatus, setHealthStatus] = useState(null);
@@ -45,7 +46,12 @@ const HealthCheck = () => {
 
     return (
         <div className={`health-check-view ${isDarkMode ? 'dark' : 'light'}`}>
-            <h2>System Health Status</h2>
+            <div className="page-header">
+                <h2>System Health Status</h2>
+                <Link to="/settings" className="back-to-settings-button">
+                    &larr; Back to Settings
+                </Link>
+            </div>
             {healthStatus && (
                 <div className="health-status-container">
                     <div className="health-item">

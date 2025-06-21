@@ -41,7 +41,7 @@ const AuditTrailView = () => {
 
     return (
         <div className={`audit-trail-view ${isDarkMode ? 'dark' : 'light'}`}>
-            <div className="audit-header">
+            <div className="page-header">
                 <h2>Audit Trail</h2>
                 <Link to="/settings" className="back-to-settings-button">
                     &larr; Back to Settings
@@ -54,6 +54,7 @@ const AuditTrailView = () => {
                             <th>ID</th>
                             <th>Task ID</th>
                             <th>User ID</th>
+                            <th>User Name</th>
                             <th>Field Changed</th>
                             <th>Old Value</th>
                             <th>New Value</th>
@@ -67,6 +68,7 @@ const AuditTrailView = () => {
                                     <td>{log.id}</td>
                                     <td>{log.task_id}</td>
                                     <td>{log.user_id}</td>
+                                    <td>{log.username || 'N/A'}</td>
                                     <td>{log.field_name}</td>
                                     <td className="value-cell">{log.old_value}</td>
                                     <td className="value-cell">{log.new_value}</td>
