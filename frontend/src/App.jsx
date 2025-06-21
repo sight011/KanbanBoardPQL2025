@@ -12,9 +12,10 @@ import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import AuditTrailView from './components/Audit/AuditTrailView';
+import HealthCheck from './components/Health/HealthCheck';
 import api from './api/axios'; // Import axios for API calls
 import './App.css';
-import { Routes, Route, useNavigate, Link } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 
 const App = () => {
     const [user, setUser] = useState(null);
@@ -125,7 +126,6 @@ Based on the tasks above, please answer the user's question following the respon
                         </div>
                         <div className="header-actions">
                             <ThemeToggle />
-                            <Link to="/audit" className="header-button">Audit Trail</Link>
                             <SettingsButton />
                             <CreateTaskButton />
                         </div>
@@ -135,6 +135,7 @@ Based on the tasks above, please answer the user's question following the respon
                             <Route path="/" element={<TaskBoard viewMode={viewMode} setViewMode={setViewMode} />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/audit" element={<AuditTrailView />} />
+                            <Route path="/health" element={<HealthCheck />} />
                         </Routes>
                     </main>
                     <ChatBubble

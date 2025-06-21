@@ -629,4 +629,43 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
+}
+
+.maintenance-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 400px;
+}
+
+.maintenance-button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background-color: #f0f2f5;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    text-align: left;
+    text-decoration: none;
+    color: #333;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.settings-container.dark .maintenance-button {
+    background-color: #2c2c2c;
+    border-color: #444;
+    color: #f1f1f1;
+}
+
+.maintenance-button:hover {
+    background-color: #e5e7eb;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+.settings-container.dark .maintenance-button:hover {
+    background-color: #3a3a3a;
 } 

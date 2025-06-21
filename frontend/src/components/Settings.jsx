@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Settings.css';
 import api from '../api/axios';
+import { Link } from 'react-router-dom';
+import AuditTrailView from './Audit/AuditTrailView';
 
 const Settings = ({ onLogout }) => {
     const [activeTab, setActiveTab] = useState('profile');
@@ -425,6 +427,22 @@ const Settings = ({ onLogout }) => {
                         </div>
                     </div>
                 );
+            case 'maintenance':
+                return (
+                    <div className="settings-section">
+                        <h2 className="settings-headline">Maintenance</h2>
+                        <div className="maintenance-menu">
+                            <Link to="/audit" className="maintenance-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1V21c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h7.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V6.5L15.5 2z"></path><path d="M15 2v5h5"></path><path d="M10 16s.8-1 2-1 2 1 2 1"></path><path d="M12 12a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+                                Audit Trail
+                            </Link>
+                            <Link to="/health" className="maintenance-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path></svg>
+                                Health
+                            </Link>
+                        </div>
+                    </div>
+                );
             case 'logout':
                 return (
                     <div className="settings-section">
@@ -463,6 +481,12 @@ const Settings = ({ onLogout }) => {
                         onClick={() => setActiveTab('timeRange')}
                     >
                         Time Range
+                    </li>
+                    <li 
+                        className={activeTab === 'maintenance' ? 'active' : ''} 
+                        onClick={() => setActiveTab('maintenance')}
+                    >
+                        Maintenance
                     </li>
                 </ul>
                 <button className="logout-nav-item" onClick={handleLogout} style={{ marginTop: 32, background: '#e53e3e', color: 'white', border: 'none', borderRadius: 6, padding: '12px 0', fontWeight: 600, fontSize: '1.1rem', cursor: 'pointer' }}>

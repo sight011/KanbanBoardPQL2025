@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './AuditTrailView.css';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const AuditTrailView = () => {
     const [logs, setLogs] = useState([]);
@@ -40,7 +41,12 @@ const AuditTrailView = () => {
 
     return (
         <div className={`audit-trail-view ${isDarkMode ? 'dark' : 'light'}`}>
-            <h2>Audit Trail</h2>
+            <div className="audit-header">
+                <h2>Audit Trail</h2>
+                <Link to="/settings" className="back-to-settings-button">
+                    &larr; Back to Settings
+                </Link>
+            </div>
             <div className="audit-table-container">
                 <table className="audit-table">
                     <thead>
