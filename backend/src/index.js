@@ -67,26 +67,6 @@ app.use('/api/auth', passwordResetRoutes);
 app.use('/api', authRoutes);
 app.use('/api/audit', auditRoutes);
 
-// Add /api/users endpoint
-const db = require('./db');
-app.get('/api/users', async (req, res) => {
-    try {
-        const result = await db.query('SELECT id, username, email, created_at FROM users');
-        const users = result.rows.map(user => {
-            const [firstName, lastName] = user.username.split(' ');
-            return {
-                ...user,
-                firstName: firstName || '',
-                lastName: lastName || ''
-            };
-        });
-        res.json({ users });
-    } catch (err) {
-        console.error('Error fetching users:', err);
-        res.status(500).json({ error: 'Failed to fetch users' });
-    }
-});
-
 // Basic route for testing
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to the Task Management API' });
