@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import EmojiPicker from 'emoji-picker-react';
-import Tooltip from '../Tooltip/Tooltip';
 import './ActivityFeed.css';
 
 const ActivityFeed = ({ task }) => {
@@ -134,14 +133,14 @@ const ActivityFeed = ({ task }) => {
                                 </div>
                                 <div className="comment-reactions">
                                     {comment.reactions && comment.reactions.map(reaction => (
-                                        <Tooltip key={reaction.id} text={`Reacted by ${reaction.first_name} ${reaction.last_name}`}>
-                                            <button 
-                                                className="reaction"
-                                                onClick={() => handleReactionClick(reaction.id)}
-                                            >
-                                                {reaction.emoji}
-                                            </button>
-                                        </Tooltip>
+                                        <button 
+                                            key={reaction.id}
+                                            className="reaction"
+                                            onClick={() => handleReactionClick(reaction.id)}
+                                            title={`Reacted by ${reaction.first_name} ${reaction.last_name}`}
+                                        >
+                                            {reaction.emoji}
+                                        </button>
                                     ))}
                                 </div>
                                 <div className="comment-footer">

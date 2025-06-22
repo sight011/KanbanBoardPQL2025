@@ -62,7 +62,7 @@
     padding: 0 24px;
     background-color: var(--header-bg, #0052cc);
     color: var(--header-text, white);
-    height: 32px;
+    height: 28px;
     width: 100%;
     box-sizing: border-box;
 }
@@ -93,14 +93,14 @@
 }
 
 .app-logo-container img {
-    height: 28px; /* Adjusted for new header height */
+    height: 24px; /* Reduced from 28px */
     width: auto;
 }
 
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px; /* Reduced from 16px */
 }
 
 .robot-icon {
@@ -118,10 +118,11 @@
     background-color: #016dff;
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 6px 12px; /* Reduced from 8px 16px */
     border-radius: 4px;
     cursor: pointer;
     font-weight: 500;
+    font-size: 0.875rem; /* Added to make text smaller */
     transition: background-color 0.2s;
 }
 

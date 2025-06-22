@@ -122,7 +122,7 @@ Based on the tasks above, please answer the user's question following the respon
                 <div className="app">
                     <header className="app-header">
                         <div className="app-logo-container" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
-                            <img src="/flexflex.png" alt="FlexFlex Logo" width="200" height="55" />
+                            <img src="/FocusX.png" alt="FocusX Logo" width="200" height="55" />
                         </div>
                         <div className="header-actions">
                             <ThemeToggle />

@@ -1,4 +1,4 @@
-const pool = require('../db/db');
+const pool = require('../db');
 
 const commentController = {
     getCommentsForTask: async (req, res) => {
