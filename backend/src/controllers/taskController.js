@@ -25,7 +25,7 @@ const taskController = {
         try {
             console.log('📊 About to query database...');
             const result = await pool.query(
-                'SELECT * FROM tasks ORDER BY sprint_id, sprint_order, id'
+                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks ORDER BY sprint_id, sprint_order, id'
             );
             console.log('✅ Query successful, found', result.rows.length, 'tasks');
             console.log('First task:', result.rows[0]);
@@ -47,7 +47,7 @@ const taskController = {
         try {
             const { id } = req.params;
             const result = await pool.query(
-                'SELECT * FROM tasks WHERE id = $1',
+                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks WHERE id = $1',
                 [id]
             );
             
@@ -78,7 +78,7 @@ const taskController = {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
-            const { title, description, status, priority } = req.body;
+            const { title, description, status, priority, tags } = req.body;
             let { effort, timespent } = req.body;
 
             if (!req.user || !req.user.id) {
@@ -134,9 +134,11 @@ const taskController = {
             const position = positionResult.rows[0].new_position;
             console.log('New position will be:', position);
 
+            const tagsString = tags && tags.length > 0 ? tags.join(',') : null;
+
             const result = await client.query(
-                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING *',
-                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent, req.body.sprint_id || null]
+                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, sprint_id, tags, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()) RETURNING *',
+                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent, req.body.sprint_id || null, tagsString]
             );
 
             const newTask = result.rows[0];
@@ -185,7 +187,7 @@ const taskController = {
             }
             const originalTask = originalTaskResult.rows[0];
 
-            const { title, description, status, priority, assignee_id, sprint_id, sprint_order, completed_at } = req.body;
+            const { title, description, status, priority, assignee_id, sprint_id, sprint_order, completed_at, tags } = req.body;
             let { effort, timespent } = req.body;
 
             // Validate required fields
@@ -220,8 +222,10 @@ const taskController = {
                 return res.status(400).json({ error: 'Invalid time spent: ' + err.message });
             }
 
-            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, completed_at = $10, updated_at = NOW() WHERE id = $11 RETURNING *';
-            const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, completed_at || null, id];
+            const tagsString = tags && tags.length > 0 ? tags.join(',') : null;
+
+            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, completed_at = $10, updated_at = NOW(), tags = $11 WHERE id = $12 RETURNING *';
+            const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, completed_at || null, tagsString, id];
             
             const result = await client.query(sql, params);
             const updatedTask = result.rows[0];

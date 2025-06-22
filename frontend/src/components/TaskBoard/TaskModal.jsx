@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskModal.css';
 import { formatHours } from '../../utils/timeFormat';
+import {
+    StatusIcon, PriorityIcon, AssigneeIcon, SprintIcon,
+    TimeEstimateIcon, TimeTrackIcon, DatesIcon, TagsIcon, RelationshipsIcon
+} from './TaskIcons';
+import TagsInput from './TagsInput';
 
 const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     const {
@@ -22,7 +27,8 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
         assignee_id: '',
         effort: '',
         timespent: '',
-        sprint_id: ''
+        sprint_id: '',
+        tags: []
     });
 
     const [effortError, setEffortError] = useState('');
@@ -32,7 +38,6 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     const [sprintsError, setSprintsError] = useState(null);
     const [hoursPerDay, setHoursPerDay] = useState(8);
 
-    // Fetch users from the database
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -46,43 +51,6 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
         };
         fetchUsers();
     }, []);
-
-    useEffect(() => {
-        // Debug log for viewMode and activeSprintId
-        console.log('[TaskModal] viewMode:', viewMode, 'activeSprintId:', activeSprintId);
-        if (selectedTask) {
-            setFormData({
-                title: selectedTask.title,
-                description: selectedTask.description,
-                status: selectedTask.status,
-                priority: selectedTask.priority,
-                assignee_id: selectedTask.assignee_id || '',
-                effort: selectedTask.effort || '',
-                timespent: selectedTask.timespent || '',
-                sprint_id: selectedTask.sprint_id ?? ''
-            });
-        } else {
-            // Set default sprint_id based on viewMode and activeSprintId
-            let defaultSprintId = '';
-            if (["kanban", "list", "diagram", "burndown"].includes(viewMode) && activeSprintId) {
-                defaultSprintId = String(activeSprintId); // Ensure it's a string for select value
-            }
-            setFormData({
-                title: '',
-                description: '',
-                status: 'todo',
-                priority: 'medium',
-                assignee_id: '',
-                effort: '',
-                timespent: '',
-                sprint_id: defaultSprintId
-            });
-        }
-    }, [selectedTask, isModalOpen, viewMode, activeSprintId]);
-
-    useEffect(() => {
-        console.log('formData in modal:', formData);
-    }, [formData]);
 
     useEffect(() => {
         const fetchSprints = async () => {
@@ -102,45 +70,44 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
         fetchSprints();
     }, []);
 
-    // Force sprint_id to active sprint if not valid after sprints load
     useEffect(() => {
-        if (!selectedTask && isModalOpen && sprints.length > 0) {
-            const validIds = sprints.map(s => String(s.id));
-            if (["kanban", "list", "diagram", "burndown"].includes(viewMode) && activeSprintId) {
-                if (!formData.sprint_id || !validIds.includes(formData.sprint_id)) {
-                    setFormData(prev => ({ ...prev, sprint_id: String(activeSprintId) }));
+        if (isModalOpen) {
+            if (selectedTask) {
+                // Edit mode
+                setFormData({
+                    title: selectedTask.title,
+                    description: selectedTask.description,
+                    status: selectedTask.status,
+                    priority: selectedTask.priority,
+                    assignee_id: selectedTask.assignee_id || '',
+                    effort: selectedTask.effort || '',
+                    timespent: selectedTask.timespent || '',
+                    sprint_id: selectedTask.sprint_id ?? '',
+                    tags: selectedTask.tags || []
+                });
+            } else {
+                // Create mode
+                let defaultSprintId = '';
+                if (["kanban", "list", "diagram", "burndown"].includes(viewMode) && activeSprintId && sprints.length > 0) {
+                    if (sprints.some(s => String(s.id) === String(activeSprintId))) {
+                        defaultSprintId = String(activeSprintId);
+                    }
                 }
+                setFormData({
+                    title: '',
+                    description: '',
+                    status: 'todo',
+                    priority: 'medium',
+                    assignee_id: '',
+                    effort: '',
+                    timespent: '',
+                    sprint_id: defaultSprintId,
+                    tags: []
+                });
             }
-        }
-    }, [sprints, selectedTask, isModalOpen, viewMode, activeSprintId, formData.sprint_id]);
-
-    // Always set default sprint_id on modal open in create mode
-    useEffect(() => {
-        console.log('[TaskModal] useEffect triggered:', {
-            isModalOpen,
-            selectedTask,
-            sprints,
-            viewMode,
-            activeSprintId
-        });
-        if (isModalOpen && !selectedTask && sprints.length > 0) {
-            let defaultSprintId = '';
-            if (["kanban", "list", "diagram", "burndown"].includes(viewMode) && activeSprintId) {
-                defaultSprintId = String(activeSprintId);
-            }
-            setFormData({
-                title: '',
-                description: '',
-                status: 'todo',
-                priority: 'medium',
-                assignee_id: '',
-                effort: '',
-                timespent: '',
-                sprint_id: defaultSprintId
-            });
         }
     }, [isModalOpen, selectedTask, sprints, viewMode, activeSprintId]);
-
+    
     useEffect(() => {
         // Fetch hours per day from backend settings
         fetch('/api/settings/hoursperday')
@@ -151,7 +118,6 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
             .catch(() => {});
     }, []);
 
-    // Utility to parse and validate time input
     function parseEffortInput(value, hoursPerDay = 8) {
         if (!value) return null;
         const trimmed = value.trim().toLowerCase();
@@ -244,174 +210,139 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
         }
     };
 
-    // Add a helper/info icon component
-    function InfoIcon({ message }) {
-        return (
-            <span style={{ marginLeft: 6, cursor: 'pointer' }} title={message}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            </span>
-        );
-    }
+    const handleAddTemplate = (e) => {
+        e.preventDefault();
+        const template = `View: \nWhat: \nWhy: \n\nDescription:\nThe ability for the user to\n\nAcceptance criteria:\n· `;
 
-    function formatPreviewNumber(val) {
-        if (typeof val !== 'number') return val;
-        return val % 1 === 0 ? val.toFixed(0) : val.toFixed(1);
-    }
+        if (formData.description && formData.description.trim() !== '') {
+            if (window.confirm('The description is not empty. Are you sure you want to replace it with the template?')) {
+                setFormData(prev => ({ ...prev, description: template }));
+            }
+        } else {
+            setFormData(prev => ({ ...prev, description: template }));
+        }
+    };
 
     if (!isModalOpen) return null;
 
+    const getAssigneeName = (assigneeId) => {
+        if (!users.length || !assigneeId) return 'Empty';
+        const user = users.find(u => u.id === parseInt(assigneeId));
+        return user ? `${user.firstName} ${user.lastName}` : 'Empty';
+    };
+
+    const getSprintName = (sprintId) => {
+        if (!sprints.length || !sprintId) return 'Backlog';
+        const sprint = sprints.find(s => s.id === parseInt(sprintId));
+        return sprint ? sprint.name : 'Backlog';
+    };
+
+    const renderMetadataRow = ({ icon, label, children }) => (
+        <div className="metadata-row">
+            <div className="metadata-label">
+                {icon}
+                <span>{label}</span>
+            </div>
+            <div className="metadata-value">{children}</div>
+        </div>
+    );
+    
     return (
-        <div 
-            className="modal-overlay" 
-            onClick={closeTaskModal}
-            onKeyPress={handleInputChange}
-            tabIndex={0}
-        >
-            <div className={`modal-content ${selectedTask ? 'edit-task-modal' : 'create-task-modal'}`} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={closeTaskModal}>
+            <div className={`modal-content-reborn`} onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>{selectedTask ? 'Edit Task' : 'Create New Task'}</h2>
+                     <input
+                        type="text"
+                        name="title"
+                        className="modal-title-input"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        placeholder="Task Title"
+                        required
+                    />
                     <button className="close-button" onClick={closeTaskModal}>×</button>
                 </div>
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="title">Title</label>
-                        <input
-                            type="text"
-                            id="title"
-                            name="title"
-                            value={formData.title}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="description">Description</label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="sprint_id"><b>Sprint/Backlog</b></label>
-                        <select
-                            key={sprints.map(s => s.id).join('-')}
-                            id="sprint_id"
-                            name="sprint_id"
-                            value={formData.sprint_id ?? ''}
-                            onChange={handleInputChange}
-                            disabled={sprintsLoading}
-                        >
-                            <option value="">Backlog</option>
-                            {sprints.map(sprint => (
-                                <option key={sprint.id} value={String(sprint.id)}>{sprint.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="status">Status</label>
-                            <select
-                                id="status"
-                                name="status"
-                                value={formData.status}
-                                onChange={handleInputChange}
-                                required
-                            >
+
+                <div className="ai-bar">
+                    <span className="ai-icon">✨</span>
+                    Create Template for description below – <a href="#" onClick={handleAddTemplate}>Add Template</a>
+                </div>
+
+                <div className="modal-body">
+                    <div className="metadata-grid">
+                        {renderMetadataRow({ icon: <StatusIcon />, label: "Status", children: (
+                            <select name="status" value={formData.status} onChange={handleInputChange}>
                                 <option value="todo">To Do</option>
                                 <option value="inProgress">In Progress</option>
+                                <option value="review">Review</option>
                                 <option value="done">Done</option>
                             </select>
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="priority">Priority</label>
-                            <select
-                                id="priority"
-                                name="priority"
-                                value={formData.priority}
-                                onChange={handleInputChange}
-                                required
-                            >
+                        )})}
+                        {renderMetadataRow({ icon: <AssigneeIcon />, label: "Assignees", children: (
+                            <select name="assignee_id" value={formData.assignee_id} onChange={handleInputChange}>
+                                <option value="">Empty</option>
+                                {users.map(user => <option key={user.id} value={user.id}>{user.firstName} {user.lastName}</option>)}
+                            </select>
+                        )})}
+
+                        {renderMetadataRow({ icon: <DatesIcon />, label: "Dates", children: <div className="metadata-placeholder">Empty</div> })}
+                        
+                        {renderMetadataRow({ icon: <PriorityIcon />, label: "Priority", children: (
+                             <select name="priority" value={formData.priority} onChange={handleInputChange}>
                                 <option value="low">Low</option>
                                 <option value="medium">Medium</option>
                                 <option value="high">High</option>
                             </select>
-                        </div>
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="effort" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                Effort (in hours)
-                                <InfoIcon message="Allowed: 4, 2.5, 1d, 0.5d, 1d 4h. All values are saved in hours. Display adapts to your hours/day setting." />
-                                {formData.effort && !effortError && (
-                                    <span style={{ fontStyle: 'italic', color: '#aaa', fontSize: '0.95em' }}>
-                                        {formatPreviewNumber(parseEffortInput(formData.effort, hoursPerDay))}h
-                                    </span>
-                                )}
-                            </label>
-                            <input
-                                type="text"
-                                id="effort"
-                                name="effort"
-                                value={formData.effort}
-                                onChange={handleInputChange}
-                                placeholder="e.g., 2h, 1d, 1d 4h, 4 (hours)"
+                        )})}
+
+                        {renderMetadataRow({ icon: <TimeEstimateIcon />, label: "Time Estimate", children: (
+                            <input type="text" name="effort" value={formData.effort} onChange={handleInputChange} placeholder="Empty" />
+                        )})}
+                        
+                        {renderMetadataRow({ icon: <TimeTrackIcon />, label: "Track Time", children: (
+                             <input type="text" name="timespent" value={formData.timespent} onChange={handleInputChange} placeholder="Add Time" />
+                        )})}
+
+                        {renderMetadataRow({ icon: <TagsIcon />, label: "Tags", children: (
+                            <TagsInput 
+                                tags={formData.tags}
+                                setTags={(newTags) => setFormData(prev => ({ ...prev, tags: newTags }))}
                             />
-                            {effortError && <span className="error-message">{effortError}</span>}
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="timespent" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                Time Spent (in hours)
-                                <InfoIcon message="Allowed: 4, 2.5, 1d, 0.5d, 1d 4h. All values are saved in hours. Display adapts to your hours/day setting." />
-                                {formData.timespent && !timeSpentError && (
-                                    <span style={{ fontStyle: 'italic', color: '#aaa', fontSize: '0.95em' }}>
-                                        {formatPreviewNumber(parseEffortInput(formData.timespent, hoursPerDay))}h
-                                    </span>
-                                )}
-                            </label>
-                            <input
-                                type="text"
-                                id="timespent"
-                                name="timespent"
-                                value={formData.timespent}
-                                onChange={handleInputChange}
-                                placeholder="e.g., 2h, 1d, 1d 4h, 4 (hours)"
-                            />
-                            {timeSpentError && <span className="error-message">{timeSpentError}</span>}
-                        </div>
+                        )})}
+                        
+                        {renderMetadataRow({ icon: <RelationshipsIcon />, label: "Relationships", children: <div className="metadata-placeholder">Empty</div> })}
+                        
+                        {renderMetadataRow({ icon: <SprintIcon />, label: "Sprint", children: (
+                             <select name="sprint_id" value={formData.sprint_id} onChange={handleInputChange}>
+                                <option value="">Backlog</option>
+                                {sprints.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                        )})}
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="assignee_id">Assignee</label>
-                        <select
-                            id="assignee_id"
-                            name="assignee_id"
-                            value={formData.assignee_id}
+                    
+                    <div className="description-area">
+                        <textarea
+                            name="description"
+                            value={formData.description}
                             onChange={handleInputChange}
-                        >
-                            <option value="">Unassigned</option>
-                            {users.map((user) => (
-                                <option key={user.id} value={user.id}>
-                                    {user.firstName} {user.lastName}
-                                </option>
-                            ))}
-                        </select>
+                            placeholder="Write something or type '/' for commands and AI actions"
+                        />
                     </div>
-                    <div className={`modal-footer ${selectedTask ? 'row' : 'row-reverse'}`}>
-                        <button type="submit" className="save-button">
-                            {selectedTask ? 'Save Changes' : 'Create Task'}
+                </div>
+
+                <div className="modal-footer">
+                     {selectedTask && (
+                        <button type="button" className="delete-button" onClick={handleDelete}>
+                            Delete
                         </button>
-                        <button type="button" className="cancel-button" onClick={closeTaskModal}>
-                            Cancel
-                        </button>
-                        {selectedTask && (
-                            <button type="button" className="delete-button" onClick={handleDelete}>
-                                Delete
-                            </button>
-                        )}
-                       
-                    </div>
-                </form>
+                    )}
+                    <button type="button" className="cancel-button" onClick={closeTaskModal}>
+                        Cancel
+                    </button>
+                    <button type="submit" className="save-button" onClick={handleSubmit}>
+                        {selectedTask ? 'Save Changes' : 'Create Task'}
+                    </button>
+                </div>
             </div>
         </div>
     );

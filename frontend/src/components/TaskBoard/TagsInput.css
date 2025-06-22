@@ -1,0 +1,63 @@
+.tags-input-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.tags-input-container:hover {
+    border-color: #dfe1e6;
+}
+
+.dark-mode .tags-input-container:hover {
+    border-color: #4a5568;
+}
+
+.tag-item {
+    display: flex;
+    align-items: center;
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.dark-mode .tag-item {
+    background-color: #374151;
+    color: #e2e8f0;
+}
+
+.remove-tag-button {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    margin-left: 6px;
+    font-size: 16px;
+    padding: 0;
+    line-height: 1;
+}
+
+.dark-mode .remove-tag-button {
+    color: #a0aec0;
+}
+
+.tags-input {
+    flex-grow: 1;
+    border: none;
+    background: transparent;
+    padding: 4px 0;
+    font-size: 14px;
+    min-width: 100px;
+}
+
+.tags-input:focus {
+    outline: none;
+} 
