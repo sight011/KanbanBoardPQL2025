@@ -21,12 +21,14 @@ const TagsInput = ({ tags, setTags }) => {
 
     return (
         <div className="tags-input-container">
-            {tags.map((tag, index) => (
-                <div key={index} className="tag-item">
-                    {tag}
-                    <button onClick={() => removeTag(tag)} className="remove-tag-button">×</button>
-                </div>
-            ))}
+            <div className="tags-list">
+                {tags.map((tag, index) => (
+                    <div key={index} className="tag-item">
+                        {tag}
+                        <button onClick={() => removeTag(tag)} className="remove-tag-button">×</button>
+                    </div>
+                ))}
+            </div>
             <input
                 type="text"
                 value={inputValue}

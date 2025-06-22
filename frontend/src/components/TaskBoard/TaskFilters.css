@@ -1,5 +1,5 @@
 .task-filters {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-primary);
     margin-bottom: 1rem;
     width: 100%;
 }
@@ -33,7 +33,7 @@
 
 .clear-filters-button {
     padding: 0.5rem 1rem;
-    background-color: var(--danger-color);
+    background-color: #016dff;
     color: white;
     border: none;
     border-radius: 4px;

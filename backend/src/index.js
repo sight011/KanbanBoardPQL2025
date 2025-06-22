@@ -11,6 +11,7 @@ const passwordResetRoutes = require('./routes/passwordResetRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const session = require('express-session');
 const healthRoutes = require("./routes/healthRoutes");
+const commentRoutes = require('./routes/commentRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -66,6 +67,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/auth', passwordResetRoutes);
 app.use('/api', authRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
@@ -74,11 +76,12 @@ app.get('/', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error:', err.stack);
+    console.error('--- UNHANDLED ERROR ---');
+    console.error(err.stack);
     res.status(500).json({ 
-        error: 'Something went wrong!',
+        error: 'An unexpected error occurred.',
         message: err.message,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        stack: err.stack // Always return stack trace
     });
 });
 

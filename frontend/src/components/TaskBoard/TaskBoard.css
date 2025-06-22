@@ -446,7 +446,6 @@
     align-items: center;
     height: 36px;
     padding: 0 0;
-    background-color: var(--bg-secondary);
     border-radius: 8px;
     margin-bottom: 1rem;
 }
@@ -457,7 +456,6 @@
     padding: 0 0.5rem;
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    background-color: var(--bg-primary);
     color: var(--text-primary);
     font-size: 0.875rem;
     min-width: 150px;
@@ -468,7 +466,6 @@
     padding: 0 1rem;
     border: none;
     border-radius: 4px;
-    background-color: var(--primary-color);
     color: white;
     font-size: 0.875rem;
     font-weight: 500;
@@ -476,10 +473,6 @@
     transition: background-color 0.2s ease;
     display: flex;
     align-items: center;
-}
-
-.task-filters button:hover {
-    background-color: var(--secondary-color);
 }
 
 .dark-mode .list-view .assignee-bubble.unassigned {

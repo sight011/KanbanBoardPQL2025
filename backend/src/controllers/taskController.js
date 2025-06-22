@@ -25,7 +25,7 @@ const taskController = {
         try {
             console.log('📊 About to query database...');
             const result = await pool.query(
-                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks ORDER BY sprint_id, sprint_order, id'
+                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, duedate, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks ORDER BY sprint_id, sprint_order, id'
             );
             console.log('✅ Query successful, found', result.rows.length, 'tasks');
             console.log('First task:', result.rows[0]);
@@ -47,7 +47,7 @@ const taskController = {
         try {
             const { id } = req.params;
             const result = await pool.query(
-                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks WHERE id = $1',
+                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, duedate, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks WHERE id = $1',
                 [id]
             );
             
@@ -78,7 +78,7 @@ const taskController = {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
-            const { title, description, status, priority, tags } = req.body;
+            const { title, description, status, priority, tags, duedate } = req.body;
             let { effort, timespent } = req.body;
 
             if (!req.user || !req.user.id) {
@@ -137,8 +137,8 @@ const taskController = {
             const tagsString = tags && tags.length > 0 ? tags.join(',') : null;
 
             const result = await client.query(
-                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, sprint_id, tags, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()) RETURNING *',
-                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent, req.body.sprint_id || null, tagsString]
+                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, sprint_id, tags, duedate, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()) RETURNING *',
+                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent, req.body.sprint_id || null, tagsString, duedate || null]
             );
 
             const newTask = result.rows[0];
@@ -187,7 +187,7 @@ const taskController = {
             }
             const originalTask = originalTaskResult.rows[0];
 
-            const { title, description, status, priority, assignee_id, sprint_id, sprint_order, completed_at, tags } = req.body;
+            const { title, description, status, priority, assignee_id, sprint_id, sprint_order, completed_at, tags, duedate } = req.body;
             let { effort, timespent } = req.body;
 
             // Validate required fields
@@ -224,8 +224,8 @@ const taskController = {
 
             const tagsString = tags && tags.length > 0 ? tags.join(',') : null;
 
-            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, completed_at = $10, updated_at = NOW(), tags = $11 WHERE id = $12 RETURNING *';
-            const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, completed_at || null, tagsString, id];
+            const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, completed_at = $10, updated_at = NOW(), tags = $11, duedate = $12 WHERE id = $13 RETURNING *';
+            const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, completed_at || null, tagsString, duedate || null, id];
             
             const result = await client.query(sql, params);
             const updatedTask = result.rows[0];
@@ -241,6 +241,7 @@ const taskController = {
                 { field: 'sprint_order', oldValue: originalTask.sprint_order, newValue: updatedTask.sprint_order },
                 { field: 'effort', oldValue: originalTask.effort, newValue: updatedTask.effort },
                 { field: 'timespent', oldValue: originalTask.timespent, newValue: updatedTask.timespent },
+                { field: 'duedate', oldValue: originalTask.duedate, newValue: updatedTask.duedate },
             ];
 
             for (const change of changes) {
@@ -308,8 +309,8 @@ const taskController = {
                 taskId: id,
                 userId: req.user.id,
                 fieldName: 'task',
-                oldValue: taskToDelete.title,
-                newValue: "deleted"
+                oldValue: `Task "${taskToDelete.title}" was deleted.`,
+                newValue: null
             }, client);
 
             // Then delete the task
@@ -582,8 +583,8 @@ const taskController = {
                 taskId: duplicatedTask.id,
                 userId: req.user.id,
                 fieldName: 'task',
-                oldValue: originalTask.id,
-                newValue: `Task "${duplicatedTask.title}" was duplicated from task #${originalTask.ticket_number}.`
+                oldValue: null,
+                newValue: `Task "${duplicatedTask.title}" was created as a duplicate of task #${originalTask.id}.`
             }, client);
 
             await client.query('COMMIT'); // Commit transaction

@@ -45,8 +45,9 @@
 .app {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    background-color: #f4f5f7;
+    height: 100vh;
+    background-color: var(--background-primary);
+    color: var(--text-color);
     transition: background-color 0.3s ease;
 }
 
@@ -55,19 +56,15 @@
 }
 
 .app-header {
-    background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
-    background-size: 200% 100%;
-    background-position-x: 0%;
-    animation: gradient-move 8s ease-in-out infinite alternate;
-    color: white;
-    padding: 12px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 60px;
-    box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
-    width: 1420px;
-    margin: 0 auto;
+    padding: 0 24px;
+    background-color: var(--header-bg, #0052cc);
+    color: var(--header-text, white);
+    height: 32px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 @keyframes gradient-move {
@@ -92,6 +89,12 @@
 .app-logo-container {
     display: flex;
     align-items: center;
+    height: 100%;
+}
+
+.app-logo-container img {
+    height: 28px; /* Adjusted for new header height */
+    width: auto;
 }
 
 .header-actions {
