@@ -7,8 +7,8 @@
 }
 
 .audit-trail-view.dark {
-    background-color: var(--background-color-dark);
-    color: var(--text-color-dark);
+    background-color: #181c23;
+    color: #e2e8f0;
 }
 
 .audit-trail-view h2 {
@@ -55,8 +55,9 @@
 }
 
 .audit-trail-view.dark .audit-table thead th {
-    background-color: #1f2937;
+    background-color: #23272f;
     color: #f9fafb;
+    border-bottom-color: #374151;
 }
 
 .audit-table tbody tr:hover {
@@ -121,7 +122,7 @@
 }
 
 .audit-trail-view.dark .back-to-settings-button {
-    background-color: #2c2c2c;
+    background-color: #23272f;
     border-color: #444;
     color: #f1f1f1;
 }
@@ -132,31 +133,23 @@
 }
 
 .audit-trail-view.dark .back-to-settings-button:hover {
-    background-color: #3a3a3a;
+    background-color: #374151;
 }
 
 .audit-trail-view.dark .audit-table {
-    color: #d1d5db; /* A light gray for better readability than pure white */
-}
-
-.audit-trail-view.dark .audit-table thead th {
-    background-color: #1f2937;
-    color: #f9fafb;
-    border-bottom-color: #374151;
+    color: #d1d5db;
+    background-color: #23272f;
 }
 
 .audit-trail-view.dark .audit-table td {
+    background-color: #23272f;
     border-bottom-color: #374151;
 }
 
-.audit-trail-view.dark .audit-table tbody tr:hover {
-    background-color: #374151;
+.audit-trail-view.dark .audit-table tbody tr:nth-child(even) {
+    background-color: #20232a;
 }
 
 .audit-table tbody tr:nth-child(even) {
     background-color: #f9fafb;
-}
-
-.audit-trail-view.dark .audit-table tbody tr:nth-child(even) {
-    background-color: #2c2f33;
 } 

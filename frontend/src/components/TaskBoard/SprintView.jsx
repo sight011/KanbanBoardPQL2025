@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { useTaskContext } from '../../context/TaskContext';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './SprintView.css';
@@ -76,6 +77,17 @@ const SprintModal = ({ open, onClose, onSave, initial }) => {
     );
 };
 
+SprintModal.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onSave: PropTypes.func.isRequired,
+    initial: PropTypes.shape({
+        name: PropTypes.string,
+        start_date: PropTypes.string,
+        end_date: PropTypes.string
+    })
+};
+
 function formatDateRange(start, end) {
     if (!start || !end) return '';
     const s = new Date(start);
@@ -113,6 +125,17 @@ const DeleteSprintModal = ({ open, onClose, onConfirm, sprints, defaultValue }) 
     );
 };
 
+DeleteSprintModal.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onConfirm: PropTypes.func.isRequired,
+    sprints: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired
+    })).isRequired,
+    defaultValue: PropTypes.string
+};
+
 const ReactivateModal = ({ open, onClose, onConfirm, activeSprint, isDarkMode }) => {
     if (!open) return null;
 
@@ -144,8 +167,18 @@ const ReactivateModal = ({ open, onClose, onConfirm, activeSprint, isDarkMode })
     );
 };
 
+ReactivateModal.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onConfirm: PropTypes.func.isRequired,
+    activeSprint: PropTypes.shape({
+        name: PropTypes.string.isRequired
+    }),
+    isDarkMode: PropTypes.bool.isRequired
+};
+
 const SprintView = () => {
-    const { tasks, updateTask, openTaskModal, isModalOpen, closeTaskModal, addTask, removeTask, setTasks } = useTaskContext();
+    const { tasks, updateTask, updateTaskPosition, openTaskModal, addTask, removeTask, setTasks } = useTaskContext();
     const [sprints, setSprints] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -184,6 +217,12 @@ const SprintView = () => {
     const [deleteTaskModalOpen, setDeleteTaskModalOpen] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState(null);
 
+    const [attendeesDropdown, setAttendeesDropdown] = useState({}); // { [sprintId]: boolean }
+    const [sprintAttendees, setSprintAttendees] = useState({}); // { [sprintId]: [userId, ...] }
+
+    // Add drag operation state to prevent concurrent operations
+    const [isDragUpdating, setIsDragUpdating] = useState(false);
+
     useEffect(() => {
         const observer = new MutationObserver(() => {
             setIsDarkMode(
@@ -198,7 +237,7 @@ const SprintView = () => {
 
     // Global click handler to close context menu
     useEffect(() => {
-        const handleGlobalClick = (e) => {
+        const handleGlobalClick = () => {
             if (contextMenu.isVisible) {
                 handleContextMenuClose();
             }
@@ -302,43 +341,69 @@ const SprintView = () => {
     }, [sprints]);
 
     const onDragEnd = async (result) => {
+        console.log('🔄 onDragEnd called:', result);
+        
+        // Prevent concurrent drag operations
+        if (isDragUpdating) {
+            console.log('⚠️ Drag operation already in progress, skipping');
+            return;
+        }
+        
         const { source, destination, draggableId } = result;
-        if (!destination) return;
-        if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+        if (!destination) {
+            console.log('❌ No destination, returning early');
+            return;
+        }
+        if (source.droppableId === destination.droppableId && source.index === destination.index) {
+            console.log('❌ Same position, returning early');
+            return;
+        }
+        
         const taskId = parseInt(draggableId);
-        const sourceSprintId = source.droppableId === 'backlog' ? null : parseInt(source.droppableId);
         const destSprintId = destination.droppableId === 'backlog' ? null : parseInt(destination.droppableId);
         const task = tasks.find(t => t.id === taskId);
-        if (!task) return;
-
-        const sourceList = (tasksBySprint[sourceSprintId || 'backlog'] || []).filter(t => t.id !== taskId);
-        const destList = (tasksBySprint[destSprintId || 'backlog'] || []).filter(t => t.id !== taskId);
-        let newList;
-        if (source.droppableId === destination.droppableId) {
-            newList = [...sourceList];
-            newList.splice(destination.index, 0, task);
-        } else {
-            newList = [...destList];
-            newList.splice(destination.index, 0, { ...task, sprint_id: destSprintId });
+        if (!task) {
+            console.log('❌ Task not found:', taskId);
+            return;
         }
 
-        for (let i = 0; i < newList.length; i++) {
-            const t = newList[i];
-            await updateTask(t.id, {
-                ...t,
-                sprint_id: destSprintId,
-                sprint_order: i + 1
+        console.log('✅ Starting drag update for task:', taskId, 'to position:', destination.index + 1);
+        setIsDragUpdating(true);
+
+        try {
+            // Add timeout protection to prevent hanging
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout')), 10000)
+            );
+
+            // Use the more efficient updateTaskPosition endpoint for the moved task
+            console.log('📡 Calling updateTaskPosition...');
+            const updatePromise = updateTaskPosition(taskId, {
+                newPosition: destination.index + 1,
+                newStatus: task.status, // Keep the same status
+                completed_at: task.completed_at
             });
-        }
 
-        if (source.droppableId !== destination.droppableId) {
-            for (let i = 0; i < sourceList.length; i++) {
-                const t = sourceList[i];
-                await updateTask(t.id, {
-                    ...t,
-                    sprint_order: i + 1
+            await Promise.race([updatePromise, timeoutPromise]);
+            console.log('✅ updateTaskPosition completed');
+
+            // Update sprint_id separately if it changed
+            if (task.sprint_id !== destSprintId) {
+                console.log('📡 Updating sprint_id from', task.sprint_id, 'to', destSprintId);
+                const sprintUpdatePromise = updateTask(taskId, {
+                    ...task,
+                    sprint_id: destSprintId
                 });
+                await Promise.race([sprintUpdatePromise, timeoutPromise]);
+                console.log('✅ sprint_id update completed');
             }
+            
+            console.log('✅ Drag operation completed successfully');
+        } catch (error) {
+            console.error('❌ Error updating task positions:', error);
+            // The optimistic updates will be reverted by the TaskContext error handling
+        } finally {
+            setIsDragUpdating(false);
         }
     };
 
@@ -629,6 +694,21 @@ const SprintView = () => {
         return formatHours(totalHours, hoursPerDay);
     };
 
+    const toggleAttendeesDropdown = (sprintId) => {
+        setAttendeesDropdown(prev => ({ ...prev, [sprintId]: !prev[sprintId] }));
+    };
+
+    const handleAttendeesChange = (sprintId, userId) => {
+        setSprintAttendees(prev => {
+            const current = prev[sprintId] || [];
+            if (current.includes(userId)) {
+                return { ...prev, [sprintId]: current.filter(id => id !== userId) };
+            } else {
+                return { ...prev, [sprintId]: [...current, userId] };
+            }
+        });
+    };
+
     return (
         <div className={`sprint-view ${isDarkMode ? 'dark' : 'light'}`}>
             <TaskFilters filters={filters} onFilterChange={handleFilterChange} activeSprintId={activeSprint ? String(activeSprint.id) : ''} />
@@ -691,7 +771,7 @@ const SprintView = () => {
                 ) : (
                     <>
                         <div className="sprint-list">
-                            {sprints.map((sprint, sprintIdx) => (
+                            {sprints.map((sprint) => (
                                 <Droppable droppableId={String(sprint.id)} key={sprint.id}>
                                     {(provided, snapshot) => (
                                         <div
@@ -717,8 +797,78 @@ const SprintView = () => {
                                                     <span className="sprint-dates" style={{ marginLeft: 16 }}>{formatDateRange(sprint.start_date, sprint.end_date)}</span>
                                                     <span className="sprint-status-badge" style={{ marginLeft: 16 }}>Status: {sprint.status}</span>
                                                     <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
+                                                        Available Ressources: 0h
+                                                    </span>
+                                                    <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
                                                         Total Effort: {calculateTotalEffort(tasksBySprint[sprint.id])}
                                                     </span>
+                                                    {/* Sprint Attendees Button and Dropdown */}
+                                                    <div style={{ position: 'relative', marginLeft: 16 }}>
+                                                        <button
+                                                            className="sprint-attendees-button"
+                                                            style={{ 
+                                                                padding: '6px 12px', 
+                                                                borderRadius: 4, 
+                                                                border: '1px solid #93c5fd', 
+                                                                background: '#dbeafe', 
+                                                                color: '#1e40af', 
+                                                                fontWeight: 500, 
+                                                                cursor: 'pointer', 
+                                                                fontSize: '0.875rem',
+                                                                lineHeight: '1.25',
+                                                                height: '32px',
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}
+                                                            onClick={() => toggleAttendeesDropdown(sprint.id)}
+                                                            type="button"
+                                                        >
+                                                            Sprint Attendees
+                                                        </button>
+                                                        {attendeesDropdown[sprint.id] && (
+                                                            <div style={{ position: 'absolute', top: '110%', left: 0, zIndex: 10, background: isDarkMode ? '#23272f' : '#fff', border: '1px solid #93c5fd', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.12)', padding: '16px 12px', minWidth: 200, maxHeight: '400px' }}>
+                                                                <div style={{ maxHeight: 350, overflowY: 'auto', paddingRight: 4 }}>
+                                                                    {users.length === 0 ? (
+                                                                        <div style={{ color: '#888' }}>No users</div>
+                                                                    ) : (
+                                                                        <>
+                                                                            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid #e2e8f0' }}>
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={sprintAttendees[sprint.id] && users.every(user => sprintAttendees[sprint.id]?.includes(user.id))}
+                                                                                    onChange={() => {
+                                                                                        if (sprintAttendees[sprint.id]?.length === users.length) {
+                                                                                            // If all are selected, deselect all
+                                                                                            handleAttendeesChange(sprint.id, 'all', false);
+                                                                                        } else {
+                                                                                            // Otherwise select all
+                                                                                            users.forEach(user => {
+                                                                                                if (!sprintAttendees[sprint.id]?.includes(user.id)) {
+                                                                                                    handleAttendeesChange(sprint.id, user.id);
+                                                                                                }
+                                                                                            });
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                                <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>All</span>
+                                                                            </label>
+                                                                            {users.map(user => (
+                                                                                <label key={user.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: '0.875rem' }}>
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={!!(sprintAttendees[sprint.id]?.includes(user.id))}
+                                                                                        onChange={() => handleAttendeesChange(sprint.id, user.id)}
+                                                                                    />
+                                                                                    <span>{user.firstName} {user.lastName}</span>
+                                                                                </label>
+                                                                            ))}
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                     <div className="sprint-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                                                         {sprint.status === 'planned' && (
                                                             <button 
