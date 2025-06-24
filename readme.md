@@ -6,8 +6,7 @@
 ----------------------------------------------------------------------------------------------------
 
 ## Running
-
-1. designed for [node.js lts v20](https://nodejs.org/en) and above
+(Designed for [node.js lts v20](https://nodejs.org/en) and above)
 
 
 **On a Mac (for example)**
