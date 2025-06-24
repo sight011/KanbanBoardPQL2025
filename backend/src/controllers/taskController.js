@@ -374,16 +374,16 @@ const taskController = {
                 console.log('Transaction started');
 
                 // Get the current task's status and position
-                const currentTask = await client.query(
+                const currentTaskResult = await client.query(
                     'SELECT status, position FROM tasks WHERE id = $1',
                     [id]
                 );
 
-                if (currentTask.rows.length === 0) {
+                if (currentTaskResult.rows.length === 0) {
                     throw new Error('Task not found');
                 }
 
-                const { status: oldStatus, position: oldPosition } = currentTask.rows[0];
+                const { status: oldStatus, position: oldPosition } = currentTaskResult.rows[0];
 
                 // Position update logic
                 if (oldStatus !== newStatus) {
@@ -395,9 +395,8 @@ const taskController = {
                         newValue: newStatus
                     }, client);
                 }
-                
                 if (oldPosition !== newPosition) {
-                     await historyService.logChange({
+                    await historyService.logChange({
                         taskId: id,
                         userId: req.user.id,
                         fieldName: 'position',
@@ -406,20 +405,56 @@ const taskController = {
                     }, client);
                 }
 
-                // Update the task's position, status, and completed_at
-                const completed_at = newStatus === 'done' ? 'NOW()' : 'NULL';
-                const updatedTask = await client.query(
-                    `UPDATE tasks SET position = $1, status = $2, completed_at = ${completed_at}, updated_at = NOW() WHERE id = $3 RETURNING *`,
-                    [newPosition, newStatus, id]
-                );
+                if (oldStatus === newStatus) {
+                    // Same column reordering
+                    // 1. Get all tasks in this status, ordered by position, id
+                    const tasksResult = await client.query(
+                        'SELECT id FROM tasks WHERE status = $1 ORDER BY position, id',
+                        [oldStatus]
+                    );
+                    const tasks = tasksResult.rows.map(row => row.id);
+                    // 2. Remove the moved task from its old position
+                    const oldIdx = tasks.indexOf(Number(id));
+                    if (oldIdx !== -1) tasks.splice(oldIdx, 1);
+                    // 3. Insert at new position (array is 0-based, newPosition is 1-based)
+                    let insertIdx = newPosition - 1;
+                    if (insertIdx < 0) insertIdx = 0;
+                    if (insertIdx > tasks.length) insertIdx = tasks.length;
+                    tasks.splice(insertIdx, 0, Number(id));
+                    // 4. Update all positions in DB
+                    for (let i = 0; i < tasks.length; i++) {
+                        await client.query(
+                            'UPDATE tasks SET position = $1 WHERE id = $2',
+                            [i + 1, tasks[i]]
+                        );
+                    }
+                } else {
+                    // Moving to a different column
+                    // 1. Shift down positions in old column
+                    await client.query(
+                        'UPDATE tasks SET position = position - 1 WHERE status = $1 AND position > $2',
+                        [oldStatus, oldPosition]
+                    );
+                    // 2. Shift up positions in new column
+                    await client.query(
+                        'UPDATE tasks SET position = position + 1 WHERE status = $1 AND position >= $2',
+                        [newStatus, newPosition]
+                    );
+                    // 3. Move the task
+                    await client.query(
+                        'UPDATE tasks SET status = $1, position = $2, completed_at = $3, updated_at = NOW() WHERE id = $4',
+                        [newStatus, newPosition, newStatus === 'done' ? new Date() : null, id]
+                    );
+                }
 
-                // Get all tasks with updated positions
-                const allTasks = await client.query('SELECT * FROM tasks ORDER BY status, position');
-
+                // Resequence both columns to be safe
                 await resequencePositions(oldStatus, client);
                 if (oldStatus !== newStatus) {
                     await resequencePositions(newStatus, client);
                 }
+
+                // Get all tasks with updated positions
+                const allTasks = await client.query('SELECT * FROM tasks ORDER BY status, position');
 
                 await client.query('COMMIT');
                 console.log('✅ Task position updated successfully');
@@ -427,7 +462,6 @@ const taskController = {
                 res.status(200).json({
                     success: true,
                     tasks: allTasks.rows,
-                    updatedTask: updatedTask.rows[0],
                     message: 'Task position updated successfully'
                 });
             } catch (err) {
