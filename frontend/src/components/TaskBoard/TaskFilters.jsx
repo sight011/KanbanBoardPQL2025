@@ -39,6 +39,10 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
         onFilterChange('sprint', e.target.value);
     };
 
+    const handleChangedInTimeChange = (e) => {
+        onFilterChange('changedInTime', e.target.value);
+    };
+
     const handlePriorityChange = (e) => {
         onFilterChange('priority', e.target.value);
     };
@@ -54,6 +58,7 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
     const handleClearFilters = () => {
         onFilterChange('text', '');
         onFilterChange('sprint', activeSprintId || '');
+        onFilterChange('changedInTime', '');
         onFilterChange('priority', '');
         onFilterChange('status', '');
         onFilterChange('assignee', '');
@@ -82,6 +87,20 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
                             {sprint.name}{activeSprintId === String(sprint.id) ? ' (active)' : ''}
                         </option>
                     ))}
+                </select>
+                <select
+                    className="filter-select"
+                    value={filters.changedInTime || ''}
+                    onChange={handleChangedInTimeChange}
+                >
+                    <option value="">Changed in Time</option>
+                    <option value="all">All</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="lastTwoDays">Last Two Days</option>
+                    <option value="last24h">Last 24h</option>
+                    <option value="last7d">Last 7d</option>
+                    <option value="last14d">Last 14d</option>
                 </select>
                 <select
                     className="filter-select"

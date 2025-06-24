@@ -162,7 +162,8 @@ const SprintView = () => {
         text: '',
         assignee: '',
         priority: '',
-        sprint: ''
+        sprint: '',
+        changedInTime: ''
     });
     const [foldedSprints, setFoldedSprints] = useState(new Set());
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -171,6 +172,7 @@ const SprintView = () => {
     const [sprintToReactivate, setSprintToReactivate] = useState(null);
     const [activeSprint, setActiveSprint] = useState(null);
     const [hoursPerDay, setHoursPerDay] = useState(8);
+    const [tasksWithChanges, setTasksWithChanges] = useState([]);
     
     // Context menu state
     const [contextMenu, setContextMenu] = useState({
@@ -261,6 +263,30 @@ const SprintView = () => {
         fetchSprints();
     }, []);
 
+    // Fetch tasks with changes when changedInTime filter is applied
+    useEffect(() => {
+        const fetchTasksWithChanges = async () => {
+            if (filters.changedInTime && filters.changedInTime !== 'all') {
+                try {
+                    const response = await fetch(`/api/audit/tasks-with-changes?timeFrame=${filters.changedInTime}`);
+                    const data = await response.json();
+                    if (data.success) {
+                        setTasksWithChanges(data.tasks.map(task => task.id));
+                    } else {
+                        setTasksWithChanges([]);
+                    }
+                } catch (err) {
+                    console.error('Error fetching tasks with changes:', err);
+                    setTasksWithChanges([]);
+                }
+            } else {
+                setTasksWithChanges([]);
+            }
+        };
+
+        fetchTasksWithChanges();
+    }, [filters.changedInTime]);
+
     // Filter tasks based on filters
     const filteredTasks = tasks.filter(task => {
         // Text filter
@@ -283,6 +309,10 @@ const SprintView = () => {
             if (filters.sprint !== 'backlog' && task.sprint_id !== parseInt(filters.sprint)) {
                 return false;
             }
+        }
+        // Changed in Time filter
+        if (filters.changedInTime && filters.changedInTime !== 'all' && !tasksWithChanges.includes(task.id)) {
+            return false;
         }
         return true;
     });

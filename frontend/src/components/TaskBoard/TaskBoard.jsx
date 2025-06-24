@@ -64,6 +64,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     const [filters, setFilters] = useState({
         text: '',
         sprint: '',
+        changedInTime: '',
         priority: '',
         assignee: '',
         status: ''
@@ -71,6 +72,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     const [sprints, setSprints] = useState([]);
     const [selectedSprint, setSelectedSprint] = useState('');
     const [users, setUsers] = useState([]);
+    const [tasksWithChanges, setTasksWithChanges] = useState([]);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -92,6 +94,30 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         };
         fetchUsers();
     }, []);
+
+    // Fetch tasks with changes when changedInTime filter is applied
+    useEffect(() => {
+        const fetchTasksWithChanges = async () => {
+            if (filters.changedInTime && filters.changedInTime !== 'all') {
+                try {
+                    const response = await fetch(`/api/audit/tasks-with-changes?timeFrame=${filters.changedInTime}`);
+                    const data = await response.json();
+                    if (data.success) {
+                        setTasksWithChanges(data.tasks.map(task => task.id));
+                    } else {
+                        setTasksWithChanges([]);
+                    }
+                } catch (err) {
+                    console.error('Error fetching tasks with changes:', err);
+                    setTasksWithChanges([]);
+                }
+            } else {
+                setTasksWithChanges([]);
+            }
+        };
+
+        fetchTasksWithChanges();
+    }, [filters.changedInTime]);
 
     // Add toggleTheme function
     const toggleTheme = () => {
@@ -180,9 +206,13 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
             const matchesAssignee = !filters.assignee || task.assignee_id === parseInt(filters.assignee);
             const matchesSprint = !filters.sprint || String(task.sprint_id) === filters.sprint;
             const matchesStatus = !filters.status || task.status === filters.status;
-            return matchesText && matchesPriority && matchesAssignee && matchesSprint && matchesStatus;
+            const matchesChangedInTime = !filters.changedInTime || 
+                                       filters.changedInTime === 'all' || 
+                                       tasksWithChanges.includes(task.id);
+            
+            return matchesText && matchesPriority && matchesAssignee && matchesSprint && matchesStatus && matchesChangedInTime;
         });
-    }, [tasks, filters]);
+    }, [tasks, filters, tasksWithChanges]);
 
     const handleFilterChange = (filterType, value) => {
         setFilters(prev => ({
