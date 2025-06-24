@@ -41,7 +41,7 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     const [sprintsLoading, setSprintsLoading] = useState(false);
     const [sprintsError, setSprintsError] = useState(null);
     const [hoursPerDay, setHoursPerDay] = useState(8);
-    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -124,6 +124,31 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
             })
             .catch(() => {});
     }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                // Check if the focused element is the comment textarea
+                const activeElement = document.activeElement;
+                const isCommentTextarea = activeElement && 
+                    activeElement.tagName === 'TEXTAREA' && 
+                    activeElement.closest('.comment-form');
+                
+                if (!isCommentTextarea) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                }
+            }
+        };
+
+        if (isModalOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isModalOpen, formData, effortError, timeSpentError]);
 
     function parseEffortInput(value, hoursPerDay = 8) {
         if (!value) return null;
@@ -256,105 +281,113 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     
     return (
         <div className="modal-overlay" onClick={closeTaskModal}>
-            <div className="modal-content-reborn" onClick={e => e.stopPropagation()}>
-                <div className="modal-main-content">
-                    <div className="modal-header">
-                        <input
-                            type="text"
-                            name="title"
-                            value={formData.title}
-                            onChange={handleInputChange}
-                            className="modal-title-input"
-                            placeholder="Task Title"
-                        />
-                    </div>
-
-                    {selectedTask && selectedTask.id && (
-                        <div className="ai-bar">
-                            ✨ <a href="#" onClick={handleAddTemplate}>Create Template for description below</a>
-                        </div>
-                    )}
-                    
-                    <div className="modal-body">
-                        <div className="metadata-grid">
-                            {renderMetadataRow({ icon: <StatusIcon />, label: "Status", children: (
-                                <select name="status" value={formData.status} onChange={handleInputChange}>
-                                    <option value="todo">To Do</option>
-                                    <option value="inProgress">In Progress</option>
-                                    <option value="review">Review</option>
-                                    <option value="done">Done</option>
-                                </select>
-                            )})}
-                            {renderMetadataRow({ icon: <AssigneeIcon />, label: "Assignees", children: (
-                                <select name="assignee_id" value={formData.assignee_id} onChange={handleInputChange}>
-                                    <option value="">Empty</option>
-                                    {users.map(user => <option key={user.id} value={user.id}>{user.firstName} {user.lastName}</option>)}
-                                </select>
-                            )})}
-
-                            {renderMetadataRow({ icon: <DatesIcon />, label: "Due Date", children: (
-                                <DueDate duedate={formData.duedate} setDuedate={(date) => setFormData(prev => ({ ...prev, duedate: date }))} />
-                            )})}
-                            
-                            {renderMetadataRow({ icon: <PriorityIcon />, label: "Priority", children: (
-                                 <select name="priority" value={formData.priority} onChange={handleInputChange}>
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                            )})}
-
-                            {renderMetadataRow({ icon: <TimeEstimateIcon />, label: "Time Estimate", children: (
-                                <input type="text" name="effort" value={formData.effort} onChange={handleInputChange} placeholder="Empty" />
-                            )})}
-                            
-                            {renderMetadataRow({ icon: <TimeTrackIcon />, label: "Track Time", children: (
-                                 <input type="text" name="timespent" value={formData.timespent} onChange={handleInputChange} placeholder="Add Time" />
-                            )})}
-
-                            {renderMetadataRow({ icon: <TagsIcon />, label: "Tags", children: (
-                                <TagsInput 
-                                    tags={formData.tags}
-                                    setTags={(newTags) => setFormData(prev => ({ ...prev, tags: newTags }))}
-                                />
-                            )})}
-                            
-                            {renderMetadataRow({ icon: <RelationshipsIcon />, label: "Relationships", children: <div className="metadata-placeholder">Empty</div> })}
-                            
-                            {renderMetadataRow({ icon: <SprintIcon />, label: "Sprint", children: (
-                                 <select name="sprint_id" value={formData.sprint_id} onChange={handleInputChange}>
-                                    <option value="">Backlog</option>
-                                    {sprints.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                </select>
-                            )})}
-                        </div>
-                        <div className="description-area">
-                            <textarea
-                                name="description"
-                                value={formData.description}
+            {!showConfirmDelete ? (
+                <div className="modal-content-reborn" onClick={e => e.stopPropagation()}>
+                    <div className="modal-main-content">
+                        <div className="modal-header">
+                            <input
+                                type="text"
+                                name="title"
+                                value={formData.title}
                                 onChange={handleInputChange}
-                                placeholder="Add a description..."
+                                className="modal-title-input"
+                                placeholder="Task Title"
                             />
                         </div>
+
+                        {selectedTask && selectedTask.id && (
+                            <div className="ai-bar">
+                                ✨ <a href="#" onClick={handleAddTemplate}>Create Template for description below</a>
+                            </div>
+                        )}
+                        
+                        <div className="modal-body">
+                            <div className="metadata-grid">
+                                {renderMetadataRow({ icon: <StatusIcon />, label: "Status", children: (
+                                    <select name="status" value={formData.status} onChange={handleInputChange}>
+                                        <option value="todo">To Do</option>
+                                        <option value="inProgress">In Progress</option>
+                                        <option value="review">Review</option>
+                                        <option value="done">Done</option>
+                                    </select>
+                                )})}
+                                {renderMetadataRow({ icon: <AssigneeIcon />, label: "Assignees", children: (
+                                    <select name="assignee_id" value={formData.assignee_id} onChange={handleInputChange}>
+                                        <option value="">Empty</option>
+                                        {users.map(user => <option key={user.id} value={user.id}>{user.firstName} {user.lastName}</option>)}
+                                    </select>
+                                )})}
+
+                                {renderMetadataRow({ icon: <DatesIcon />, label: "Due Date", children: (
+                                    <DueDate duedate={formData.duedate} setDuedate={(date) => setFormData(prev => ({ ...prev, duedate: date }))} />
+                                )})}
+                                
+                                {renderMetadataRow({ icon: <PriorityIcon />, label: "Priority", children: (
+                                     <select name="priority" value={formData.priority} onChange={handleInputChange}>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                )})}
+
+                                {renderMetadataRow({ icon: <TimeEstimateIcon />, label: "Time Estimate", children: (
+                                    <input type="text" name="effort" value={formData.effort} onChange={handleInputChange} placeholder="Empty" />
+                                )})}
+                                
+                                {renderMetadataRow({ icon: <TimeTrackIcon />, label: "Track Time", children: (
+                                     <input type="text" name="timespent" value={formData.timespent} onChange={handleInputChange} placeholder="Add Time" />
+                                )})}
+
+                                {renderMetadataRow({ icon: <TagsIcon />, label: "Tags", children: (
+                                    <TagsInput 
+                                        tags={formData.tags}
+                                        setTags={(newTags) => setFormData(prev => ({ ...prev, tags: newTags }))}
+                                    />
+                                )})}
+                                
+                                {renderMetadataRow({ icon: <RelationshipsIcon />, label: "Relationships", children: <div className="metadata-placeholder">Empty</div> })}
+                                
+                                {renderMetadataRow({ icon: <SprintIcon />, label: "Sprint", children: (
+                                     <select name="sprint_id" value={formData.sprint_id} onChange={handleInputChange}>
+                                        <option value="">Backlog</option>
+                                        {sprints.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    </select>
+                                )})}
+                            </div>
+                            <div className="description-area">
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    placeholder="Add a description..."
+                                />
+                            </div>
+                        </div>
+
+                        <div className="modal-footer">
+                            <button onClick={() => setShowConfirmDelete(true)} className="delete-button">Delete</button>
+                            <button onClick={closeTaskModal} className="cancel-button">Cancel</button>
+                            <button onClick={handleSubmit} className="save-button">Save Changes</button>
+                        </div>
                     </div>
 
-                    <div className="modal-footer">
-                        <button onClick={() => setConfirmDelete(true)} className="delete-button">Delete</button>
-                        <button onClick={closeTaskModal} className="cancel-button">Cancel</button>
-                        <button onClick={handleSubmit} className="save-button">Save Changes</button>
+                    <div className="modal-sidebar">
+                        <ActivityFeed task={selectedTask} />
                     </div>
                 </div>
-
-                <div className="modal-sidebar">
-                    <ActivityFeed task={selectedTask} />
-                </div>
-            </div>
-            {confirmDelete && (
-                <div className="confirm-delete-overlay">
-                    <div className="confirm-delete-content">
-                        <h2>Are you sure you want to delete this task?</h2>
-                        <button onClick={handleDelete} className="confirm-delete-button">Yes, delete</button>
-                        <button onClick={() => setConfirmDelete(false)} className="cancel-delete-button">Cancel</button>
+            ) : (
+                <div
+                    className="confirm-delete-content"
+                    role="dialog"
+                    aria-modal="true"
+                    tabIndex={-1}
+                    onClick={e => e.stopPropagation()}
+                >
+                    <h2>Are you sure you want to delete this task?</h2>
+                    <div className="subtitle">This action cannot be undone.</div>
+                    <div className="confirm-delete-buttons">
+                        <button onClick={async () => { await handleDelete(); closeTaskModal(); }} className="confirm-delete-button">Yes, delete</button>
+                        <button onClick={() => setShowConfirmDelete(false)} className="cancel-delete-button">Cancel</button>
                     </div>
                 </div>
             )}

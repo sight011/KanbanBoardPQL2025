@@ -2,6 +2,7 @@ const pool = require('../db');
 const { validationResult } = require('express-validator');
 const { parseHours } = require('../utils');
 const historyService = require('../services/historyService');
+const { resequencePositions } = require('../services/kanbanService');
 
 // Test database connection on startup
 pool.query('SELECT NOW()', (err, res) => {
@@ -25,7 +26,7 @@ const taskController = {
         try {
             console.log('📊 About to query database...');
             const result = await pool.query(
-                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, duedate, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks ORDER BY sprint_id, sprint_order, id'
+                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, duedate, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks ORDER BY status, position, id'
             );
             console.log('✅ Query successful, found', result.rows.length, 'tasks');
             console.log('First task:', result.rows[0]);
@@ -152,6 +153,8 @@ const taskController = {
                 newValue: `Task "${newTask.title}" was created.`
             }, client);
 
+            await resequencePositions(status, client);
+
             await client.query('COMMIT');
             console.log('✅ Task created successfully:', newTask);
             res.status(201).json({
@@ -256,6 +259,11 @@ const taskController = {
                 }
             }
 
+            await resequencePositions(originalTask.status, client);
+            if (originalTask.status !== status) {
+                await resequencePositions(status, client);
+            }
+
             await client.query('COMMIT');
 
             console.log('✅ Task updated successfully:', result.rows[0]);
@@ -318,6 +326,8 @@ const taskController = {
                 'DELETE FROM tasks WHERE id = $1 RETURNING *',
                 [id]
             );
+
+            await resequencePositions(taskToDelete.status, client);
 
             await client.query('COMMIT');
             console.log('✅ Task deleted successfully');
@@ -405,6 +415,11 @@ const taskController = {
 
                 // Get all tasks with updated positions
                 const allTasks = await client.query('SELECT * FROM tasks ORDER BY status, position');
+
+                await resequencePositions(oldStatus, client);
+                if (oldStatus !== newStatus) {
+                    await resequencePositions(newStatus, client);
+                }
 
                 await client.query('COMMIT');
                 console.log('✅ Task position updated successfully');
@@ -586,6 +601,8 @@ const taskController = {
                 oldValue: null,
                 newValue: `Task "${duplicatedTask.title}" was created as a duplicate of task #${originalTask.id}.`
             }, client);
+
+            await resequencePositions(duplicatedTask.status, client);
 
             await client.query('COMMIT'); // Commit transaction
 

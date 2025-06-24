@@ -172,6 +172,12 @@ const ActivityFeed = ({ task }) => {
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Add a comment... Markdown is supported."
                         disabled={!task?.id}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSubmitComment(e);
+                            }
+                        }}
                     />
                     <div className="form-actions">
                         <button type="submit" disabled={!newComment.trim() || !task?.id}>
