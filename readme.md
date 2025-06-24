@@ -29,23 +29,19 @@ cd ~/Documents/New_Projects_2025/
 git clone https://github.com/sight011/KanbanBoardPQL2025.git
 
 
-cd KanbanBoardPQL2025
-
-
-cat README.md
-
-
 ### Frontend
 
-1. cd into ./frontend
-1. npm install
-1. npm run dev
-1. open http://localhost:5173
+1. cd KanbanBoardPQL2025/frontend
+2. npm install
+3. npm run dev
+4. open http://localhost:5173
 
 ### Backend
+(Open a new Terminal Window)
 
-1. cd into ./backend
+cd ~/Documents/New_Projects_2025/KanbanBoardPQL2025/backend
+
 1. npm i
-1. npm start
-1. open http://localhost:4000
+2. npm start
+3. open http://localhost:4000
 
