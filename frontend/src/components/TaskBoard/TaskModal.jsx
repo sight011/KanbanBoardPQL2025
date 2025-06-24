@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskModal.css';
 import './DueDate.css';
@@ -42,6 +42,7 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     const [sprintsError, setSprintsError] = useState(null);
     const [hoursPerDay, setHoursPerDay] = useState(8);
     const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+    const confirmDeleteRef = useRef(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -149,6 +150,12 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [isModalOpen, formData, effortError, timeSpentError]);
+
+    useEffect(() => {
+        if (showConfirmDelete && confirmDeleteRef.current) {
+            confirmDeleteRef.current.focus();
+        }
+    }, [showConfirmDelete]);
 
     function parseEffortInput(value, hoursPerDay = 8) {
         if (!value) return null;
@@ -381,7 +388,15 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
                     role="dialog"
                     aria-modal="true"
                     tabIndex={-1}
+                    ref={confirmDeleteRef}
                     onClick={e => e.stopPropagation()}
+                    onKeyDown={async (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            await handleDelete();
+                            closeTaskModal();
+                        }
+                    }}
                 >
                     <h2>Are you sure you want to delete this task?</h2>
                     <div className="subtitle">This action cannot be undone.</div>

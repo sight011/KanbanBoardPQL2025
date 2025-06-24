@@ -9,6 +9,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import './TaskBoard.css';
 import SprintView from './SprintView';
 import BurndownChart from './BurndownChart';
+import CalendarView from '../CalendarView';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -673,10 +674,21 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                         </svg>
                         <span>Burn Down</span>
                     </button>
+                    <button
+                        className={`view-button ${viewMode === 'calendar' ? 'active' : ''}`}
+                        onClick={() => setViewMode('calendar')}
+                        title="Calendar View"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2"/>
+                        </svg>
+                        <span>Calendar</span>
+                    </button>
                 </div>
             </div>
 
-            {viewMode !== 'sprint' && (
+            {viewMode !== 'sprint' && viewMode !== 'calendar' && (
                 <TaskFilters 
                     filters={filters}
                     onFilterChange={handleFilterChange}
@@ -774,11 +786,13 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                         <Pie data={assignmentData} options={chartOptions} />
                     </div>
                 </div>
-            ) : (
+            ) : viewMode === 'burndown' ? (
                 <div className="burndown-view">
                     <BurndownChart sprintId={selectedSprint} filters={filters} />
                 </div>
-            )}
+            ) : viewMode === 'calendar' ? (
+                <CalendarView />
+            ) : null}
 
             <TaskModal viewMode={viewMode} activeSprintId={selectedSprint} />
         </div>
