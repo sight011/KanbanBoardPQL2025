@@ -187,6 +187,12 @@ const SprintView = ({ focusedSprintId }) => {
     // Delete confirmation modal state
     const [deleteTaskModalOpen, setDeleteTaskModalOpen] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState(null);
+    
+    // Multi-select dropdown state
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
+    const [selectedUsers, setSelectedUsers] = useState(new Set());
+    const [dropdownTarget, setDropdownTarget] = useState(null); // 'sprint' or 'backlog'
 
     useEffect(() => {
         const observer = new MutationObserver(() => {
@@ -206,11 +212,14 @@ const SprintView = ({ focusedSprintId }) => {
             if (contextMenu.isVisible) {
                 handleContextMenuClose();
             }
+            if (dropdownOpen) {
+                handleCloseDropdown();
+            }
         };
 
         document.addEventListener('click', handleGlobalClick);
         return () => document.removeEventListener('click', handleGlobalClick);
-    }, [contextMenu.isVisible]);
+    }, [contextMenu.isVisible, dropdownOpen]);
 
     // Fetch users for the assignee filter
     useEffect(() => {
@@ -516,6 +525,34 @@ const SprintView = ({ focusedSprintId }) => {
         }));
     };
 
+    // Multi-select dropdown handlers
+    const handleOpenDropdown = (event, target) => {
+        console.log('Dropdown button clicked for:', target);
+        const rect = event.currentTarget.getBoundingClientRect();
+        console.log('Button position:', rect);
+        setDropdownPosition({ x: rect.left, y: rect.bottom + 5 });
+        setDropdownTarget(target);
+        setDropdownOpen(true);
+        console.log('Dropdown state set to open');
+    };
+
+    const handleToggleUser = (userId) => {
+        setSelectedUsers(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(userId)) {
+                newSet.delete(userId);
+            } else {
+                newSet.add(userId);
+            }
+            return newSet;
+        });
+    };
+
+    const handleCloseDropdown = () => {
+        setDropdownOpen(false);
+        setDropdownTarget(null);
+    };
+
     const handleTaskDoubleClick = (task) => {
         openTaskModal(task);
     };
@@ -720,6 +757,69 @@ const SprintView = ({ focusedSprintId }) => {
                 taskTitle={taskToDelete?.title || ''}
                 isDarkMode={isDarkMode}
             />
+            
+            {/* Multi-select User Dropdown */}
+            {dropdownOpen && (
+                <div 
+                    className={`user-dropdown ${isDarkMode ? 'dark' : 'light'}`}
+                    style={{
+                        position: 'fixed',
+                        top: dropdownPosition.y,
+                        left: dropdownPosition.x,
+                        zIndex: 9999,
+                        background: isDarkMode ? '#2d3748' : '#ffffff',
+                        border: `1px solid ${isDarkMode ? '#4a5568' : '#e2e8f0'}`,
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        padding: '8px 0',
+                        minWidth: '200px',
+                        maxHeight: '300px',
+                        overflowY: 'auto'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div style={{ padding: '8px 12px', borderBottom: `1px solid ${isDarkMode ? '#4a5568' : '#e2e8f0'}`, fontWeight: 'bold', fontSize: '14px' }}>
+                        Select Users for {dropdownTarget === 'backlog' ? 'Backlog' : 'Sprint'} ({users.length} users)
+                    </div>
+                    {users.map(user => (
+                        <div
+                            key={user.id}
+                            className="user-option"
+                            onClick={() => handleToggleUser(user.id)}
+                            style={{
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                backgroundColor: selectedUsers.has(user.id) ? (isDarkMode ? '#4a5568' : '#edf2f7') : 'transparent',
+                                color: isDarkMode ? '#e2e8f0' : '#2d3748'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = isDarkMode ? '#4a5568' : '#edf2f7';
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!selectedUsers.has(user.id)) {
+                                    e.target.style.backgroundColor = 'transparent';
+                                }
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={selectedUsers.has(user.id)}
+                                onChange={() => handleToggleUser(user.id)}
+                                style={{ margin: 0 }}
+                            />
+                            <span>{user.firstName} {user.lastName}</span>
+                        </div>
+                    ))}
+                    {users.length === 0 && (
+                        <div style={{ padding: '8px 12px', color: isDarkMode ? '#a0aec0' : '#718096', fontStyle: 'italic' }}>
+                            No users available
+                        </div>
+                    )}
+                </div>
+            )}
             <div className="sprint-header">
                 <h2>Sprints</h2>
                 <button 
@@ -765,6 +865,22 @@ const SprintView = ({ focusedSprintId }) => {
                                                     <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
                                                         Total Effort: {calculateTotalEffort(tasksBySprint[sprint.id])}
                                                     </span>
+                                                    <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
+                                                        Available Time: TBD
+                                                    </span>
+                                                    <button
+                                                        className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
+                                                        onClick={(e) => handleOpenDropdown(e, 'sprint')}
+                                                        style={{ 
+                                                            marginLeft: 8, 
+                                                            padding: '4px 8px', 
+                                                            fontSize: '12px',
+                                                            backgroundColor: dropdownOpen && dropdownTarget === 'sprint' ? (isDarkMode ? '#4a5568' : '#edf2f7') : undefined
+                                                        }}
+                                                        title="Select users for available time calculation"
+                                                    >
+                                                        👥 {dropdownOpen && dropdownTarget === 'sprint' ? '▼' : ''}
+                                                    </button>
                                                     <div className="sprint-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                                                         {sprint.status === 'planned' && (
                                                             <button 
@@ -888,6 +1004,22 @@ const SprintView = ({ focusedSprintId }) => {
                                                 <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
                                                     Total Effort: {calculateTotalEffort(tasksBySprint['backlog'])}
                                                 </span>
+                                                <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
+                                                    Available Time: TBD
+                                                </span>
+                                                <button
+                                                    className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
+                                                    onClick={(e) => handleOpenDropdown(e, 'backlog')}
+                                                    style={{ 
+                                                        marginLeft: 8, 
+                                                        padding: '4px 8px', 
+                                                        fontSize: '12px',
+                                                        backgroundColor: dropdownOpen && dropdownTarget === 'backlog' ? (isDarkMode ? '#4a5568' : '#edf2f7') : undefined
+                                                    }}
+                                                    title="Select users for available time calculation"
+                                                >
+                                                    👥 {dropdownOpen && dropdownTarget === 'backlog' ? '▼' : ''}
+                                                </button>
                                             </div>
                                         </div>
                                         {!foldedSprints.has('backlog') && (

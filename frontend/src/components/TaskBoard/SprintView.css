@@ -711,4 +711,43 @@
 
 .sprint-task.optimistic.dark .task-title {
     color: #9ca3af;
+}
+
+/* User Dropdown */
+.user-dropdown {
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.user-dropdown.dark {
+    background-color: #2d3748;
+    color: #e2e8f0;
+}
+
+.user-dropdown.light {
+    background-color: #ffffff;
+    color: #2d3748;
+}
+
+.user-option {
+    transition: background-color 0.2s ease;
+}
+
+.user-option:hover {
+    background-color: #edf2f7;
+}
+
+.user-dropdown.dark .user-option:hover {
+    background-color: #4a5568;
+}
+
+.user-option input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* Sprint Action Button for User Selection */
+.sprint-action-button.edit {
+    min-width: auto;
+    padding: 4px 8px;
+    font-size: 12px;
 } 
