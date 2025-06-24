@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+// import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import PropTypes from 'prop-types';
 
 const locales = {
   'en-US': enUS,
@@ -53,7 +55,7 @@ const placeholderEvents = [
   },
 ];
 
-const CalendarView = () => {
+const CalendarView = ({ onSprintDoubleClick }) => {
   const [sprintEvents, setSprintEvents] = useState([]);
 
   useEffect(() => {
@@ -63,13 +65,25 @@ const CalendarView = () => {
         const data = await res.json();
         if (data.sprints) {
           const events = data.sprints.map((sprint, idx) => ({
+            id: sprint.id,
             title: sprint.name,
             start: sprint.start_date ? new Date(sprint.start_date) : null,
             end: sprint.end_date ? new Date(sprint.end_date) : null,
             allDay: true,
             color: colorPalette[idx % colorPalette.length],
           })).filter(e => e.start && e.end);
-          setSprintEvents(events);
+          
+          // Add a special "Backlog" event
+          const backlogEvent = {
+            id: 'backlog',
+            title: '📋 Backlog',
+            start: new Date(),
+            end: new Date(),
+            allDay: true,
+            color: '#6c757d', // gray color for backlog
+          };
+          
+          setSprintEvents([...events, backlogEvent]);
         }
       } catch (err) {
         setSprintEvents([]);
@@ -95,6 +109,13 @@ const CalendarView = () => {
     };
   };
 
+  // Double click handler
+  const handleDoubleClickEvent = (event) => {
+    if (event.id && onSprintDoubleClick) {
+      onSprintDoubleClick(event.id);
+    }
+  };
+
   return (
     <div style={{ height: 'calc(100vh - 120px)', width: '100%', background: '#fff', padding: 16 }}>
       <Calendar
@@ -107,9 +128,14 @@ const CalendarView = () => {
         defaultView="month"
         popup
         eventPropGetter={eventPropGetter}
+        onDoubleClickEvent={handleDoubleClickEvent}
       />
     </div>
   );
+};
+
+CalendarView.propTypes = {
+  onSprintDoubleClick: PropTypes.func,
 };
 
 export default CalendarView; 

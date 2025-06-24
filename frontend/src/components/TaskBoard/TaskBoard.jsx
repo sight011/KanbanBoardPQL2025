@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { DragDropContext, Droppable } from '@hello-pangea/dnd';
+// import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import PropTypes from 'prop-types';
+import { DragDropContext } from '@hello-pangea/dnd';
 import TaskColumn from './TaskColumn';
 import TaskFilters from './TaskFilters';
 import { useTaskContext } from '../../context/TaskContext';
@@ -60,7 +62,7 @@ const textPlugin = {
 ChartJS.register(textPlugin);
 
 const TaskBoard = ({ viewMode, setViewMode }) => {
-    const { tasks, updateTaskPosition, loading, error, updateTaskStatus, openTaskModal, isModalOpen, updateTask } = useTaskContext();
+    const { tasks, updateTaskPosition, loading, error, openTaskModal, updateTask } = useTaskContext();
     const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark-mode'));
     const [filters, setFilters] = useState({
         text: '',
@@ -74,6 +76,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     const [selectedSprint, setSelectedSprint] = useState('');
     const [users, setUsers] = useState([]);
     const [tasksWithChanges, setTasksWithChanges] = useState([]);
+    const [focusedSprintId, setFocusedSprintId] = useState(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -595,6 +598,12 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         };
     }, []);
 
+    // Handler for calendar double click
+    const handleSprintDoubleClick = (sprintId) => {
+        setFocusedSprintId(sprintId);
+        setViewMode('sprint');
+    };
+
     if (loading) {
         return (
             <div className="task-board-loading">
@@ -697,7 +706,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
             )}
 
             {viewMode === 'sprint' ? (
-                <SprintView />
+                <SprintView focusedSprintId={focusedSprintId} />
             ) : viewMode === 'kanban' ? (
                 <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
                     <div className="board-columns">
@@ -791,12 +800,17 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                     <BurndownChart sprintId={selectedSprint} filters={filters} />
                 </div>
             ) : viewMode === 'calendar' ? (
-                <CalendarView />
+                <CalendarView onSprintDoubleClick={handleSprintDoubleClick} />
             ) : null}
 
             <TaskModal viewMode={viewMode} activeSprintId={selectedSprint} />
         </div>
     );
+};
+
+TaskBoard.propTypes = {
+  viewMode: PropTypes.string.isRequired,
+  setViewMode: PropTypes.func.isRequired,
 };
 
 export default TaskBoard;

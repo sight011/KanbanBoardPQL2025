@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTaskContext } from '../../context/TaskContext';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './SprintView.css';
@@ -8,6 +9,7 @@ import TaskModal from './TaskModal';
 import ContextMenu from './ContextMenu';
 import { formatHours } from '../../utils/timeFormat';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import PropTypes from 'prop-types';
 
 const formatDateInput = (date) => {
     if (!date) return '';
@@ -144,7 +146,7 @@ const ReactivateModal = ({ open, onClose, onConfirm, activeSprint, isDarkMode })
     );
 };
 
-const SprintView = () => {
+const SprintView = ({ focusedSprintId }) => {
     const { tasks, updateTask, openTaskModal, isModalOpen, closeTaskModal, addTask, removeTask, setTasks } = useTaskContext();
     const [sprints, setSprints] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -330,6 +332,20 @@ const SprintView = () => {
         const active = sprints.find(s => s.status === 'active');
         setActiveSprint(active || null);
     }, [sprints]);
+
+    useEffect(() => {
+        if (focusedSprintId) {
+            setFoldedSprints(prev => {
+                // Unfold only the focused sprint/backlog, fold all others
+                const allIds = new Set([
+                    ...sprints.map(s => s.id),
+                    'backlog'
+                ]);
+                const focusedId = String(focusedSprintId);
+                return new Set([...allIds].filter(id => String(id) !== focusedId));
+            });
+        }
+    }, [focusedSprintId, sprints]);
 
     const onDragEnd = async (result) => {
         const { source, destination, draggableId } = result;
@@ -851,63 +867,80 @@ const SprintView = () => {
                             <Droppable droppableId="backlog">
                                 {(provided, snapshot) => (
                                     <div
-                                        className={classNames('sprint-section', 'backlog', isDarkMode ? 'dark' : 'light', { 'dragging-over': snapshot.isDraggingOver })}
+                                        className={classNames('sprint-section', 'backlog', isDarkMode ? 'dark' : 'light', { 'dragging-over': snapshot.isDraggingOver, 'folded': foldedSprints.has('backlog') })}
                                         style={{boxShadow: '0 2px 8px rgba(0,0,0,0.08)'}}
                                         ref={provided.innerRef}
                                         {...provided.droppableProps}
                                     >
                                         <div className="sprint-section-header">
-                                            <h3>Backlog</h3>
+                                            <div className="sprint-section-header-row" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                                <button
+                                                    className="fold-toggle-button"
+                                                    onClick={e => handleFoldToggle('backlog', e)}
+                                                    title={foldedSprints.has('backlog') ? 'Expand backlog' : 'Collapse backlog'}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: foldedSprints.has('backlog') ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                                                        <path d="M19 9l-7 7-7-7" stroke={isDarkMode ? '#DDD' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    </svg>
+                                                </button>
+                                                <h3 style={{ margin: 0 }}>Backlog</h3>
+                                                <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
+                                                    Total Effort: {calculateTotalEffort(tasksBySprint['backlog'])}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <ul className="backlog-task-list">
-                                            {(tasksBySprint['backlog'] || [])
-                                                .slice()
-                                                .sort((a, b) => (a.sprint_order ?? 0) - (b.sprint_order ?? 0) || a.id - b.id)
-                                                .map((task, idx) => (
-                                                    <Draggable draggableId={String(task.id)} index={idx} key={task.id}>
-                                                        {(provided, snapshot) => (
-                                                            <li
-                                                                id={`task-${task.id}`}
-                                                                className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''} ${task.isOptimistic ? 'optimistic' : ''}`}
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                {...provided.dragHandleProps}
-                                                                onDoubleClick={() => handleTaskDoubleClick(task)}
-                                                                onContextMenu={(e) => handleTaskRightClick(e, task)}
-                                                            >
-                                                                <div className="task-left">
-                                                                    <span className="task-icon">
-                                                                        {task.isOptimistic ? (
-                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="loading-spinner">
-                                                                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
-                                                                                    <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                                                                                    <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
-                                                                                </circle>
-                                                                            </svg>
-                                                                        ) : (
-                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                                <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                                <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                            </svg>
-                                                                        )}
-                                                                    </span>
-                                                                    <span className="task-title">{task.title}</span>
-                                                                </div>
-                                                                <div className="task-right">
-                                                                    <span className="task-effort">
-                                                                        {task.effort ? `EE: ${formatHours(task.effort, hoursPerDay)}` : '–'}
-                                                                    </span>
-                                                                    <span className={`priority-badge priority-${task.priority}`}>
-                                                                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                                                                    </span>
-                                                                </div>
-                                                            </li>
-                                                        )}
-                                                    </Draggable>
-                                                ))}
-                                            {provided.placeholder}
-                                        </ul>
+                                        {!foldedSprints.has('backlog') && (
+                                            <ul className="backlog-task-list">
+                                                {(tasksBySprint['backlog'] || [])
+                                                    .slice()
+                                                    .sort((a, b) => (a.sprint_order ?? 0) - (b.sprint_order ?? 0) || a.id - b.id)
+                                                    .map((task, idx) => (
+                                                        <Draggable draggableId={String(task.id)} index={idx} key={task.id}>
+                                                            {(provided, snapshot) => (
+                                                                <li
+                                                                    id={`task-${task.id}`}
+                                                                    className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''} ${task.isOptimistic ? 'optimistic' : ''}`}
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                    onDoubleClick={() => handleTaskDoubleClick(task)}
+                                                                    onContextMenu={(e) => handleTaskRightClick(e, task)}
+                                                                >
+                                                                    <div className="task-left">
+                                                                        <span className="task-icon">
+                                                                            {task.isOptimistic ? (
+                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="loading-spinner">
+                                                                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
+                                                                                        <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                                                                                        <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                                                                                    </circle>
+                                                                                </svg>
+                                                                            ) : (
+                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                    <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                    <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                </svg>
+                                                                            )}
+                                                                        </span>
+                                                                        <span className="task-title">{task.title}</span>
+                                                                    </div>
+                                                                    <div className="task-right">
+                                                                        <span className="task-effort">
+                                                                            {task.effort ? `EE: ${formatHours(task.effort, hoursPerDay)}` : '–'}
+                                                                        </span>
+                                                                        <span className={`priority-badge priority-${task.priority}`}>
+                                                                            {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                                                        </span>
+                                                                    </div>
+                                                                </li>
+                                                            )}
+                                                        </Draggable>
+                                                    ))}
+                                                {provided.placeholder}
+                                            </ul>
+                                        )}
                                     </div>
                                 )}
                             </Droppable>
@@ -917,6 +950,13 @@ const SprintView = () => {
             </DragDropContext>
         </div>
     );
+};
+
+SprintView.propTypes = {
+  focusedSprintId: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+  ]),
 };
 
 export default SprintView; 
