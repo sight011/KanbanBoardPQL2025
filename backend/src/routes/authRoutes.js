@@ -5,10 +5,22 @@ const bcrypt = require('bcrypt');
 
 // Helper to generate a slug from company name
 function generateSlug(name) {
-    return name
+    if (!name || typeof name !== 'string') {
+        return 'company-' + Date.now();
+    }
+    
+    let slug = name
         .toLowerCase()
+        .trim()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
+    
+    // If slug is empty after processing, generate a fallback
+    if (!slug) {
+        slug = 'company-' + Date.now();
+    }
+    
+    return slug;
 }
 
 // Helper to generate a username from first and last name

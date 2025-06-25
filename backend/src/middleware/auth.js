@@ -8,7 +8,7 @@ const requireLogin = async (req, res, next) => {
 
     try {
         const userId = req.session.userId;
-        const { rows } = await pool.query('SELECT id, email, first_name, last_name, role FROM users WHERE id = $1', [userId]);
+        const { rows } = await pool.query('SELECT id, email, first_name, last_name, role, company_id FROM users WHERE id = $1', [userId]);
         
         if (rows.length === 0) {
             return res.status(401).json({ error: 'User not found.' });
@@ -22,6 +22,46 @@ const requireLogin = async (req, res, next) => {
         return res.status(500).json({ error: 'Internal server error.' });
     }
 };
+
+// Authentication middleware with tenant context setup
+const requireLoginWithTenant = async (req, res, next) => {
+    if (!req.session || !req.session.userId) {
+        return res.status(401).json({ error: 'You must be logged in.' });
+    }
+
+    try {
+        const userId = req.session.userId;
+        const { rows } = await pool.query('SELECT id, email, first_name, last_name, role, company_id FROM users WHERE id = $1', [userId]);
+        
+        if (rows.length === 0) {
+            return res.status(401).json({ error: 'User not found.' });
+        }
+        
+        req.user = rows[0];
+        console.log(`🔐 Authentication successful for user: ${req.user.first_name || 'dev_user'}`);
+        
+        // Set tenant context for audit logging
+        if (req.user.company_id) {
+            await setDatabaseTenantContext(req.user.company_id, req.user.id);
+        }
+        
+        next();
+    } catch (dbError) {
+        console.error('Error fetching user from database', dbError);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+};
+
+// Set database session context for audit logging
+async function setDatabaseTenantContext(companyId, userId) {
+    const client = await pool.connect();
+    
+    try {
+        await client.query('SELECT set_tenant_context($1, $2)', [companyId, userId]);
+    } finally {
+        client.release();
+    }
+}
 
 // Authorization middleware to require admin role
 const requireAdmin = async (req, res, next) => {
@@ -37,4 +77,4 @@ const requireAdmin = async (req, res, next) => {
     next();
 };
 
-module.exports = { requireLogin, requireAdmin }; 
+module.exports = { requireLogin, requireLoginWithTenant, requireAdmin }; 

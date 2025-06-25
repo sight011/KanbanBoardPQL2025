@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './AuditTrailView.css';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -31,6 +31,54 @@ const AuditTrailView = () => {
         fetchAuditLogs();
     }, []);
 
+    const formatDetails = (details, actionType) => {
+        if (!details) return 'N/A';
+        
+        try {
+            const parsed = typeof details === 'string' ? JSON.parse(details) : details;
+            
+            if (actionType === 'INSERT') {
+                return 'Created';
+            } else if (actionType === 'UPDATE') {
+                const changes = [];
+                if (parsed.old_values && parsed.new_values) {
+                    const oldVals = typeof parsed.old_values === 'string' ? JSON.parse(parsed.old_values) : parsed.old_values;
+                    const newVals = typeof parsed.new_values === 'string' ? JSON.parse(parsed.new_values) : parsed.new_values;
+                    
+                    Object.keys(newVals).forEach(key => {
+                        if (oldVals[key] !== newVals[key]) {
+                            changes.push(`${key}: "${oldVals[key]}" → "${newVals[key]}"`);
+                        }
+                    });
+                }
+                return changes.length > 0 ? changes.join(', ') : 'Updated';
+            } else if (actionType === 'DELETE') {
+                return 'Deleted';
+            }
+            
+            return 'Modified';
+        } catch (e) {
+            return 'N/A';
+        }
+    };
+
+    const getEntityDisplayName = (entityType, entityId) => {
+        switch (entityType) {
+            case 'tasks':
+                return `Task #${entityId}`;
+            case 'projects':
+                return `Project #${entityId}`;
+            case 'sprints':
+                return `Sprint #${entityId}`;
+            case 'companies':
+                return `Company #${entityId}`;
+            case 'departments':
+                return `Department #${entityId}`;
+            default:
+                return `${entityType} #${entityId}`;
+        }
+    };
+
     if (loading) {
         return <div className="loading-message">Loading audit trail...</div>;
     }
@@ -52,12 +100,10 @@ const AuditTrailView = () => {
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Task ID</th>
-                            <th>User ID</th>
-                            <th>User Name</th>
-                            <th>Field Changed</th>
-                            <th>Old Value</th>
-                            <th>New Value</th>
+                            <th>Entity</th>
+                            <th>Action</th>
+                            <th>User</th>
+                            <th>Changes</th>
                             <th>Timestamp</th>
                         </tr>
                     </thead>
@@ -66,18 +112,20 @@ const AuditTrailView = () => {
                             logs.map(log => (
                                 <tr key={log.id}>
                                     <td>{log.id}</td>
-                                    <td>{log.task_id}</td>
-                                    <td>{log.user_id}</td>
+                                    <td>{getEntityDisplayName(log.entity_type, log.entity_id)}</td>
+                                    <td className={`action-${log.field_name?.toLowerCase()}`}>
+                                        {log.field_name || 'N/A'}
+                                    </td>
                                     <td>{log.username || 'N/A'}</td>
-                                    <td>{log.field_name}</td>
-                                    <td className="value-cell">{log.old_value}</td>
-                                    <td className="value-cell">{log.new_value}</td>
+                                    <td className="changes-cell">
+                                        {formatDetails(log.details, log.field_name)}
+                                    </td>
                                     <td>{format(new Date(log.changed_at), 'yyyy-MM-dd HH:mm:ss')}</td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="7" className="no-logs-message">No audit logs found.</td>
+                                <td colSpan="6" className="no-logs-message">No audit logs found for your company.</td>
                             </tr>
                         )}
                     </tbody>

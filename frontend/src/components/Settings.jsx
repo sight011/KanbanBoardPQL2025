@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import './Settings.css';
 import api from '../api/axios';
 import { Link } from 'react-router-dom';
-import AuditTrailView from './Audit/AuditTrailView';
 import SearchableSelect from './SearchableSelect';
 
 const countries = [
@@ -400,6 +400,7 @@ const Settings = ({ onLogout }) => {
                                         <span>Name</span>
                                         <span>Email</span>
                                         <span>Role</span>
+                                        <span>Company</span>
                                         <span>Country</span>
                                         <span>Created</span>
                                         <span>Actions</span>
@@ -425,6 +426,9 @@ const Settings = ({ onLogout }) => {
                                                     <option value="User">User</option>
                                                     <option value="Checker">Checker</option>
                                                 </select>
+                                            </div>
+                                            <div className="user-company">
+                                                {user.companyName || 'N/A'}
                                             </div>
                                             <div className="user-country">
                                                 <SearchableSelect
@@ -549,6 +553,10 @@ const Settings = ({ onLogout }) => {
             </section>
         </div>
     );
+};
+
+Settings.propTypes = {
+    onLogout: PropTypes.func.isRequired
 };
 
 export default Settings; 

@@ -15,11 +15,12 @@ router.get('/', requireLogin, async (req, res) => {
         }
         const userCompanyId = userResult.rows[0].company_id;
         const result = await db.query(`
-            SELECT id, username, first_name as "firstName", last_name as "lastName", 
-                   email, role, country, created_at 
-            FROM users 
-            WHERE (deleted = false OR deleted IS NULL) AND company_id = $1
-            ORDER BY created_at DESC
+            SELECT u.id, u.username, u.first_name as "firstName", u.last_name as "lastName", 
+                   u.email, u.role, u.country, u.created_at, c.name as "companyName"
+            FROM users u
+            LEFT JOIN companies c ON u.company_id = c.id
+            WHERE (u.deleted = false OR u.deleted IS NULL) AND u.company_id = $1
+            ORDER BY u.created_at DESC
         `, [userCompanyId]);
         res.json({ users: result.rows });
     } catch (error) {

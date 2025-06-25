@@ -11,9 +11,11 @@ const passwordResetRoutes = require('./routes/passwordResetRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const healthRoutes = require("./routes/healthRoutes");
 const commentRoutes = require('./routes/commentRoutes');
 const { tenantContextMiddleware } = require('./middleware/tenantContext');
+const pool = require('./db');
 
 // Load environment variables
 dotenv.config();
@@ -39,22 +41,29 @@ app.use(cors({
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Company-Slug']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Company-Slug'],
+    exposedHeaders: ['Set-Cookie']
 }));
 
 app.use(express.json());
 
-// Session middleware
+// Session middleware with PostgreSQL store
 app.use(session({
+  store: new pgSession({
+    pool: pool,
+    tableName: 'sessions'
+  }),
   secret: process.env.SESSION_SECRET || 'dev_secret_key',
-  resave: true,
-  saveUninitialized: true,
+  resave: false,
+  saveUninitialized: false,
   rolling: true,
   cookie: {
-    secure: false,
+    secure: false, // Set to true in production with HTTPS
     httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24,
-    sameSite: 'lax'
+    maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    sameSite: 'lax',
+    path: '/',
+    domain: undefined // Let the browser set the domain
   },
   name: 'kanban_session'
 }));
@@ -98,5 +107,5 @@ const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-    console.log(`Multi-tenant support: ${process.env.ENABLE_MULTI_TENANT === 'true' ? 'ENABLED' : 'DISABLED'}`);
+    console.log(`Multi-tenant support: ${process.env.ENABLE_MULTI_TENANT === 'true' || process.env.ENABLE_MULTI_TENANT === true ? 'ENABLED' : 'DISABLED'}`);
 }); 

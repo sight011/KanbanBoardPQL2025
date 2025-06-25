@@ -275,7 +275,7 @@
 
 .users-list-header {
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr 1.5fr 1fr 1fr;
+    grid-template-columns: 2fr 2fr 1fr 1.5fr 1fr 1fr 1fr;
     gap: 16px;
     padding: 16px 20px;
     background: var(--primary);
@@ -290,7 +290,7 @@
 
 .user-item {
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr 1.5fr 1fr 1fr;
+    grid-template-columns: 2fr 2fr 1fr 1.5fr 1fr 1fr 1fr;
     gap: 16px;
     padding: 16px 20px;
     border-bottom: 1px solid var(--border-color);
@@ -321,6 +321,12 @@
 
 .user-role {
     text-align: left;
+}
+
+.user-company {
+    text-align: left;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
 }
 
 .user-country {

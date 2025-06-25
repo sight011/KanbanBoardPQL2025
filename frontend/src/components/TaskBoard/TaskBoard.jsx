@@ -64,8 +64,9 @@ ChartJS.register(textPlugin);
 
 const TaskBoard = ({ viewMode, setViewMode }) => {
     const { tasks, updateTaskPosition, loading, error, openTaskModal, updateTask, fetchTasks, selectedTask, isModalOpen, closeTaskModal } = useTaskContext();
-    const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark-mode'));
-    const [selectedProjectId, setSelectedProjectId] = useState(null);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [projects, setProjects] = useState([]);
+    const [projectsLoading, setProjectsLoading] = useState(true);
     const [filters, setFilters] = useState({
         text: '',
         sprint: '',
@@ -80,12 +81,38 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     const [tasksWithChanges, setTasksWithChanges] = useState([]);
     const [focusedSprintId, setFocusedSprintId] = useState(null);
 
+    // Fetch projects
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                setProjectsLoading(true);
+                const response = await api.get('/api/projects');
+                if (response.data.success) {
+                    const fetchedProjects = response.data.projects || [];
+                    setProjects(fetchedProjects);
+                    
+                    // If no project is selected and we have projects, select the first one
+                    if (!selectedProject && fetchedProjects.length > 0) {
+                        setSelectedProject(fetchedProjects[0]);
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching projects:', err);
+                setProjects([]);
+            } finally {
+                setProjectsLoading(false);
+            }
+        };
+        
+        fetchProjects();
+    }, []);
+
     // Fetch tasks when project changes
     useEffect(() => {
-        if (selectedProjectId) {
-            fetchTasks(selectedProjectId);
+        if (selectedProject) {
+            fetchTasks(selectedProject.id);
         }
-    }, [selectedProjectId, fetchTasks]);
+    }, [selectedProject, fetchTasks]);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -131,24 +158,6 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
 
         fetchTasksWithChanges();
     }, [filters.changedInTime]);
-
-    // Add effect to handle theme changes
-    useEffect(() => {
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.attributeName === 'class') {
-                    setIsDarkMode(document.documentElement.classList.contains('dark-mode'));
-                }
-            });
-        });
-
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['class']
-        });
-
-        return () => observer.disconnect();
-    }, []);
 
     // Fetch sprints for the filter
     useEffect(() => {
@@ -199,69 +208,78 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     const filteredTasks = useMemo(() => {
         return tasks.filter(task => {
             // Text filter
-            if (filters.text && !task.title.toLowerCase().includes(filters.text.toLowerCase()) && 
-                !task.description?.toLowerCase().includes(filters.text.toLowerCase())) {
+            if (filters.text && !task.title.toLowerCase().includes(filters.text.toLowerCase())) {
                 return false;
             }
-            
+
             // Sprint filter
             if (filters.sprint && task.sprint_id !== parseInt(filters.sprint)) {
                 return false;
             }
-            
+
             // Priority filter
             if (filters.priority && task.priority !== filters.priority) {
                 return false;
             }
-            
+
             // Assignee filter
             if (filters.assignee && task.assignee_id !== parseInt(filters.assignee)) {
                 return false;
             }
-            
+
             // Status filter
             if (filters.status && task.status !== filters.status) {
                 return false;
             }
-            
+
             // Changed in time filter
-            if (filters.changedInTime && filters.changedInTime !== 'all' && !tasksWithChanges.includes(task.id)) {
-                return false;
+            if (filters.changedInTime && filters.changedInTime !== 'all') {
+                if (!tasksWithChanges.includes(task.id)) {
+                    return false;
+                }
             }
-            
+
             return true;
         });
     }, [tasks, filters, tasksWithChanges]);
 
     // Group tasks by status
     const columns = useMemo(() => {
-        return {
-            todo: filteredTasks.filter(task => task.status === 'todo'),
-            inProgress: filteredTasks.filter(task => task.status === 'inProgress'),
-            review: filteredTasks.filter(task => task.status === 'review'),
-            done: filteredTasks.filter(task => task.status === 'done')
+        const grouped = {
+            todo: [],
+            inProgress: [],
+            review: [],
+            done: []
         };
+
+        filteredTasks.forEach(task => {
+            if (grouped[task.status]) {
+                grouped[task.status].push(task);
+            }
+        });
+
+        // Sort tasks by position within each column
+        Object.keys(grouped).forEach(status => {
+            grouped[status].sort((a, b) => a.position - b.position);
+        });
+
+        return grouped;
     }, [filteredTasks]);
 
     const onDragStart = () => {
-        console.log('Drag started');
+        // Optional: Add any logic needed when drag starts
     };
 
     const onDragEnd = async (result) => {
         if (!result.destination) return;
 
-        const { source, destination, draggableId } = result;
-        
-        if (source.droppableId === destination.droppableId && 
-            source.index === destination.index) {
-            return;
-        }
-
+        const { draggableId, destination } = result;
+        const taskId = parseInt(draggableId);
         const newStatus = destination.droppableId;
-        const newPosition = destination.index + 1;
+        const newPosition = destination.index;
 
         try {
-            await updateTaskPosition(parseInt(draggableId), newPosition, newStatus);
+            await updateTaskPosition(taskId, newPosition, newStatus);
         } catch (error) {
             console.error('Failed to update task position:', error);
         }
@@ -277,169 +295,28 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     };
 
     const getAssigneeInitials = (assigneeId) => {
-        if (!assigneeId || !users[assigneeId]) return '?';
+        if (!assigneeId || !users[assigneeId]) return '';
         const user = users[assigneeId];
         return `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase();
     };
 
     const getAssigneeColor = (assigneeId) => {
-        if (!assigneeId || !users[assigneeId]) return '#e2e8f0';
-        
-        // Generate a consistent color based on user ID
-        const colors = [
-            '#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5',
-            '#dd6b20', '#319795', '#2b6cb0', '#38a169', '#d69e2e'
-        ];
-        return colors[assigneeId % colors.length];
+        if (!assigneeId || !users[assigneeId]) return '#6b7280';
+        const user = users[assigneeId];
+        const name = `${user.first_name}${user.last_name}`;
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const hue = Math.abs(hash) % 360;
+        return `hsl(${hue}, 70%, 60%)`;
     };
 
     const getAssigneeName = (assigneeId) => {
         if (!assigneeId || !users[assigneeId]) return 'Unassigned';
         const user = users[assigneeId];
-        return `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User';
+        return `${user.first_name} ${user.last_name}`;
     };
-
-    // Prepare data for pie charts
-    const priorityData = useMemo(() => {
-        const counts = filteredTasks.reduce((acc, task) => {
-            acc[task.priority] = (acc[task.priority] || 0) + 1;
-            return acc;
-        }, {});
-
-        return {
-            labels: ['High', 'Medium', 'Low'],
-            datasets: [{
-                data: [counts.high || 0, counts.medium || 0, counts.low || 0],
-                backgroundColor: ['#ff5630', '#ffab00', '#00b8d9'],
-                borderColor: ['#ff5630', '#ffab00', '#00b8d9'],
-                borderWidth: 1
-            }]
-        };
-    }, [filteredTasks]);
-
-    const statusData = useMemo(() => {
-        const counts = filteredTasks.reduce((acc, task) => {
-            acc[task.status] = (acc[task.status] || 0) + 1;
-            return acc;
-        }, {});
-
-        return {
-            labels: ['To Do', 'In Progress', 'Review', 'Done'],
-            datasets: [{
-                data: [
-                    counts.todo || 0,
-                    counts.inProgress || 0,
-                    counts.review || 0,
-                    counts.done || 0
-                ],
-                backgroundColor: ['#4a5568', '#3182ce', '#805ad5', '#38a169'],
-                borderColor: ['#4a5568', '#3182ce', '#805ad5', '#38a169'],
-                borderWidth: 1
-            }]
-        };
-    }, [filteredTasks]);
-
-    const assignmentData = useMemo(() => {
-        if (!filteredTasks || filteredTasks.length === 0) {
-            return {
-                labels: ['No Tasks'],
-                datasets: [{
-                    data: [1],
-                    backgroundColor: ['#e2e8f0'],
-                    borderWidth: 0
-                }]
-            };
-        }
-
-        // Group tasks by assignee_id
-        const assignments = filteredTasks.reduce((acc, task) => {
-            const assigneeId = task.assignee_id;
-            const key = assigneeId || 'unassigned';
-            
-            if (!acc[key]) {
-                acc[key] = {
-                    name: getAssigneeName(assigneeId),
-                    count: 0,
-                    color: assigneeId ? getAssigneeColor(assigneeId) : '#e2e8f0'
-                };
-            }
-            acc[key].count += 1;
-            return acc;
-        }, {});
-
-        // Sort by task count and convert to arrays for chart
-        const sortedAssignees = Object.entries(assignments)
-            .sort(([, a], [, b]) => b.count - a.count);
-
-        return {
-            labels: sortedAssignees.map(([, data]) => data.name),
-            datasets: [{
-                data: sortedAssignees.map(([, data]) => data.count),
-                backgroundColor: sortedAssignees.map(([, data]) => data.color),
-                borderWidth: 0,
-                hoverOffset: 4
-            }]
-        };
-    }, [filteredTasks, users]);
-
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    color: isDarkMode ? '#e2e8f0' : '#2d3748',
-                    font: {
-                        size: 12,
-                        weight: '500'
-                    },
-                    padding: 15,
-                    usePointStyle: true,
-                    pointStyle: 'circle',
-                    boxWidth: 8,
-                    boxHeight: 8
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        const label = context.label || '';
-                        const value = context.raw || 0;
-                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percentage = ((value / total) * 100).toFixed(1);
-                        return `${label}: ${value} (${percentage}%)`;
-                    }
-                },
-                titleColor: isDarkMode ? '#e2e8f0' : '#2d3748',
-                bodyColor: isDarkMode ? '#e2e8f0' : '#2d3748',
-                backgroundColor: isDarkMode ? '#2d3748' : '#ffffff',
-                borderColor: isDarkMode ? '#4a5568' : '#e2e8f0',
-                borderWidth: 1
-            }
-        },
-        elements: {
-            arc: {
-                borderWidth: 0
-            }
-        },
-        cutout: '0%',
-        layout: {
-            padding: {
-                top: 20,
-                bottom: 60
-            }
-        }
-    };
-
-    // Effect to set root width for all views
-    useEffect(() => {
-        const root = document.getElementById('root');
-        root.style.width = '1426px';
-        return () => {
-            root.style.width = '';
-        };
-    }, []);
 
     // Handler for calendar double click
     const handleSprintDoubleClick = (sprintId) => {
@@ -447,25 +324,32 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         setViewMode('sprint');
     };
 
-    const handleProjectChange = (projectId) => {
-        setSelectedProjectId(projectId);
+    const handleProjectSelect = (project) => {
+        setSelectedProject(project);
         // Store the selected project in sessionStorage for persistence
-        if (projectId) {
-            sessionStorage.setItem('selectedProjectId', projectId.toString());
+        if (project) {
+            sessionStorage.setItem('selectedProjectId', project.id.toString());
         } else {
             sessionStorage.removeItem('selectedProjectId');
         }
     };
 
+    const handleProjectsChange = (updatedProjects) => {
+        setProjects(updatedProjects);
+    };
+
     // Load selected project from sessionStorage on component mount
     useEffect(() => {
         const savedProjectId = sessionStorage.getItem('selectedProjectId');
-        if (savedProjectId) {
-            setSelectedProjectId(parseInt(savedProjectId));
+        if (savedProjectId && projects.length > 0) {
+            const project = projects.find(p => p.id === parseInt(savedProjectId));
+            if (project) {
+                setSelectedProject(project);
+            }
         }
-    }, []);
+    }, [projects]);
 
-    if (loading) {
+    if (loading || projectsLoading) {
         return (
             <div className="task-board-loading">
                 <div className="loading-spinner"></div>
@@ -489,8 +373,10 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 <div className="board-header-left">
                     <h2>Task Board</h2>
                     <ProjectSelector
-                        selectedProjectId={selectedProjectId}
-                        onProjectChange={handleProjectChange}
+                        projects={projects}
+                        selectedProject={selectedProject}
+                        onProjectSelect={handleProjectSelect}
+                        onProjectsChange={handleProjectsChange}
                     />
                 </div>
                 <div className="view-controls">
@@ -565,13 +451,13 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
             </div>
 
             {/* Show message if no project is selected */}
-            {!selectedProjectId && (
+            {!selectedProject && (
                 <div className="no-project-message">
                     <p>Please select a project to view tasks.</p>
                 </div>
             )}
 
-            {selectedProjectId && viewMode !== 'sprint' && viewMode !== 'calendar' && (
+            {selectedProject && viewMode !== 'sprint' && viewMode !== 'calendar' && (
                 <TaskFilters 
                     filters={filters}
                     onFilterChange={handleFilterChange}
@@ -579,9 +465,9 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 />
             )}
 
-            {selectedProjectId && viewMode === 'sprint' ? (
+            {selectedProject && viewMode === 'sprint' ? (
                 <SprintView focusedSprintId={focusedSprintId} />
-            ) : selectedProjectId && viewMode === 'kanban' ? (
+            ) : selectedProject && viewMode === 'kanban' ? (
                 <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
                     <div className="board-columns">
                         <TaskColumn
@@ -610,7 +496,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                         />
                     </div>
                 </DragDropContext>
-            ) : selectedProjectId && viewMode === 'list' ? (
+            ) : selectedProject && viewMode === 'list' ? (
                 <div className="list-view" style={{ 
                     width: '100%',
                     maxWidth: '1320px',
@@ -637,16 +523,22 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                                     </td>
                                     <td>
                                         {task.assignee_id ? (
-                                            <div className="assignee-bubble" style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}>
-                                                {getAssigneeInitials(task.assignee_id)}
+                                            <div className="assignee-info">
+                                                <div 
+                                                    className="assignee-avatar"
+                                                    style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}
+                                                >
+                                                    {getAssigneeInitials(task.assignee_id)}
+                                                </div>
+                                                <span>{getAssigneeName(task.assignee_id)}</span>
                                             </div>
                                         ) : (
-                                            <div className="assignee-bubble unassigned">UA</div>
+                                            <span className="unassigned">Unassigned</span>
                                         )}
                                     </td>
-                                    <td className="status-cell">
-                                        <span className={`status-badge status-${task.status.toLowerCase()}`}>
-                                            {task.status === 'inProgress' ? 'In Progress' : task.status}
+                                    <td>
+                                        <span className={`status-badge status-${task.status}`}>
+                                            {task.status}
                                         </span>
                                     </td>
                                 </tr>
@@ -654,26 +546,65 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                         </tbody>
                     </table>
                 </div>
-            ) : selectedProjectId && viewMode === 'diagram' ? (
-                <div className="diagram-view chart-container">
-                    <div className="chart-wrapper">
-                        <h3>Priority Distribution</h3>
-                        <Pie data={priorityData} options={chartOptions} />
-                    </div>
-                    <div className="chart-wrapper">
-                        <h3>Status Distribution</h3>
-                        <Pie data={statusData} options={chartOptions} />
-                    </div>
-                    <div className="chart-wrapper">
-                        <h3>Assignment Distribution</h3>
-                        <Pie data={assignmentData} options={chartOptions} />
+            ) : selectedProject && viewMode === 'diagram' ? (
+                <div className="diagram-view">
+                    <div className="chart-container">
+                        <h3>Task Status Distribution</h3>
+                        <div className="chart-wrapper">
+                            <Pie
+                                data={{
+                                    labels: ['To Do', 'In Progress', 'Review', 'Done'],
+                                    datasets: [{
+                                        data: [
+                                            columns.todo.length,
+                                            columns.inProgress.length,
+                                            columns.review.length,
+                                            columns.done.length
+                                        ],
+                                        backgroundColor: [
+                                            '#3b82f6', // Blue for To Do
+                                            '#f59e0b', // Amber for In Progress
+                                            '#8b5cf6', // Purple for Review
+                                            '#10b981'  // Green for Done
+                                        ],
+                                        borderWidth: 2,
+                                        borderColor: '#ffffff'
+                                    }]
+                                }}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                usePointStyle: true,
+                                                padding: 20,
+                                                font: {
+                                                    size: 12
+                                                }
+                                            }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const label = context.label || '';
+                                                    const value = context.parsed;
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    const percentage = ((value / total) * 100).toFixed(1);
+                                                    return `${label}: ${value} (${percentage}%)`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
-            ) : selectedProjectId && viewMode === 'burndown' ? (
-                <div className="burndown-view">
-                    <BurndownChart sprintId={selectedSprint} filters={filters} />
-                </div>
-            ) : selectedProjectId && viewMode === 'calendar' ? (
+            ) : selectedProject && viewMode === 'burndown' ? (
+                <BurndownChart />
+            ) : selectedProject && viewMode === 'calendar' ? (
                 <CalendarView onSprintDoubleClick={handleSprintDoubleClick} />
             ) : null}
 
@@ -684,16 +615,14 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 onUpdate={updateTask}
                 onDelete={handleDeleteTask}
                 users={users}
-                sprints={sprints}
-                selectedProjectId={selectedProjectId}
             />
         </div>
     );
 };
 
 TaskBoard.propTypes = {
-  viewMode: PropTypes.string.isRequired,
-  setViewMode: PropTypes.func.isRequired,
+    viewMode: PropTypes.string.isRequired,
+    setViewMode: PropTypes.func.isRequired
 };
 
 export default TaskBoard;

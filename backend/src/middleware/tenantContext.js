@@ -18,10 +18,35 @@ const pool = new Pool(dbConfig);
  * 2. Header (X-Company-Slug)
  * 3. JWT token (company_id claim)
  * 4. Query parameter (company_slug)
+ * 5. User's company_id (from authentication)
  */
 const tenantContextMiddleware = async (req, res, next) => {
   try {
-    // Extract company identifier from various sources
+    // If user is authenticated and has a company_id, use that
+    if (req.user && req.user.company_id) {
+      // Get company details
+      const company = await getCompanyById(req.user.company_id);
+      
+      if (company) {
+        // Set tenant context
+        req.tenantContext = {
+          companyId: company.id,
+          companySlug: company.slug,
+          companyName: company.name,
+          subscriptionPlan: company.subscription_plan,
+          subscriptionStatus: company.subscription_status,
+          maxUsers: company.max_users,
+          isMultiTenant: true
+        };
+        
+        // Set database session context for audit logging
+        await setDatabaseTenantContext(company.id, req.user.id);
+        
+        return next();
+      }
+    }
+    
+    // Fallback: Extract company identifier from various sources
     const companySlug = extractCompanySlug(req);
     
     if (!companySlug) {
@@ -63,7 +88,7 @@ const tenantContextMiddleware = async (req, res, next) => {
       isMultiTenant: true
     };
     
-    // Set database session context for audit logging
+    // Set database session context for audit logging only if user is available
     if (req.user && req.user.id) {
       await setDatabaseTenantContext(company.id, req.user.id);
     }
@@ -71,10 +96,13 @@ const tenantContextMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Tenant context middleware error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error', 
-      message: 'Failed to establish tenant context' 
-    });
+    // Don't fail the request, just set default context
+    req.tenantContext = { 
+      companyId: null, 
+      companySlug: null,
+      isMultiTenant: false 
+    };
+    next();
   }
 };
 
@@ -120,6 +148,24 @@ async function getCompanyBySlug(slug) {
     const result = await client.query(
       'SELECT * FROM companies WHERE slug = $1 AND deleted_at IS NULL',
       [slug]
+    );
+    
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Get company by ID
+ */
+async function getCompanyById(id) {
+  const client = await pool.connect();
+  
+  try {
+    const result = await client.query(
+      'SELECT * FROM companies WHERE id = $1 AND deleted_at IS NULL',
+      [id]
     );
     
     return result.rows[0] || null;
@@ -284,5 +330,6 @@ module.exports = {
   checkProjectPermission,
   getUserAccessibleProjects,
   logUserActivity,
-  getCompanyBySlug
+  getCompanyBySlug,
+  getCompanyById
 }; 
