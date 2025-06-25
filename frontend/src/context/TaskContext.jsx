@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import api from '../api/axios';
 
 const TaskContext = createContext();
@@ -29,10 +30,14 @@ export const TaskProvider = ({ children }) => {
         console.log('📋 Current tasks:', tasks.map(t => ({ id: t.id, title: t.title, status: t.status, position: t.position })));
     }, [tasks]);
 
-    const fetchTasks = async (signal) => {
-        console.log('🔍 Fetching tasks from server...');
+    const fetchTasks = useCallback(async (projectId = null, signal = null) => {
+        console.log('🔍 Fetching tasks from server...', projectId ? `for project ${projectId}` : 'for all projects');
         try {
-            const response = await api.get('/api/tasks', { signal });
+            const params = projectId ? { project_id: projectId } : {};
+            const response = await api.get('/api/tasks', { 
+                params,
+                signal: signal || new AbortController().signal 
+            });
             logApiResponse(response, 'Fetch Tasks');
             
             setTasks(response.data.tasks);
@@ -50,13 +55,13 @@ export const TaskProvider = ({ children }) => {
             setError('Failed to fetch tasks');
         }
         setLoading(false);
-    };
+    }, []);
 
     useEffect(() => {
         const controller = new AbortController();
-        fetchTasks(controller.signal);
+        fetchTasks(null, controller.signal);
         return () => controller.abort();
-    }, []);
+    }, [fetchTasks]);
 
     const createTask = async (taskData) => {
         console.log('➕ Creating task:', taskData);
@@ -235,6 +240,7 @@ export const TaskProvider = ({ children }) => {
         error,
         selectedTask,
         isModalOpen,
+        fetchTasks,
         createTask,
         updateTask,
         deleteTask,
@@ -251,4 +257,8 @@ export const TaskProvider = ({ children }) => {
             {children}
         </TaskContext.Provider>
     );
+};
+
+TaskProvider.propTypes = {
+    children: PropTypes.node.isRequired
 };

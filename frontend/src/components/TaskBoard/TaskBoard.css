@@ -87,14 +87,21 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 0;
+    margin-bottom: 20px;
+    padding: 0 20px;
+}
+
+.board-header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
 .board-header h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #2d3748;
     margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-primary, #2d3748);
 }
 
 .view-controls {
@@ -313,7 +320,7 @@
 }
 
 .dark-mode .board-header h2 {
-    color: #e2e8f0;
+    color: var(--text-primary-dark, #e2e8f0);
 }
 
 .dark-mode .list-view,
@@ -506,4 +513,29 @@ border-bottom: 2px solid #6a7685;
     justify-content: center;
     font-size: 1.5rem;
     color: #888;
+}
+
+.no-project-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    background-color: var(--bg-secondary, #f7fafc);
+    border-radius: 8px;
+    margin: 20px;
+}
+
+.no-project-message p {
+    font-size: 16px;
+    color: var(--text-secondary, #718096);
+    margin: 0;
+}
+
+/* Dark mode support */
+.dark-mode .no-project-message {
+    background-color: var(--bg-secondary-dark, #2d3748);
+}
+
+.dark-mode .no-project-message p {
+    color: var(--text-secondary-dark, #a0aec0);
 }

@@ -1,0 +1,127 @@
+⚠️ SendGrid API Key is not configured correctly. Password reset emails will not be sent.
+   Please set SENDGRID_API_KEY in your .env file.
+Server is running on port 3001
+Multi-tenant support: DISABLED
+✅ Database connected successfully at 2025-06-25T10:42:12.669Z
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔍 getAllTasks endpoint hit
+📊 About to query database...
+🔍 Filtering tasks for company_id: 36
+🔍 Filtering tasks for project_id: 18
+🔐 Authentication successful for user: Hans
+🔍 getAllTasks endpoint hit
+📊 About to query database...
+🔍 Filtering tasks for company_id: 36
+✅ Query successful, found 0 tasks for company 36
+First task: undefined
+✅ Query successful, found 0 tasks for company 36
+First task: undefined
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔍 getAllProjects endpoint hit
+🔍 Filtering projects for department_id: 20
+🔐 Authentication successful for user: Hans
+✅ Found 2 projects for department 20
+🔐 Authentication successful for user: Hans
+🔍 getAllProjects endpoint hit
+🔍 Filtering projects for department_id: 20
+🔐 Authentication successful for user: Hans
+✅ Found 2 projects for department 20
+🔐 Authentication successful for user: Hans
+🔍 createTask endpoint hit
+Request body: {
+  title: 'sfsdf',
+  description: 'sfdsf',
+  status: 'todo',
+  priority: 'medium',
+  assignee_id: null,
+  effort: null,
+  timespent: null,
+  sprint_id: null,
+  tags: [],
+  duedate: null,
+  project_id: 18
+}
+User: {
+  id: 50,
+  email: 'exampleXXDDD@gmx.de',
+  first_name: 'Hans',
+  last_name: 'Peter',
+  role: 'Admin'
+}
+Creating task for user ID: 50 in project ID: 18
+Generated new ticket number: PT-0086
+New position will be: 18
+❌ Error in createTask: column "action" of relation "audit_logs" does not exist
+Full error stack: error: column "action" of relation "audit_logs" does not exist
+    at /Users/utente/Documents/New_Projects_2025/09_KanbanBoardPQL2025/backend/node_modules/pg/lib/client.js:545:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async resequencePositions (/Users/utente/Documents/New_Projects_2025/09_KanbanBoardPQL2025/backend/src/services/kanbanService.js:12:9)
+    at async createTask (/Users/utente/Documents/New_Projects_2025/09_KanbanBoardPQL2025/backend/src/controllers/taskController.js:279:13)
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔍 getAllTasks endpoint hit
+📊 About to query database...
+🔍 Filtering tasks for company_id: 36
+🔐 Authentication successful for user: Hans
+🔍 getAllTasks endpoint hit
+📊 About to query database...
+🔍 Filtering tasks for company_id: 36
+🔍 Filtering tasks for project_id: 18
+✅ Query successful, found 0 tasks for company 36
+First task: undefined
+✅ Query successful, found 0 tasks for company 36
+First task: undefined
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔍 getAllProjects endpoint hit
+🔐 Authentication successful for user: Hans
+🔍 Filtering projects for department_id: 20
+✅ Found 2 projects for department 20
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔍 getAllProjects endpoint hit
+🔍 Filtering projects for department_id: 20
+✅ Found 2 projects for department 20
+🔐 Authentication successful for user: Hans
+🔐 Authentication successful for user: Hans
+🔍 createTask endpoint hit
+Request body: {
+  title: 'dfsdfdf',
+  description: 'dsffsfs',
+  status: 'todo',
+  priority: 'medium',
+  assignee_id: null,
+  effort: null,
+  timespent: null,
+  sprint_id: null,
+  tags: [],
+  duedate: null,
+  project_id: 18
+}
+User: {
+  id: 50,
+  email: 'exampleXXDDD@gmx.de',
+  first_name: 'Hans',
+  last_name: 'Peter',
+  role: 'Admin'
+}
+Creating task for user ID: 50 in project ID: 18
+Generated new ticket number: PT-0086
+New position will be: 18
+❌ Error in createTask: column "action" of relation "audit_logs" does not exist
+Full error stack: error: column "action" of relation "audit_logs" does not exist
+    at /Users/utente/Documents/New_Projects_2025/09_KanbanBoardPQL2025/backend/node_modules/pg/lib/client.js:545:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async resequencePositions (/Users/utente/Documents/New_Projects_2025/09_KanbanBoardPQL2025/backend/src/services/kanbanService.js:12:9)
+    at async createTask (/Users/utente/Documents/New_Projects_2025/09_KanbanBoardPQL2025/backend/src/controllers/taskController.js:279:13)

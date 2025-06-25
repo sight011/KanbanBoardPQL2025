@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import PropTypes from 'prop-types';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -51,6 +52,21 @@ export default function Login({ onLogin }) {
         </form>
         <div style={{ textAlign: 'center', marginTop: '1rem' }}>
           <button 
+            onClick={() => navigate('/create-account')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#ffffff',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              fontSize: '14px',
+              marginBottom: '0.5rem'
+            }}
+          >
+            Create Account
+          </button>
+          <br />
+          <button 
             onClick={() => navigate('/forgot-password')}
             style={{
               background: 'none',
@@ -67,4 +83,8 @@ export default function Login({ onLogin }) {
       </div>
     </div>
   );
-} 
+}
+
+Login.propTypes = {
+  onLogin: PropTypes.func.isRequired,
+}; 

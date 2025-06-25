@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import TaskColumn from './TaskColumn';
-import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import { DragDropContext } from '@hello-pangea/dnd';
 import { toast } from 'react-hot-toast';
 
 const KanbanBoard = () => {
@@ -9,14 +9,9 @@ const KanbanBoard = () => {
         tasks, 
         loading, 
         error,
-        createTask,
-        updateTask,
         deleteTask,
         updateTaskPosition,
-        openTaskModal,
-        closeTaskModal,
-        isModalOpen,
-        selectedTask
+        openTaskModal
     } = useTaskContext();
 
     const [columns, setColumns] = useState({
@@ -71,30 +66,6 @@ const KanbanBoard = () => {
         } catch (error) {
             toast.error('Failed to update task position');
             console.error('Error updating task position:', error);
-        }
-    };
-
-    // Handle task creation
-    const handleCreateTask = async (taskData) => {
-        try {
-            await createTask(taskData);
-            toast.success('Task created successfully');
-            closeTaskModal();
-        } catch (error) {
-            toast.error('Failed to create task');
-            console.error('Error creating task:', error);
-        }
-    };
-
-    // Handle task update
-    const handleUpdateTask = async (taskId, updatedData) => {
-        try {
-            await updateTask(taskId, updatedData);
-            toast.success('Task updated successfully');
-            closeTaskModal();
-        } catch (error) {
-            toast.error('Failed to update task');
-            console.error('Error updating task:', error);
         }
     };
 

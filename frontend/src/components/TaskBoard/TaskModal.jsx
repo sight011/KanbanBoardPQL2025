@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskModal.css';
 import './DueDate.css';
-import { formatHours } from '../../utils/timeFormat';
 import {
     StatusIcon, PriorityIcon, AssigneeIcon, SprintIcon,
     TimeEstimateIcon, TimeTrackIcon, DatesIcon, TagsIcon, RelationshipsIcon
@@ -11,7 +11,7 @@ import TagsInput from './TagsInput';
 import DueDate from './DueDate';
 import ActivityFeed from './ActivityFeed';
 
-const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
+const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = null }) => {
     const {
         selectedTask,
         isModalOpen,
@@ -38,8 +38,6 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     const [effortError, setEffortError] = useState('');
     const [timeSpentError, setTimeSpentError] = useState('');
     const [sprints, setSprints] = useState([]);
-    const [sprintsLoading, setSprintsLoading] = useState(false);
-    const [sprintsError, setSprintsError] = useState(null);
     const [hoursPerDay, setHoursPerDay] = useState(8);
     const [showConfirmDelete, setShowConfirmDelete] = useState(false);
     const confirmDeleteRef = useRef(null);
@@ -60,17 +58,12 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
 
     useEffect(() => {
         const fetchSprints = async () => {
-            setSprintsLoading(true);
             try {
                 const res = await fetch('/api/sprints');
                 const data = await res.json();
                 setSprints(data.sprints || []);
-                setSprintsError(null);
             } catch (err) {
                 setSprints([]);
-                setSprintsError('Failed to load sprints');
-            } finally {
-                setSprintsLoading(false);
             }
         };
         fetchSprints();
@@ -224,7 +217,8 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
             const payload = {
                 ...formData,
                 sprint_id: formData.sprint_id === '' ? null : Number(formData.sprint_id),
-                timespent: formData.timespent === '' ? null : formData.timespent
+                timespent: formData.timespent === '' ? null : formData.timespent,
+                project_id: selectedProjectId
             };
             console.log('Submitting payload:', payload);
             if (selectedTask) {
@@ -263,18 +257,6 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
     };
 
     if (!isModalOpen) return null;
-
-    const getAssigneeName = (assigneeId) => {
-        if (!users.length || !assigneeId) return 'Empty';
-        const user = users.find(u => u.id === parseInt(assigneeId));
-        return user ? `${user.firstName} ${user.lastName}` : 'Empty';
-    };
-
-    const getSprintName = (sprintId) => {
-        if (!sprints.length || !sprintId) return 'Backlog';
-        const sprint = sprints.find(s => s.id === parseInt(sprintId));
-        return sprint ? sprint.name : 'Backlog';
-    };
 
     const renderMetadataRow = ({ icon, label, children }) => (
         <div className="metadata-row">
@@ -408,6 +390,12 @@ const TaskModal = ({ viewMode = '', activeSprintId = '' }) => {
             )}
         </div>
     );
+};
+
+TaskModal.propTypes = {
+    viewMode: PropTypes.string,
+    activeSprintId: PropTypes.string,
+    selectedProjectId: PropTypes.number
 };
 
 export default TaskModal;

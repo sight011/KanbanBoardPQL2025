@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { TaskProvider } from './context/TaskContext';
 import { ThemeProvider } from './context/ThemeContext';
 import TaskBoard from './components/TaskBoard/TaskBoard';
@@ -13,6 +13,7 @@ import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import AuditTrailView from './components/Audit/AuditTrailView';
 import HealthCheck from './components/Health/HealthCheck';
+import CreateAccount from './components/CreateAccount';
 import api from './api/axios'; // Import axios for API calls
 import './App.css';
 import { Routes, Route, useNavigate } from 'react-router-dom';
@@ -110,6 +111,7 @@ Based on the tasks above, please answer the user's question following the respon
                 <Route path="/login" element={<Login onLogin={setUser} />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/create-account" element={<CreateAccount />} />
                 <Route path="*" element={<Login onLogin={setUser} />} />
             </Routes>
         );

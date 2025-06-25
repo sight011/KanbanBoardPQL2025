@@ -25,10 +25,45 @@ const taskController = {
         console.log('🔍 getAllTasks endpoint hit');
         try {
             console.log('📊 About to query database...');
-            const result = await pool.query(
-                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, duedate, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks ORDER BY status, position, id'
+            
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await pool.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
             );
-            console.log('✅ Query successful, found', result.rows.length, 'tasks');
+            
+            if (userResult.rows.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            console.log('🔍 Filtering tasks for company_id:', userCompanyId);
+            
+            // Check if project_id is provided in query params
+            const { project_id } = req.query;
+            let projectFilter = '';
+            let queryParams = [userCompanyId];
+            let paramIndex = 2;
+            
+            if (project_id) {
+                projectFilter = `AND t.project_id = $${paramIndex}`;
+                queryParams.push(project_id);
+                paramIndex++;
+                console.log('🔍 Filtering tasks for project_id:', project_id);
+            }
+            
+            const result = await pool.query(
+                `SELECT t.id, t.title, t.description, t.status, t.priority, t.position, 
+                        t.reporter_id, t.assignee_id, t.ticket_number, t.effort, t.timespent, 
+                        t.sprint_id, t.project_id, t.created_at, t.updated_at, t.completed_at, t.duedate, 
+                        (CASE WHEN t.tags IS NULL OR t.tags = '' THEN NULL ELSE string_to_array(t.tags, ',') END) as tags 
+                 FROM tasks t
+                 JOIN users u ON t.reporter_id = u.id
+                 WHERE u.company_id = $1 ${projectFilter}
+                 ORDER BY t.status, t.position, t.id`,
+                queryParams
+            );
+            console.log('✅ Query successful, found', result.rows.length, 'tasks for company', userCompanyId);
             console.log('First task:', result.rows[0]);
             res.status(200).json({
                 success: true,
@@ -47,13 +82,32 @@ const taskController = {
         console.log('🔍 getTaskById endpoint hit for ID:', req.params.id);
         try {
             const { id } = req.params;
+            
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await pool.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
             const result = await pool.query(
-                'SELECT id, title, description, status, priority, position, reporter_id, assignee_id, ticket_number, effort, timespent, sprint_id, created_at, updated_at, completed_at, duedate, (CASE WHEN tags IS NULL OR tags = \'\' THEN NULL ELSE string_to_array(tags, \',\') END) as tags FROM tasks WHERE id = $1',
-                [id]
+                `SELECT t.id, t.title, t.description, t.status, t.priority, t.position, 
+                        t.reporter_id, t.assignee_id, t.ticket_number, t.effort, t.timespent, 
+                        t.sprint_id, t.created_at, t.updated_at, t.completed_at, t.duedate, 
+                        (CASE WHEN t.tags IS NULL OR t.tags = '' THEN NULL ELSE string_to_array(t.tags, ',') END) as tags 
+                 FROM tasks t
+                 JOIN users u ON t.reporter_id = u.id
+                 WHERE t.id = $1 AND u.company_id = $2`,
+                [id, userCompanyId]
             );
             
             if (result.rows.length === 0) {
-                console.log('❌ Task not found for ID:', id);
+                console.log('❌ Task not found for ID:', id, 'in company:', userCompanyId);
                 return res.status(404).json({ error: 'Task not found' });
             }
             
@@ -79,13 +133,82 @@ const taskController = {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
-            const { title, description, status, priority, tags, duedate } = req.body;
+            const { title, description, status, priority, tags, duedate, project_id } = req.body;
             let { effort, timespent } = req.body;
 
             if (!req.user || !req.user.id) {
                 await client.query('ROLLBACK');
                 console.log('❌ No authenticated user found');
                 return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            // Get user's company_id and department_id for project lookup
+            const userResult = await client.query(
+                `SELECT u.company_id, ud.department_id 
+                 FROM users u
+                 LEFT JOIN user_departments ud ON u.id = ud.user_id
+                 WHERE u.id = $1
+                 LIMIT 1`,
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            const userDepartmentId = userResult.rows[0].department_id;
+            
+            // Determine project_id - use provided one or fallback to default
+            let finalProjectId = project_id;
+            if (!finalProjectId) {
+                if (!userDepartmentId) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({ 
+                        error: 'No department assigned', 
+                        message: 'User must be assigned to a department to create tasks' 
+                    });
+                }
+                
+                // Get the default project for the user's department
+                const defaultProjectResult = await client.query(
+                    'SELECT id FROM projects WHERE department_id = $1 ORDER BY created_at ASC LIMIT 1',
+                    [userDepartmentId]
+                );
+                
+                if (defaultProjectResult.rows.length === 0) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({ 
+                        error: 'No project available', 
+                        message: 'Please create a project first or specify a project_id' 
+                    });
+                }
+                
+                finalProjectId = defaultProjectResult.rows[0].id;
+                console.log('Using default project ID:', finalProjectId);
+            } else {
+                // Validate that the provided project_id belongs to the user's department
+                if (!userDepartmentId) {
+                    await client.query('ROLLBACK');
+                    return res.status(403).json({ 
+                        error: 'No department assigned', 
+                        message: 'User must be assigned to a department to create tasks' 
+                    });
+                }
+                
+                const projectValidationResult = await client.query(
+                    'SELECT id FROM projects WHERE id = $1 AND department_id = $2',
+                    [finalProjectId, userDepartmentId]
+                );
+                
+                if (projectValidationResult.rows.length === 0) {
+                    await client.query('ROLLBACK');
+                    return res.status(403).json({ 
+                        error: 'Invalid project', 
+                        message: 'Project does not belong to your department' 
+                    });
+                }
             }
             
             // Fetch hoursPerDay from settings (fallback to 8)
@@ -112,7 +235,7 @@ const taskController = {
             }
 
             const reporter_id = req.user.id;
-            console.log('Creating task for user ID:', reporter_id);
+            console.log('Creating task for user ID:', reporter_id, 'in project ID:', finalProjectId);
 
             // Generate ticket number
             const lastTicketResult = await client.query(
@@ -138,8 +261,8 @@ const taskController = {
             const tagsString = tags && tags.length > 0 ? tags.join(',') : null;
 
             const result = await client.query(
-                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, sprint_id, tags, duedate, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()) RETURNING *',
-                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent, req.body.sprint_id || null, tagsString, duedate || null]
+                'INSERT INTO tasks (title, description, status, priority, position, reporter_id, ticket_number, effort, timespent, sprint_id, project_id, tags, duedate, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()) RETURNING *',
+                [title, description, status, priority, position, reporter_id, formattedTicketNumber, effort, timespent, req.body.sprint_id || null, finalProjectId, tagsString, duedate || null]
             );
 
             const newTask = result.rows[0];
@@ -182,8 +305,27 @@ const taskController = {
             await client.query('BEGIN');
             const { id } = req.params;
 
-            // Get the original task for comparison
-            const originalTaskResult = await client.query('SELECT * FROM tasks WHERE id = $1 FOR UPDATE', [id]);
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await client.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+
+            // Get the original task for comparison (filtered by company)
+            const originalTaskResult = await client.query(
+                `SELECT t.* FROM tasks t
+                 JOIN users u ON t.reporter_id = u.id
+                 WHERE t.id = $1 AND u.company_id = $2
+                 FOR UPDATE`,
+                [id, userCompanyId]
+            );
             if (originalTaskResult.rows.length === 0) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Task not found' });

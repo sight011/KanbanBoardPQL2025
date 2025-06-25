@@ -8,13 +8,19 @@ const SALT_ROUNDS = 10;
 // Get all users (excluding deleted)
 router.get('/', requireLogin, async (req, res) => {
     try {
+        // Get the current user's company_id
+        const userResult = await db.query('SELECT company_id FROM users WHERE id = $1', [req.user.id]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const userCompanyId = userResult.rows[0].company_id;
         const result = await db.query(`
             SELECT id, username, first_name as "firstName", last_name as "lastName", 
                    email, role, country, created_at 
             FROM users 
-            WHERE (deleted = false OR deleted IS NULL)
+            WHERE (deleted = false OR deleted IS NULL) AND company_id = $1
             ORDER BY created_at DESC
-        `);
+        `, [userCompanyId]);
         res.json({ users: result.rows });
     } catch (error) {
         console.error('Error fetching users:', error);

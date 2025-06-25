@@ -1,17 +1,18 @@
-// import React, { useState, useEffect, useMemo } from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { DragDropContext } from '@hello-pangea/dnd';
 import TaskColumn from './TaskColumn';
 import TaskFilters from './TaskFilters';
-import { useTaskContext } from '../../context/TaskContext';
 import TaskModal from './TaskModal';
+import ProjectSelector from './ProjectSelector';
+import { useTaskContext } from '../../context/TaskContext';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import './TaskBoard.css';
 import SprintView from './SprintView';
 import BurndownChart from './BurndownChart';
 import CalendarView from '../CalendarView';
+import api from '../../api/axios';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -62,8 +63,9 @@ const textPlugin = {
 ChartJS.register(textPlugin);
 
 const TaskBoard = ({ viewMode, setViewMode }) => {
-    const { tasks, updateTaskPosition, loading, error, openTaskModal, updateTask } = useTaskContext();
+    const { tasks, updateTaskPosition, loading, error, openTaskModal, updateTask, fetchTasks, selectedTask, isModalOpen, closeTaskModal } = useTaskContext();
     const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark-mode'));
+    const [selectedProjectId, setSelectedProjectId] = useState(null);
     const [filters, setFilters] = useState({
         text: '',
         sprint: '',
@@ -78,11 +80,18 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     const [tasksWithChanges, setTasksWithChanges] = useState([]);
     const [focusedSprintId, setFocusedSprintId] = useState(null);
 
+    // Fetch tasks when project changes
+    useEffect(() => {
+        if (selectedProjectId) {
+            fetchTasks(selectedProjectId);
+        }
+    }, [selectedProjectId, fetchTasks]);
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await fetch('/api/users');
-                const data = await response.json();
+                const response = await api.get('/api/users');
+                const data = response.data;
                 if (data.users) {
                     // Create a map of user IDs to user data for faster lookup
                     const usersMap = data.users.reduce((acc, user) => {
@@ -104,8 +113,8 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         const fetchTasksWithChanges = async () => {
             if (filters.changedInTime && filters.changedInTime !== 'all') {
                 try {
-                    const response = await fetch(`/api/audit/tasks-with-changes?timeFrame=${filters.changedInTime}`);
-                    const data = await response.json();
+                    const response = await api.get(`/api/audit/tasks-with-changes?timeFrame=${filters.changedInTime}`);
+                    const data = response.data;
                     if (data.success) {
                         setTasksWithChanges(data.tasks.map(task => task.id));
                     } else {
@@ -122,28 +131,6 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
 
         fetchTasksWithChanges();
     }, [filters.changedInTime]);
-
-    // Add toggleTheme function
-    const toggleTheme = () => {
-        document.documentElement.classList.toggle('dark-mode');
-        setIsDarkMode(prev => !prev);
-    };
-
-    // Add toggleViewMode function
-    const toggleViewMode = () => {
-        setViewMode(prevMode => {
-            switch (prevMode) {
-                case 'kanban':
-                    return 'list';
-                case 'list':
-                    return 'diagram';
-                case 'diagram':
-                    return 'kanban';
-                default:
-                    return 'kanban';
-            }
-        });
-    };
 
     // Add effect to handle theme changes
     useEffect(() => {
@@ -167,8 +154,8 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     useEffect(() => {
         const fetchSprints = async () => {
             try {
-                const res = await fetch('/api/sprints');
-                const data = await res.json();
+                const res = await api.get('/api/sprints');
+                const data = res.data;
                 const newSprints = data.sprints || [];
                 setSprints(newSprints);
                 // Only set default to active sprint on initial load
@@ -199,24 +186,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         // Poll for active sprint changes every 10 seconds
         const interval = setInterval(fetchSprints, 10000); // 10 seconds
         return () => clearInterval(interval);
-    }, []);
-
-    // Use useMemo to efficiently filter tasks
-    const filteredTasks = useMemo(() => {
-        return tasks.filter(task => {
-            const matchesText = task.title.toLowerCase().includes(filters.text.toLowerCase()) ||
-                              task.description.toLowerCase().includes(filters.text.toLowerCase());
-            const matchesPriority = !filters.priority || task.priority === filters.priority;
-            const matchesAssignee = !filters.assignee || task.assignee_id === parseInt(filters.assignee);
-            const matchesSprint = !filters.sprint || String(task.sprint_id) === filters.sprint;
-            const matchesStatus = !filters.status || task.status === filters.status;
-            const matchesChangedInTime = !filters.changedInTime || 
-                                       filters.changedInTime === 'all' || 
-                                       tasksWithChanges.includes(task.id);
-            
-            return matchesText && matchesPriority && matchesAssignee && matchesSprint && matchesStatus && matchesChangedInTime;
-        });
-    }, [tasks, filters, tasksWithChanges]);
+    }, [sprints.length]);
 
     const handleFilterChange = (filterType, value) => {
         setFilters(prev => ({
@@ -225,74 +195,75 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         }));
     };
 
-    // Organize filtered tasks into columns
-    const columns = useMemo(() => {
-        const organizedTasks = {
-            todo: [],
-            inProgress: [],
-            review: [],
-            done: []
-        };
-
-        filteredTasks.forEach(task => {
-            if (organizedTasks[task.status]) {
-                organizedTasks[task.status].push(task);
+    // Filter tasks based on current filters
+    const filteredTasks = useMemo(() => {
+        return tasks.filter(task => {
+            // Text filter
+            if (filters.text && !task.title.toLowerCase().includes(filters.text.toLowerCase()) && 
+                !task.description?.toLowerCase().includes(filters.text.toLowerCase())) {
+                return false;
             }
+            
+            // Sprint filter
+            if (filters.sprint && task.sprint_id !== parseInt(filters.sprint)) {
+                return false;
+            }
+            
+            // Priority filter
+            if (filters.priority && task.priority !== filters.priority) {
+                return false;
+            }
+            
+            // Assignee filter
+            if (filters.assignee && task.assignee_id !== parseInt(filters.assignee)) {
+                return false;
+            }
+            
+            // Status filter
+            if (filters.status && task.status !== filters.status) {
+                return false;
+            }
+            
+            // Changed in time filter
+            if (filters.changedInTime && filters.changedInTime !== 'all' && !tasksWithChanges.includes(task.id)) {
+                return false;
+            }
+            
+            return true;
         });
+    }, [tasks, filters, tasksWithChanges]);
 
-        // Sort tasks by position within each column
-        Object.keys(organizedTasks).forEach(status => {
-            organizedTasks[status].sort((a, b) => a.position - b.position);
-        });
-
-        return organizedTasks;
+    // Group tasks by status
+    const columns = useMemo(() => {
+        return {
+            todo: filteredTasks.filter(task => task.status === 'todo'),
+            inProgress: filteredTasks.filter(task => task.status === 'inProgress'),
+            review: filteredTasks.filter(task => task.status === 'review'),
+            done: filteredTasks.filter(task => task.status === 'done')
+        };
     }, [filteredTasks]);
 
-    const sortedTasks = useMemo(() => {
-        if (viewMode === 'list') {
-            return [...filteredTasks].sort((a, b) => {
-                const priorityOrder = { high: 3, medium: 2, low: 1 };
-                return priorityOrder[b.priority] - priorityOrder[a.priority];
-            });
-        }
-        return filteredTasks;
-    }, [filteredTasks, viewMode]);
-
     const onDragStart = () => {
-        // Add a class to the body when drag starts
-        document.body.classList.add('dragging');
+        console.log('Drag started');
     };
 
     const onDragEnd = async (result) => {
-        // Remove the dragging class from body
-        document.body.classList.remove('dragging');
+        if (!result.destination) return;
 
         const { source, destination, draggableId } = result;
+        
+        if (source.droppableId === destination.droppableId && 
+            source.index === destination.index) {
+            return;
+        }
 
-        // Dropped outside a valid destination
-        if (!destination) return;
-
-        // Dropped in the same position
-        if (
-            source.droppableId === destination.droppableId &&
-            source.index === destination.index
-        ) return;
-
-        const taskId = parseInt(draggableId);
         const newStatus = destination.droppableId;
         const newPosition = destination.index + 1;
 
         try {
-            await updateTaskPosition(taskId, newPosition, newStatus);
-            // If moved to 'done', set completed_at
-            if (newStatus === 'done') {
-                await updateTask(taskId, { status: 'done', completed_at: new Date().toISOString() });
-            } else if (source.droppableId === 'done') {
-                // If moved out of 'done', clear completed_at
-                await updateTask(taskId, { status: newStatus, completed_at: null });
-            }
+            await updateTaskPosition(parseInt(draggableId), newPosition, newStatus);
         } catch (error) {
-            console.error('Error updating task position:', error);
+            console.error('Failed to update task position:', error);
         }
     };
 
@@ -300,53 +271,73 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         openTaskModal(task);
     };
 
-    const handleCloseModal = () => {
-        // Implement the logic to close the modal
-        console.log('Closing modal');
-    };
-
-    const handleUpdateTask = (updatedTask) => {
-        // Implement the logic to update the task
-        console.log('Updating task:', updatedTask);
-        handleCloseModal();
-    };
-
     const handleDeleteTask = (taskId) => {
-        // Implement the logic to delete the task
-        console.log('Deleting task with id:', taskId);
-        handleCloseModal();
+        // This will be handled by the TaskModal component
+        console.log('Delete task:', taskId);
     };
 
     const getAssigneeInitials = (assigneeId) => {
-        if (!assigneeId) return 'UA';
-        
+        if (!assigneeId || !users[assigneeId]) return '?';
         const user = users[assigneeId];
-        if (!user) return '?';
-        
-        return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+        return `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase();
     };
 
     const getAssigneeColor = (assigneeId) => {
+        if (!assigneeId || !users[assigneeId]) return '#e2e8f0';
+        
+        // Generate a consistent color based on user ID
         const colors = [
-            '#0052cc', // Blue
-            '#36b37e', // Green
-            '#ff5630', // Red
-            '#ffab00', // Yellow
-            '#6554c0', // Purple
-            '#00b8d9', // Cyan
-            '#ff7452', // Orange
-            '#8777d9', // Lavender
-            '#57d9a3', // Mint
-            '#00a3bf'  // Teal
+            '#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5',
+            '#dd6b20', '#319795', '#2b6cb0', '#38a169', '#d69e2e'
         ];
-        return colors[(assigneeId - 1) % colors.length];
+        return colors[assigneeId % colors.length];
     };
 
     const getAssigneeName = (assigneeId) => {
-        if (!assigneeId) return 'Unassigned';
+        if (!assigneeId || !users[assigneeId]) return 'Unassigned';
         const user = users[assigneeId];
-        return user ? `${user.firstName} ${user.lastName}` : `User ${assigneeId}`;
+        return `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User';
     };
+
+    // Prepare data for pie charts
+    const priorityData = useMemo(() => {
+        const counts = filteredTasks.reduce((acc, task) => {
+            acc[task.priority] = (acc[task.priority] || 0) + 1;
+            return acc;
+        }, {});
+
+        return {
+            labels: ['High', 'Medium', 'Low'],
+            datasets: [{
+                data: [counts.high || 0, counts.medium || 0, counts.low || 0],
+                backgroundColor: ['#ff5630', '#ffab00', '#00b8d9'],
+                borderColor: ['#ff5630', '#ffab00', '#00b8d9'],
+                borderWidth: 1
+            }]
+        };
+    }, [filteredTasks]);
+
+    const statusData = useMemo(() => {
+        const counts = filteredTasks.reduce((acc, task) => {
+            acc[task.status] = (acc[task.status] || 0) + 1;
+            return acc;
+        }, {});
+
+        return {
+            labels: ['To Do', 'In Progress', 'Review', 'Done'],
+            datasets: [{
+                data: [
+                    counts.todo || 0,
+                    counts.inProgress || 0,
+                    counts.review || 0,
+                    counts.done || 0
+                ],
+                backgroundColor: ['#4a5568', '#3182ce', '#805ad5', '#38a169'],
+                borderColor: ['#4a5568', '#3182ce', '#805ad5', '#38a169'],
+                borderWidth: 1
+            }]
+        };
+    }, [filteredTasks]);
 
     const assignmentData = useMemo(() => {
         if (!filteredTasks || filteredTasks.length === 0) {
@@ -381,7 +372,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
             .sort(([, a], [, b]) => b.count - a.count);
 
         return {
-            labels: sortedAssignees.map(([key, data]) => data.name),
+            labels: sortedAssignees.map(([, data]) => data.name),
             datasets: [{
                 data: sortedAssignees.map(([, data]) => data.count),
                 backgroundColor: sortedAssignees.map(([, data]) => data.color),
@@ -441,154 +432,6 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         }
     };
 
-    // Prepare data for pie charts
-    const priorityData = useMemo(() => {
-        const counts = filteredTasks.reduce((acc, task) => {
-            acc[task.priority] = (acc[task.priority] || 0) + 1;
-            return acc;
-        }, {});
-
-        return {
-            labels: ['High', 'Medium', 'Low'],
-            datasets: [{
-                data: [counts.high || 0, counts.medium || 0, counts.low || 0],
-                backgroundColor: ['#ff5630', '#ffab00', '#00b8d9'],
-                borderColor: ['#ff5630', '#ffab00', '#00b8d9'],
-                borderWidth: 1
-            }]
-        };
-    }, [filteredTasks]);
-
-    const statusData = useMemo(() => {
-        const counts = filteredTasks.reduce((acc, task) => {
-            acc[task.status] = (acc[task.status] || 0) + 1;
-            return acc;
-        }, {});
-
-        return {
-            labels: ['To Do', 'In Progress', 'Review', 'Done'],
-            datasets: [{
-                data: [
-                    counts.todo || 0,
-                    counts.inProgress || 0,
-                    counts.review || 0,
-                    counts.done || 0
-                ],
-                backgroundColor: ['#4a5568', '#3182ce', '#805ad5', '#38a169'],
-                borderColor: ['#4a5568', '#3182ce', '#805ad5', '#38a169'],
-                borderWidth: 1
-            }]
-        };
-    }, [filteredTasks]);
-
-    const assigneeData = useMemo(() => {
-        if (!tasks || tasks.length === 0) {
-            return {
-                labels: ['No Tasks'],
-                datasets: [{
-                    data: [1],
-                    backgroundColor: ['#e2e8f0'],
-                    borderWidth: 0
-                }]
-            };
-        }
-
-        // Group tasks by assignee
-        const assigneeGroups = tasks.reduce((acc, task) => {
-            const assignee = task.assignee_name || 'Unassigned';
-            if (!acc[assignee]) {
-                acc[assignee] = {
-                    total: 0,
-                    completed: 0
-                };
-            }
-            acc[assignee].total += 1;
-            if (task.status === 'done') {
-                acc[assignee].completed += 1;
-            }
-            return acc;
-        }, {});
-
-        // Sort assignees by total tasks
-        const sortedAssignees = Object.entries(assigneeGroups)
-            .sort(([, a], [, b]) => b.total - a.total)
-            .slice(0, 5); // Take top 5 assignees
-
-        return {
-            labels: sortedAssignees.map(([name]) => name),
-            datasets: [
-                {
-                    label: 'Completed Tasks',
-                    data: sortedAssignees.map(([, data]) => data.completed),
-                    backgroundColor: '#82ca9d',
-                    borderWidth: 0
-                },
-                {
-                    label: 'Total Tasks',
-                    data: sortedAssignees.map(([, data]) => data.total),
-                    backgroundColor: '#8884d8',
-                    borderWidth: 0
-                }
-            ]
-        };
-    }, [tasks]);
-
-    const assigneeChartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    color: isDarkMode ? '#e2e8f0' : '#2d3748',
-                    font: {
-                        size: 12,
-                        weight: '500'
-                    },
-                    padding: 15,
-                    usePointStyle: true,
-                    pointStyle: 'circle',
-                    boxWidth: 8,
-                    boxHeight: 8
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        const label = context.dataset.label || '';
-                        const value = context.raw || 0;
-                        return `${label}: ${value}`;
-                    }
-                },
-                titleColor: isDarkMode ? '#e2e8f0' : '#2d3748',
-                bodyColor: isDarkMode ? '#e2e8f0' : '#2d3748',
-                backgroundColor: isDarkMode ? '#2d3748' : '#ffffff',
-                borderColor: isDarkMode ? '#4a5568' : '#e2e8f0',
-                borderWidth: 1
-            }
-        },
-        scales: {
-            x: {
-                stacked: true,
-                grid: {
-                    display: false
-                },
-                ticks: {
-                    color: isDarkMode ? '#e2e8f0' : '#2d3748'
-                }
-            },
-            y: {
-                stacked: true,
-                grid: {
-                    color: isDarkMode ? '#4a5568' : '#e2e8f0'
-                },
-                ticks: {
-                    color: isDarkMode ? '#e2e8f0' : '#2d3748'
-                }
-            }
-        }
-    };
-
     // Effect to set root width for all views
     useEffect(() => {
         const root = document.getElementById('root');
@@ -603,6 +446,24 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         setFocusedSprintId(sprintId);
         setViewMode('sprint');
     };
+
+    const handleProjectChange = (projectId) => {
+        setSelectedProjectId(projectId);
+        // Store the selected project in sessionStorage for persistence
+        if (projectId) {
+            sessionStorage.setItem('selectedProjectId', projectId.toString());
+        } else {
+            sessionStorage.removeItem('selectedProjectId');
+        }
+    };
+
+    // Load selected project from sessionStorage on component mount
+    useEffect(() => {
+        const savedProjectId = sessionStorage.getItem('selectedProjectId');
+        if (savedProjectId) {
+            setSelectedProjectId(parseInt(savedProjectId));
+        }
+    }, []);
 
     if (loading) {
         return (
@@ -625,7 +486,13 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     return (
         <div className="task-board">
             <div className="board-header">
-                <h2>Task Board</h2>
+                <div className="board-header-left">
+                    <h2>Task Board</h2>
+                    <ProjectSelector
+                        selectedProjectId={selectedProjectId}
+                        onProjectChange={handleProjectChange}
+                    />
+                </div>
                 <div className="view-controls">
                     <button 
                         className={`view-button ${viewMode === 'sprint' ? 'active' : ''}`}
@@ -697,7 +564,14 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 </div>
             </div>
 
-            {viewMode !== 'sprint' && viewMode !== 'calendar' && (
+            {/* Show message if no project is selected */}
+            {!selectedProjectId && (
+                <div className="no-project-message">
+                    <p>Please select a project to view tasks.</p>
+                </div>
+            )}
+
+            {selectedProjectId && viewMode !== 'sprint' && viewMode !== 'calendar' && (
                 <TaskFilters 
                     filters={filters}
                     onFilterChange={handleFilterChange}
@@ -705,9 +579,9 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 />
             )}
 
-            {viewMode === 'sprint' ? (
+            {selectedProjectId && viewMode === 'sprint' ? (
                 <SprintView focusedSprintId={focusedSprintId} />
-            ) : viewMode === 'kanban' ? (
+            ) : selectedProjectId && viewMode === 'kanban' ? (
                 <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
                     <div className="board-columns">
                         <TaskColumn
@@ -736,7 +610,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                         />
                     </div>
                 </DragDropContext>
-            ) : viewMode === 'list' ? (
+            ) : selectedProjectId && viewMode === 'list' ? (
                 <div className="list-view" style={{ 
                     width: '100%',
                     maxWidth: '1320px',
@@ -753,7 +627,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedTasks.map(task => (
+                            {filteredTasks.map(task => (
                                 <tr key={task.id} onClick={() => handleTaskClick(task)}>
                                     <td>{task.title}</td>
                                     <td>
@@ -780,7 +654,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                         </tbody>
                     </table>
                 </div>
-            ) : viewMode === 'diagram' ? (
+            ) : selectedProjectId && viewMode === 'diagram' ? (
                 <div className="diagram-view chart-container">
                     <div className="chart-wrapper">
                         <h3>Priority Distribution</h3>
@@ -795,15 +669,24 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                         <Pie data={assignmentData} options={chartOptions} />
                     </div>
                 </div>
-            ) : viewMode === 'burndown' ? (
+            ) : selectedProjectId && viewMode === 'burndown' ? (
                 <div className="burndown-view">
                     <BurndownChart sprintId={selectedSprint} filters={filters} />
                 </div>
-            ) : viewMode === 'calendar' ? (
+            ) : selectedProjectId && viewMode === 'calendar' ? (
                 <CalendarView onSprintDoubleClick={handleSprintDoubleClick} />
             ) : null}
 
-            <TaskModal viewMode={viewMode} activeSprintId={selectedSprint} />
+            <TaskModal
+                isOpen={isModalOpen}
+                onClose={closeTaskModal}
+                task={selectedTask}
+                onUpdate={updateTask}
+                onDelete={handleDeleteTask}
+                users={users}
+                sprints={sprints}
+                selectedProjectId={selectedProjectId}
+            />
         </div>
     );
 };

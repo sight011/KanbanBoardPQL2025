@@ -9,9 +9,11 @@ const authRoutes = require('./routes/authRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const passwordResetRoutes = require('./routes/passwordResetRoutes');
 const auditRoutes = require('./routes/auditRoutes');
+const projectRoutes = require('./routes/projectRoutes');
 const session = require('express-session');
 const healthRoutes = require("./routes/healthRoutes");
 const commentRoutes = require('./routes/commentRoutes');
+const { tenantContextMiddleware } = require('./middleware/tenantContext');
 
 // Load environment variables
 dotenv.config();
@@ -37,7 +39,7 @@ app.use(cors({
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Company-Slug']
 }));
 
 app.use(express.json());
@@ -57,6 +59,9 @@ app.use(session({
   name: 'kanban_session'
 }));
 
+// Tenant context middleware (for multi-tenant support)
+app.use(tenantContextMiddleware);
+
 // Routes
 app.use('/api/tasks', taskRoutes);
 app.use('/api/chat', chatRoutes);
@@ -68,10 +73,14 @@ app.use('/api/auth', passwordResetRoutes);
 app.use('/api', authRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {
-    res.json({ message: 'Welcome to the Task Management API' });
+    res.json({ 
+        message: 'Welcome to the Task Management API',
+        tenantContext: req.tenantContext || { isMultiTenant: false }
+    });
 });
 
 // Error handling middleware
@@ -89,4 +98,5 @@ const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log(`Multi-tenant support: ${process.env.ENABLE_MULTI_TENANT === 'true' ? 'ENABLED' : 'DISABLED'}`);
 }); 
