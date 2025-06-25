@@ -94,6 +94,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    margin-top: 20px;
     padding: 0 20px;
 }
 
@@ -120,7 +121,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 0.5rem;
+    padding: 0 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     background-color: var(--bg-secondary);
@@ -131,6 +132,10 @@
     transition: all 0.2s ease;
     width: 122px;
     justify-content: center;
+    height: 32px;
+    line-height: 1;
+    min-height: 0;
+    box-sizing: border-box;
 }
 
 .view-button svg {

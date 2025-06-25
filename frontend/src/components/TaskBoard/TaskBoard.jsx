@@ -446,7 +446,6 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
         <div className="task-board">
             <div className="board-header">
                 <div className="board-header-left">
-                    <h2>Task Board</h2>
                     <DepartmentSelector
                         departments={departments}
                         selectedDepartment={selectedDepartment}

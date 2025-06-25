@@ -1,5 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import './SearchableSelect.css';
+
+const DropdownPortal = ({ children, parentRef }) => {
+    const [styles, setStyles] = useState({});
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        if (parentRef.current && dropdownRef.current) {
+            const parentRect = parentRef.current.getBoundingClientRect();
+            setStyles({
+                position: 'fixed',
+                top: parentRect.bottom + window.scrollY,
+                left: parentRect.left + window.scrollX,
+                width: parentRect.width,
+                zIndex: 9999
+            });
+        }
+    }, [parentRef, dropdownRef]);
+
+    return ReactDOM.createPortal(
+        <div ref={dropdownRef} style={styles} className="select-dropdown-portal">
+            {children}
+        </div>,
+        document.body
+    );
+};
 
 const SearchableSelect = ({ 
     options, 
@@ -13,6 +39,7 @@ const SearchableSelect = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredOptions, setFilteredOptions] = useState(options);
     const dropdownRef = useRef(null);
+    const headerRef = useRef(null);
 
     useEffect(() => {
         const filtered = options.filter(option =>
@@ -23,7 +50,10 @@ const SearchableSelect = ({
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            if (
+                headerRef.current && !headerRef.current.contains(event.target) &&
+                (!dropdownRef.current || !dropdownRef.current.contains(event.target))
+            ) {
                 setIsOpen(false);
                 setSearchTerm('');
             }
@@ -53,7 +83,7 @@ const SearchableSelect = ({
     const displayValue = value || placeholder;
 
     return (
-        <div className={`searchable-select ${className}`} ref={dropdownRef}>
+        <div className={`searchable-select ${className}`} ref={headerRef}>
             <div 
                 className={`select-header ${isOpen ? 'open' : ''} ${disabled ? 'disabled' : ''}`}
                 onClick={handleToggle}
@@ -69,35 +99,36 @@ const SearchableSelect = ({
                     <polyline points="6,9 12,15 18,9"></polyline>
                 </svg>
             </div>
-            
             {isOpen && (
-                <div className="select-dropdown">
-                    <div className="search-container">
-                        <input
-                            type="text"
-                            placeholder={placeholder}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="search-input"
-                            autoFocus
-                        />
+                <DropdownPortal parentRef={headerRef}>
+                    <div className="select-dropdown" ref={dropdownRef}>
+                        <div className="search-container">
+                            <input
+                                type="text"
+                                placeholder={placeholder}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="search-input"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="options-container">
+                            {filteredOptions.length > 0 ? (
+                                filteredOptions.map((option, index) => (
+                                    <div
+                                        key={index}
+                                        className={`option ${option === value ? 'selected' : ''}`}
+                                        onClick={() => handleSelect(option)}
+                                    >
+                                        {option}
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="no-options">No countries found</div>
+                            )}
+                        </div>
                     </div>
-                    <div className="options-container">
-                        {filteredOptions.length > 0 ? (
-                            filteredOptions.map((option, index) => (
-                                <div
-                                    key={index}
-                                    className={`option ${option === value ? 'selected' : ''}`}
-                                    onClick={() => handleSelect(option)}
-                                >
-                                    {option}
-                                </div>
-                            ))
-                        ) : (
-                            <div className="no-options">No countries found</div>
-                        )}
-                    </div>
-                </div>
+                </DropdownPortal>
             )}
         </div>
     );
