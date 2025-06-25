@@ -189,6 +189,10 @@ const TaskModal = ({
         }
     }, [showConfirmDelete]);
 
+    useEffect(() => {
+        setShowConfirmDelete(false);
+    }, [selectedTask?.id]);
+
     function parseEffortInput(value, hoursPerDay = 8) {
         if (!value) return null;
         const trimmed = value.trim().toLowerCase();

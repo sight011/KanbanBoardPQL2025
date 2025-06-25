@@ -359,3 +359,7 @@ body.login-bg::after {
 .dark-mode .back-to-settings-button:hover {
     background-color: #3a3a3a;
 }
+
+body:not([data-theme='dark']) .app {
+    width: 1382px;
+}

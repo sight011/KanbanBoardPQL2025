@@ -72,18 +72,27 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId, selectedProject,
         return sprint.project_id === selectedProject.id;
     });
 
+    // Sync project filter with selected project
+    useEffect(() => {
+        if (selectedProject) {
+            // Always sync the filter with the selected project
+            onFilterChange('project', selectedProject.id);
+        }
+    }, [selectedProject, onFilterChange]);
+
     return (
         <div className="task-filters">
             <div className="filter-group">
                 <input
+                    id="filter-search"
                     type="text"
-                    id="task-search-input"
                     placeholder="Search tasks..."
                     className="filter-input"
                     value={filters.text || ''}
                     onChange={(e) => onFilterChange('text', e.target.value)}
                 />
                 <select
+                    id="filter-project"
                     className="filter-select"
                     value={filters.project || ''}
                     onChange={(e) => onFilterChange('project', e.target.value)}
@@ -96,6 +105,7 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId, selectedProject,
                     ))}
                 </select>
                 <select
+                    id="filter-sprint"
                     className="filter-select"
                     value={filters.sprint || ''}
                     onChange={(e) => onFilterChange('sprint', e.target.value)}
@@ -144,6 +154,7 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId, selectedProject,
                     <option value="done">Done</option>
                 </select>
                 <select
+                    id="filter-assignee"
                     className="filter-select"
                     value={filters.assignee || ''}
                     onChange={(e) => onFilterChange('assignee', e.target.value)}
