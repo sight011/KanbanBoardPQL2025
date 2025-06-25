@@ -6,29 +6,30 @@
 
 .filter-group {
     display: flex;
-    gap: 1rem;
+    gap: 0.25rem;
     align-items: center;
     width: 100%;
+    justify-content: space-between;
 }
 
-.filter-input {
-    padding: 0.5rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    flex: 2;
-    min-width: 165px;
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
+.filter-group input[type="text"],
+.filter-group input[type="search"] {
+    width: 120px;
+    min-width: 80px;
+    max-width: 140px;
+    font-size: 0.95rem;
+    padding: 0.25rem 0.5rem;
+    height: 32px;
+    box-sizing: border-box;
 }
 
+.filter-group select,
 .filter-select {
-    padding: 0.5rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    flex: 1;
-    min-width: 150px;
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
+    height: 32px;
+    font-size: 0.95rem;
+    padding: 0.25rem 0.5rem;
+    min-width: 90px;
+    box-sizing: border-box;
 }
 
 .clear-filters-button {
@@ -63,4 +64,22 @@
     --border-color: #4a5568;
     --danger-color: #fc8181;
     --danger-color-hover: #f56565;
+}
+
+.task-filters input,
+.task-filters select {
+    background-color: #fff;
+    color: #222;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* Keep dark mode styles as is, or override if needed */
+[data-theme='dark'] .task-filters input,
+[data-theme='dark'] .task-filters select,
+.dark-mode .task-filters input,
+.dark-mode .task-filters select {
+    background-color: #23272f;
+    color: #e2e8f0;
 }

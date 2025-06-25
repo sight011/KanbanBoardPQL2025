@@ -682,37 +682,37 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         </div>
 
                         {/* Status Distribution Chart */}
-                        <div className="chart-container">
+                    <div className="chart-container">
                             <h3>Status Distribution</h3>
-                            <div className="chart-wrapper">
-                                <Pie
-                                    data={{
-                                        labels: ['To Do', 'In Progress', 'Review', 'Done'],
-                                        datasets: [{
-                                            data: [
-                                                columns.todo.length,
-                                                columns.inProgress.length,
-                                                columns.review.length,
-                                                columns.done.length
-                                            ],
-                                            backgroundColor: [
-                                                '#3b82f6', // Blue for To Do
-                                                '#f59e0b', // Amber for In Progress
-                                                '#8b5cf6', // Purple for Review
-                                                '#10b981'  // Green for Done
-                                            ],
-                                            borderWidth: 2,
-                                            borderColor: '#ffffff'
-                                        }]
-                                    }}
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        plugins: {
-                                            legend: {
-                                                position: 'bottom',
-                                                labels: {
-                                                    usePointStyle: true,
+                        <div className="chart-wrapper">
+                            <Pie
+                                data={{
+                                    labels: ['To Do', 'In Progress', 'Review', 'Done'],
+                                    datasets: [{
+                                        data: [
+                                            columns.todo.length,
+                                            columns.inProgress.length,
+                                            columns.review.length,
+                                            columns.done.length
+                                        ],
+                                        backgroundColor: [
+                                            '#3b82f6', // Blue for To Do
+                                            '#f59e0b', // Amber for In Progress
+                                            '#8b5cf6', // Purple for Review
+                                            '#10b981'  // Green for Done
+                                        ],
+                                        borderWidth: 2,
+                                        borderColor: '#ffffff'
+                                    }]
+                                }}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                usePointStyle: true,
                                                     padding: 15,
                                                     font: { size: 11 }
                                                 }
@@ -764,22 +764,22 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                                                     usePointStyle: true,
                                                     padding: 15,
                                                     font: { size: 11 }
-                                                }
-                                            },
-                                            tooltip: {
-                                                callbacks: {
-                                                    label: function(context) {
-                                                        const label = context.label || '';
-                                                        const value = context.parsed;
-                                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const label = context.label || '';
+                                                    const value = context.parsed;
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                                         const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
-                                                        return `${label}: ${value} (${percentage}%)`;
-                                                    }
+                                                    return `${label}: ${value} (${percentage}%)`;
                                                 }
                                             }
                                         }
-                                    }}
-                                />
+                                    }
+                                }}
+                            />
                             </div>
                         </div>
                     </div>

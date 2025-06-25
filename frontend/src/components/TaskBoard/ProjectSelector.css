@@ -144,21 +144,21 @@
 
 .dark-mode .project-selector__option {
     color: #e2e8f0;
-}
+    }
 
 .dark-mode .project-selector__option.selected {
     background: #243b53;
     color: #63b3ed;
-}
+    }
 
 .dark-mode .project-selector__option:hover {
     background: #2d3748;
     color: #63b3ed;
-}
+    }
 
 .dark-mode .project-selector__icon-btn {
     color: #a0aec0;
-}
+    }
 
 .dark-mode .project-selector__icon-btn:hover {
     background: #2d3748;

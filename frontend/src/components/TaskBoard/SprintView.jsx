@@ -576,13 +576,13 @@ const SprintView = ({ focusedSprintId, user }) => {
     const handleFoldToggle = (sprintId) => {
         setFoldedSprints((folded) => {
             const newSet = new Set(folded);
-            if (newSet.has(sprintId)) {
-                newSet.delete(sprintId);
-            } else {
-                newSet.add(sprintId);
-            }
-            return newSet;
-        });
+                if (newSet.has(sprintId)) {
+                    newSet.delete(sprintId);
+                } else {
+                    newSet.add(sprintId);
+                }
+                return newSet;
+            });
     };
 
     const handleFilterChange = (filterType, value) => {
@@ -1176,11 +1176,11 @@ const SprintView = ({ focusedSprintId, user }) => {
 };
 
 SprintView.propTypes = {
-    focusedSprintId: PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.number,
-    ]),
+  focusedSprintId: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+  ]),
     user: PropTypes.object,
 };
 
-export default SprintView;
+export default SprintView; 

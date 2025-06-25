@@ -102,32 +102,32 @@ const SearchableSelect = ({
             {isOpen && (
                 <DropdownPortal parentRef={headerRef}>
                     <div className="select-dropdown" ref={dropdownRef}>
-                        <div className="search-container">
-                            <input
-                                type="text"
-                                placeholder={placeholder}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="search-input"
-                                autoFocus
-                            />
-                        </div>
-                        <div className="options-container">
-                            {filteredOptions.length > 0 ? (
-                                filteredOptions.map((option, index) => (
-                                    <div
-                                        key={index}
-                                        className={`option ${option === value ? 'selected' : ''}`}
-                                        onClick={() => handleSelect(option)}
-                                    >
-                                        {option}
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="no-options">No countries found</div>
-                            )}
-                        </div>
+                    <div className="search-container">
+                        <input
+                            type="text"
+                            placeholder={placeholder}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="search-input"
+                            autoFocus
+                        />
                     </div>
+                    <div className="options-container">
+                        {filteredOptions.length > 0 ? (
+                            filteredOptions.map((option, index) => (
+                                <div
+                                    key={index}
+                                    className={`option ${option === value ? 'selected' : ''}`}
+                                    onClick={() => handleSelect(option)}
+                                >
+                                    {option}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="no-options">No countries found</div>
+                        )}
+                    </div>
+                </div>
                 </DropdownPortal>
             )}
         </div>
