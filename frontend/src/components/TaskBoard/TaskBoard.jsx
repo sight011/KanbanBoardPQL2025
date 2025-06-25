@@ -615,6 +615,8 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 onUpdate={updateTask}
                 onDelete={handleDeleteTask}
                 users={users}
+                selectedProjectId={selectedProject ? selectedProject.id : null}
+                activeSprintId={selectedSprint}
             />
         </div>
     );
