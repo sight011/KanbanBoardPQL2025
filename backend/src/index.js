@@ -10,6 +10,7 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const passwordResetRoutes = require('./routes/passwordResetRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const projectRoutes = require('./routes/projectRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const healthRoutes = require("./routes/healthRoutes");
@@ -83,6 +84,7 @@ app.use('/api', authRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

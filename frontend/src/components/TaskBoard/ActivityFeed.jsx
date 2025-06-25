@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import EmojiPicker from 'emoji-picker-react';
@@ -120,7 +121,7 @@ const ActivityFeed = ({ task }) => {
                             <div className="comment-item">
                                 <div className="comment-header">
                                     <span className="comment-author">
-                                        {`${comment.first_name} ${comment.last_name}`}
+                                        {`${comment.firstName} ${comment.lastName}`}
                                     </span>
                                     <span className="comment-date">
                                         {new Date(comment.created_at).toLocaleString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -137,7 +138,7 @@ const ActivityFeed = ({ task }) => {
                                             key={reaction.id}
                                             className="reaction"
                                             onClick={() => handleReactionClick(reaction.id)}
-                                            title={`Reacted by ${reaction.first_name} ${reaction.last_name}`}
+                                            title={`Reacted by ${reaction.firstName} ${reaction.lastName}`}
                                         >
                                             {reaction.emoji}
                                         </button>
@@ -188,6 +189,10 @@ const ActivityFeed = ({ task }) => {
             </div>
         </div>
     );
+};
+
+ActivityFeed.propTypes = {
+    task: PropTypes.object,
 };
 
 export default ActivityFeed; 

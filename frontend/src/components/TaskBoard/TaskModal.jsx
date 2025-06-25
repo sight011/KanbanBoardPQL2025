@@ -4,22 +4,41 @@ import { useTaskContext } from '../../context/TaskContext';
 import './TaskModal.css';
 import './DueDate.css';
 import {
-    StatusIcon, PriorityIcon, AssigneeIcon, SprintIcon,
+    StatusIcon, PriorityIcon, AssigneeIcon, SprintIcon, ProjectIcon,
     TimeEstimateIcon, TimeTrackIcon, DatesIcon, TagsIcon, RelationshipsIcon
 } from './TaskIcons';
 import TagsInput from './TagsInput';
 import DueDate from './DueDate';
 import ActivityFeed from './ActivityFeed';
 
-const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = null }) => {
+const TaskModal = ({ 
+    viewMode = '', 
+    activeSprintId = '', 
+    selectedProjectId = null, 
+    projects = [],
+    // Props from TaskBoard
+    isOpen = null,
+    onClose = null,
+    task = null,
+    onUpdate = null,
+    onDelete = null,
+    users: externalUsers = null
+}) => {
     const {
-        selectedTask,
-        isModalOpen,
-        closeTaskModal,
+        selectedTask: contextSelectedTask,
+        isModalOpen: contextIsModalOpen,
+        closeTaskModal: contextCloseTaskModal,
         createTask,
-        updateTask,
-        deleteTask
+        updateTask: contextUpdateTask,
+        deleteTask: contextDeleteTask
     } = useTaskContext();
+
+    // Use props if provided, otherwise use context
+    const selectedTask = task || contextSelectedTask;
+    const isModalOpen = isOpen !== null ? isOpen : contextIsModalOpen;
+    const closeTaskModal = onClose || contextCloseTaskModal;
+    const updateTask = onUpdate || contextUpdateTask;
+    const deleteTask = onDelete || contextDeleteTask;
 
     const [users, setUsers] = useState([]);
     const [formData, setFormData] = useState({
@@ -31,6 +50,7 @@ const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = nul
         effort: '',
         timespent: '',
         sprint_id: '',
+        project_id: '',
         tags: [],
         duedate: null
     });
@@ -44,6 +64,12 @@ const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = nul
 
     useEffect(() => {
         const fetchUsers = async () => {
+            // If external users are provided, use them
+            if (externalUsers) {
+                setUsers(externalUsers);
+                return;
+            }
+            
             try {
                 const res = await fetch('/api/users');
                 const data = await res.json();
@@ -54,7 +80,7 @@ const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = nul
             }
         };
         fetchUsers();
-    }, []);
+    }, [externalUsers]);
 
     useEffect(() => {
         const fetchSprints = async () => {
@@ -82,17 +108,29 @@ const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = nul
                     effort: selectedTask.effort || '',
                     timespent: selectedTask.timespent || '',
                     sprint_id: selectedTask.sprint_id ?? '',
+                    project_id: selectedTask.project_id || '',
                     tags: selectedTask.tags || [],
                     duedate: selectedTask.duedate || null
                 });
             } else {
                 // Create mode
                 let defaultSprintId = '';
-                if (["kanban", "list", "diagram", "burndown"].includes(viewMode) && activeSprintId && sprints.length > 0) {
+                
+                // If we have a selected project, find its active sprint
+                if (selectedProjectId && sprints.length > 0) {
+                    const projectSprints = sprints.filter(s => s.project_id === selectedProjectId);
+                    const activeSprint = projectSprints.find(s => s.status === 'active');
+                    if (activeSprint) {
+                        defaultSprintId = String(activeSprint.id);
+                    }
+                }
+                // Fallback to activeSprintId if no project-specific active sprint found
+                else if (["kanban", "list", "diagram", "burndown"].includes(viewMode) && activeSprintId && sprints.length > 0) {
                     if (sprints.some(s => String(s.id) === String(activeSprintId))) {
                         defaultSprintId = String(activeSprintId);
                     }
                 }
+                
                 setFormData({
                     title: '',
                     description: '',
@@ -102,12 +140,13 @@ const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = nul
                     effort: '',
                     timespent: '',
                     sprint_id: defaultSprintId,
+                    project_id: selectedProjectId ? String(selectedProjectId) : '',
                     tags: [],
                     duedate: null
                 });
             }
         }
-    }, [isModalOpen, selectedTask, sprints, viewMode, activeSprintId]);
+    }, [isModalOpen, selectedTask, sprints, viewMode, activeSprintId, selectedProjectId]);
     
     useEffect(() => {
         // Fetch hours per day from backend settings
@@ -192,6 +231,29 @@ const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = nul
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        
+        // If project changes, update sprint selection to active sprint of new project
+        if (name === 'project_id' && value) {
+            const projectId = parseInt(value);
+            const projectSprints = sprints.filter(s => s.project_id === projectId);
+            const activeSprint = projectSprints.find(s => s.status === 'active');
+            if (activeSprint) {
+                setFormData(prev => ({ 
+                    ...prev, 
+                    [name]: value,
+                    sprint_id: String(activeSprint.id)
+                }));
+            } else {
+                setFormData(prev => ({ 
+                    ...prev, 
+                    [name]: value,
+                    sprint_id: '' // No active sprint for this project
+                }));
+            }
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+        
         if (name === 'effort') {
             try {
                 parseEffortInput(value, hoursPerDay);
@@ -218,7 +280,7 @@ const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = nul
                 ...formData,
                 sprint_id: formData.sprint_id === '' ? null : Number(formData.sprint_id),
                 timespent: formData.timespent === '' ? null : formData.timespent,
-                project_id: selectedProjectId
+                project_id: formData.project_id === "" ? null : Number(formData.project_id)
             };
             console.log('Submitting payload:', payload);
             if (selectedTask) {
@@ -339,7 +401,40 @@ const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = nul
                                 {renderMetadataRow({ icon: <SprintIcon />, label: "Sprint", children: (
                                      <select name="sprint_id" value={formData.sprint_id} onChange={handleInputChange}>
                                         <option value="">Backlog</option>
-                                        {sprints.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                        {formData.project_id ? 
+                                            (() => {
+                                                const projectSprints = sprints.filter(s => s.project_id === parseInt(formData.project_id));
+                                                const hasActiveSprint = projectSprints.some(s => s.status === 'active');
+                                                return (
+                                                    <>
+                                                        {projectSprints.map(s => (
+                                                            <option key={s.id} value={s.id}>
+                                                                {s.name}{s.status === 'active' ? ' (active)' : ''}
+                                                            </option>
+                                                        ))}
+                                                        {projectSprints.length === 0 && (
+                                                            <option disabled>No sprints in this project</option>
+                                                        )}
+                                                        {projectSprints.length > 0 && !hasActiveSprint && (
+                                                            <option disabled>No active sprint in this project</option>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()
+                                            : 
+                                            sprints.map(s => (
+                                                <option key={s.id} value={s.id}>
+                                                    {s.name}{s.status === 'active' ? ' (active)' : ''}
+                                                </option>
+                                            ))
+                                        }
+                                    </select>
+                                )})}
+
+                                {renderMetadataRow({ icon: <ProjectIcon />, label: "Project", children: (
+                                    <select name="project_id" value={formData.project_id} onChange={handleInputChange}>
+                                        <option value="">Select Project</option>
+                                        {projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
                                     </select>
                                 )})}
                             </div>
@@ -395,7 +490,14 @@ const TaskModal = ({ viewMode = '', activeSprintId = '', selectedProjectId = nul
 TaskModal.propTypes = {
     viewMode: PropTypes.string,
     activeSprintId: PropTypes.string,
-    selectedProjectId: PropTypes.number
+    selectedProjectId: PropTypes.number,
+    projects: PropTypes.array,
+    isOpen: PropTypes.bool,
+    onClose: PropTypes.func,
+    task: PropTypes.object,
+    onUpdate: PropTypes.func,
+    onDelete: PropTypes.func,
+    users: PropTypes.array
 };
 
 export default TaskModal;

@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const sprintController = require('../controllers/sprintController');
+const { requireLoginWithCompanyIsolation, enforceCompanyIsolation } = require('../middleware/auth');
+
+// Apply middleware to all routes
+router.use(requireLoginWithCompanyIsolation);
+router.use(enforceCompanyIsolation);
 
 // List all sprints
 router.get('/', sprintController.getAllSprints);

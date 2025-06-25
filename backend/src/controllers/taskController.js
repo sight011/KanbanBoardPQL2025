@@ -133,6 +133,13 @@ const taskController = {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
+            
+            // SECURITY: Sanitize any company_id from request body to prevent parameter tampering
+            if (req.body.company_id) {
+                console.log('🚫 Security warning - company_id in request body removed:', req.body.company_id);
+                delete req.body.company_id;
+            }
+            
             const { title, description, status, priority, tags, duedate, project_id } = req.body;
             let { effort, timespent } = req.body;
 
@@ -344,6 +351,18 @@ const taskController = {
                 });
             }
 
+            // Automatically set completed_at when status changes to 'done'
+            let finalCompletedAt = completed_at;
+            if (status === 'done' && originalTask.status !== 'done') {
+                finalCompletedAt = new Date();
+            } else if (status !== 'done' && originalTask.status === 'done') {
+                // If status changes from 'done' to something else, clear completed_at
+                finalCompletedAt = null;
+            } else if (status === 'done' && originalTask.status === 'done') {
+                // If status remains 'done', keep existing completed_at or set new one
+                finalCompletedAt = completed_at || originalTask.completed_at || new Date();
+            }
+
             // Fetch hoursPerDay from settings (fallback to 8)
             let hoursPerDay = 8;
             try {
@@ -370,7 +389,7 @@ const taskController = {
             const tagsString = tags && tags.length > 0 ? tags.join(',') : null;
 
             const sql = 'UPDATE tasks SET title = $1, description = $2, status = $3, priority = $4, effort = $5, timespent = $6, assignee_id = $7, sprint_id = $8, sprint_order = $9, completed_at = $10, updated_at = NOW(), tags = $11, duedate = $12 WHERE id = $13 RETURNING *';
-            const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, completed_at || null, tagsString, duedate || null, id];
+            const params = [title, description, status, priority, effort, timespent, assignee_id || null, sprint_id || null, sprint_order || null, finalCompletedAt, tagsString, duedate || null, id];
             
             const result = await client.query(sql, params);
             const updatedTask = result.rows[0];
@@ -439,17 +458,32 @@ const taskController = {
             await client.query('BEGIN');
             const { id } = req.params;
 
-            // First get the task to return it in the response
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await client.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+
+            // First get the task to return it in the response (filtered by company)
             const taskResult = await client.query(
-                'SELECT * FROM tasks WHERE id = $1',
-                [id]
+                `SELECT t.* FROM tasks t
+                 JOIN users u ON t.reporter_id = u.id
+                 WHERE t.id = $1 AND u.company_id = $2`,
+                [id, userCompanyId]
             );
 
             if (taskResult.rows.length === 0) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({
                     error: 'Task not found',
-                    message: `No task found with ID ${id}`
+                    message: `No task found with ID ${id} in your company`
                 });
             }
             const taskToDelete = taskResult.rows[0];
@@ -463,7 +497,7 @@ const taskController = {
                 newValue: null
             }, client);
 
-            // Then delete the task
+            // Then delete the task (already verified it belongs to user's company)
             await client.query(
                 'DELETE FROM tasks WHERE id = $1 RETURNING *',
                 [id]
@@ -515,14 +549,30 @@ const taskController = {
                 await client.query('BEGIN');
                 console.log('Transaction started');
 
-                // Get the current task's status and position
+                // Get user's company_id for multi-tenant filtering
+                const userResult = await client.query(
+                    'SELECT company_id FROM users WHERE id = $1',
+                    [req.user.id]
+                );
+                
+                if (userResult.rows.length === 0) {
+                    await client.query('ROLLBACK');
+                    return res.status(404).json({ error: 'User not found' });
+                }
+                
+                const userCompanyId = userResult.rows[0].company_id;
+
+                // Get the current task's status and position (filtered by company)
                 const currentTaskResult = await client.query(
-                    'SELECT status, position FROM tasks WHERE id = $1',
-                    [id]
+                    `SELECT t.status, t.position FROM tasks t
+                     JOIN users u ON t.reporter_id = u.id
+                     WHERE t.id = $1 AND u.company_id = $2`,
+                    [id, userCompanyId]
                 );
 
                 if (currentTaskResult.rows.length === 0) {
-                    throw new Error('Task not found');
+                    await client.query('ROLLBACK');
+                    throw new Error('Task not found in your company');
                 }
 
                 const { status: oldStatus, position: oldPosition } = currentTaskResult.rows[0];
@@ -548,11 +598,13 @@ const taskController = {
                 }
 
                 if (oldStatus === newStatus) {
-                    // Same column reordering
-                    // 1. Get all tasks in this status, ordered by position, id
+                    // Same column reordering - filter by company
                     const tasksResult = await client.query(
-                        'SELECT id FROM tasks WHERE status = $1 ORDER BY position, id',
-                        [oldStatus]
+                        `SELECT t.id FROM tasks t
+                         JOIN users u ON t.reporter_id = u.id
+                         WHERE t.status = $1 AND u.company_id = $2
+                         ORDER BY t.position, t.id`,
+                        [oldStatus, userCompanyId]
                     );
                     const tasks = tasksResult.rows.map(row => row.id);
                     // 2. Remove the moved task from its old position
@@ -571,16 +623,25 @@ const taskController = {
                         );
                     }
                 } else {
-                    // Moving to a different column
-                    // 1. Shift down positions in old column
+                    // Moving to a different column - filter by company
                     await client.query(
-                        'UPDATE tasks SET position = position - 1 WHERE status = $1 AND position > $2',
-                        [oldStatus, oldPosition]
+                        `UPDATE tasks SET position = position - 1 
+                         FROM users u 
+                         WHERE tasks.status = $1 
+                         AND tasks.position > $2 
+                         AND tasks.reporter_id = u.id 
+                         AND u.company_id = $3`,
+                        [oldStatus, oldPosition, userCompanyId]
                     );
-                    // 2. Shift up positions in new column
+                    // 2. Shift up positions in new column - filter by company
                     await client.query(
-                        'UPDATE tasks SET position = position + 1 WHERE status = $1 AND position >= $2',
-                        [newStatus, newPosition]
+                        `UPDATE tasks SET position = position + 1 
+                         FROM users u 
+                         WHERE tasks.status = $1 
+                         AND tasks.position >= $2 
+                         AND tasks.reporter_id = u.id 
+                         AND u.company_id = $3`,
+                        [newStatus, newPosition, userCompanyId]
                     );
                     // 3. Move the task
                     await client.query(
@@ -595,8 +656,14 @@ const taskController = {
                     await resequencePositions(newStatus, client);
                 }
 
-                // Get all tasks with updated positions
-                const allTasks = await client.query('SELECT * FROM tasks ORDER BY status, position');
+                // Get all tasks with updated positions (filtered by company)
+                const allTasks = await client.query(
+                    `SELECT t.* FROM tasks t
+                     JOIN users u ON t.reporter_id = u.id
+                     WHERE u.company_id = $1
+                     ORDER BY t.status, t.position`,
+                    [userCompanyId]
+                );
 
                 await client.query('COMMIT');
                 console.log('✅ Task position updated successfully');
@@ -631,11 +698,28 @@ const taskController = {
         
         try {
             const { status } = req.params;
-            const result = await pool.query(
-                'SELECT * FROM tasks WHERE status = $1 ORDER BY position',
-                [status]
+            
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await pool.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
             );
-            console.log('✅ Found', result.rows.length, 'tasks with status:', status);
+            
+            if (userResult.rows.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            console.log('🔍 Filtering tasks by status:', status, 'for company_id:', userCompanyId);
+            
+            const result = await pool.query(
+                `SELECT t.* FROM tasks t
+                 JOIN users u ON t.reporter_id = u.id
+                 WHERE t.status = $1 AND u.company_id = $2
+                 ORDER BY t.position`,
+                [status, userCompanyId]
+            );
+            console.log('✅ Found', result.rows.length, 'tasks with status:', status, 'for company:', userCompanyId);
             res.status(200).json({
                 success: true,
                 tasks: result.rows,
@@ -664,25 +748,46 @@ const taskController = {
                 return res.status(401).json({ error: 'User not authenticated' });
             }
 
-            // Get the original task
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await client.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+
+            // Get the original task (filtered by company)
             const originalTaskResult = await client.query(
-                'SELECT * FROM tasks WHERE id = $1 FOR UPDATE', // Lock the row for update
-                [id]
+                `SELECT t.* FROM tasks t
+                 JOIN users u ON t.reporter_id = u.id
+                 WHERE t.id = $1 AND u.company_id = $2
+                 FOR UPDATE`, // Lock the row for update
+                [id, userCompanyId]
             );
 
             if (originalTaskResult.rows.length === 0) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({
                     error: 'Task not found',
-                    message: `No task found with ID ${id}`
+                    message: `No task found with ID ${id} in your company`
                 });
             }
 
             const originalTask = originalTaskResult.rows[0];
 
-            // Generate new ticket number
+            // Generate new ticket number (filtered by company)
             const lastTicketResult = await client.query(
-                'SELECT ticket_number FROM tasks WHERE ticket_number IS NOT NULL ORDER BY ticket_number DESC LIMIT 1'
+                `SELECT t.ticket_number FROM tasks t
+                 JOIN users u ON t.reporter_id = u.id
+                 WHERE t.ticket_number IS NOT NULL 
+                 AND u.company_id = $1
+                 ORDER BY t.ticket_number DESC LIMIT 1`,
+                [userCompanyId]
             );
             let nextTicketNumber = 1;
             if (lastTicketResult.rows.length > 0) {
@@ -697,17 +802,24 @@ const taskController = {
             let newSprintOrder;
 
             if (originalTask.sprint_id !== null && originalSprintOrder !== null) {
-                // Task is in a sprint and has an order, shift subsequent tasks
+                // Task is in a sprint and has an order, shift subsequent tasks (filtered by company)
                 await client.query(
-                    'UPDATE tasks SET sprint_order = sprint_order + 1 WHERE sprint_id = $1 AND sprint_order > $2',
-                    [originalTask.sprint_id, originalSprintOrder]
+                    `UPDATE tasks SET sprint_order = sprint_order + 1 
+                     FROM users u 
+                     WHERE tasks.sprint_id = $1 
+                     AND tasks.sprint_order > $2 
+                     AND tasks.reporter_id = u.id 
+                     AND u.company_id = $3`,
+                    [originalTask.sprint_id, originalSprintOrder, userCompanyId]
                 );
                 newSprintOrder = originalSprintOrder + 1;
             } else if (originalTask.sprint_id !== null) {
-                // Task is in a sprint but has no order, place it at the end
+                // Task is in a sprint but has no order, place it at the end (filtered by company)
                 const maxOrderResult = await client.query(
-                    'SELECT MAX(sprint_order) as max_order FROM tasks WHERE sprint_id = $1',
-                    [originalTask.sprint_id]
+                    `SELECT MAX(t.sprint_order) as max_order FROM tasks t
+                     JOIN users u ON t.reporter_id = u.id
+                     WHERE t.sprint_id = $1 AND u.company_id = $2`,
+                    [originalTask.sprint_id, userCompanyId]
                 );
                 const maxOrder = maxOrderResult.rows[0].max_order || 0;
                 newSprintOrder = maxOrder + 1;
@@ -716,12 +828,17 @@ const taskController = {
                 newSprintOrder = null;
             }
             
-            // For Kanban board position, place it immediately after the original
+            // For Kanban board position, place it immediately after the original (filtered by company)
             const originalPosition = originalTask.position;
-            // Shift all tasks that come after the original task
+            // Shift all tasks that come after the original task (filtered by company)
             await client.query(
-                'UPDATE tasks SET position = position + 1 WHERE status = $1 AND position > $2',
-                [originalTask.status, originalPosition]
+                `UPDATE tasks SET position = position + 1 
+                 FROM users u 
+                 WHERE tasks.status = $1 
+                 AND tasks.position > $2 
+                 AND tasks.reporter_id = u.id 
+                 AND u.company_id = $3`,
+                [originalTask.status, originalPosition, userCompanyId]
             );
             const newPosition = originalPosition + 1;
             // === End of new ordering logic ===
@@ -758,14 +875,20 @@ const taskController = {
 
             if (duplicatedTask.sprint_id) {
                 const sprintTasksResult = await client.query(
-                    'SELECT * FROM tasks WHERE sprint_id = $1 ORDER BY sprint_order ASC',
-                    [duplicatedTask.sprint_id]
+                    `SELECT t.* FROM tasks t
+                     JOIN users u ON t.reporter_id = u.id
+                     WHERE t.sprint_id = $1 AND u.company_id = $2
+                     ORDER BY t.sprint_order ASC`,
+                    [duplicatedTask.sprint_id, userCompanyId]
                 );
                 updatedTasks = sprintTasksResult.rows;
             } else {
                 const boardTasksResult = await client.query(
-                    'SELECT * FROM tasks WHERE status = $1 ORDER BY position ASC',
-                    [duplicatedTask.status]
+                    `SELECT t.* FROM tasks t
+                     JOIN users u ON t.reporter_id = u.id
+                     WHERE t.status = $1 AND u.company_id = $2
+                     ORDER BY t.position ASC`,
+                    [duplicatedTask.status, userCompanyId]
                 );
                 updatedTasks = boardTasksResult.rows;
             }

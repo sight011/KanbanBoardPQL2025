@@ -20,16 +20,18 @@ const formatDateInput = (date) => {
     return localISO;
 };
 
-const SprintModal = ({ open, onClose, onSave, initial }) => {
+const SprintModal = ({ open, onClose, onSave, initial, projects }) => {
     const [name, setName] = useState(initial?.name || '');
     const [startDate, setStartDate] = useState(initial?.start_date ? formatDateInput(initial.start_date) : '');
     const [endDate, setEndDate] = useState(initial?.end_date ? formatDateInput(initial.end_date) : '');
+    const [projectId, setProjectId] = useState(initial?.project_id || '');
     const isDarkMode = document.documentElement.classList.contains('dark-mode');
 
     useEffect(() => {
         setName(initial?.name || '');
         setStartDate(initial?.start_date ? formatDateInput(initial.start_date) : '');
         setEndDate(initial?.end_date ? formatDateInput(initial.end_date) : '');
+        setProjectId(initial?.project_id || '');
     }, [initial, open]);
 
     if (!open) return null;
@@ -45,6 +47,19 @@ const SprintModal = ({ open, onClose, onSave, initial }) => {
                         value={name} 
                         onChange={e => setName(e.target.value)} 
                     />
+                    <select 
+                        className={`modal-input ${isDarkMode ? 'dark' : 'light'}`}
+                        value={projectId} 
+                        onChange={e => setProjectId(e.target.value)}
+                        disabled={!!initial} // Disable project selection when editing
+                    >
+                        <option value="">Select a project</option>
+                        {projects.map(project => (
+                            <option key={project.id} value={project.id}>
+                                {project.name}
+                            </option>
+                        ))}
+                    </select>
                     <input 
                         className={`modal-input ${isDarkMode ? 'dark' : 'light'}`}
                         type="date" 
@@ -66,8 +81,8 @@ const SprintModal = ({ open, onClose, onSave, initial }) => {
                         </button>
                         <button 
                             className={`modal-button primary ${isDarkMode ? 'dark' : 'light'}`}
-                            onClick={() => onSave({ name, start_date: startDate, end_date: endDate })} 
-                            disabled={!name}
+                            onClick={() => onSave({ name, start_date: startDate, end_date: endDate, project_id: projectId })} 
+                            disabled={!name || !projectId}
                         >
                             Save
                         </button>
@@ -76,6 +91,14 @@ const SprintModal = ({ open, onClose, onSave, initial }) => {
             </div>
         </div>
     );
+};
+
+SprintModal.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onSave: PropTypes.func.isRequired,
+    initial: PropTypes.object,
+    projects: PropTypes.array.isRequired
 };
 
 function formatDateRange(start, end) {
@@ -115,6 +138,14 @@ const DeleteSprintModal = ({ open, onClose, onConfirm, sprints, defaultValue }) 
     );
 };
 
+DeleteSprintModal.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onConfirm: PropTypes.func.isRequired,
+    sprints: PropTypes.array.isRequired,
+    defaultValue: PropTypes.string
+};
+
 const ReactivateModal = ({ open, onClose, onConfirm, activeSprint, isDarkMode }) => {
     if (!open) return null;
 
@@ -124,7 +155,7 @@ const ReactivateModal = ({ open, onClose, onConfirm, activeSprint, isDarkMode })
                 <h3>Reactivate Sprint</h3>
                 <p>
                     {activeSprint 
-                        ? `Sprint "${activeSprint.name}" is currently active. Reactivating this sprint will set the active sprint back to planned status.`
+                        ? `Sprint "${activeSprint.name}" is currently active in this project. Reactivating this sprint will set the active sprint back to planned status.`
                         : 'Are you sure you want to reactivate this sprint?'}
                 </p>
                 <div className="modal-actions">
@@ -146,9 +177,18 @@ const ReactivateModal = ({ open, onClose, onConfirm, activeSprint, isDarkMode })
     );
 };
 
-const SprintView = ({ focusedSprintId }) => {
-    const { tasks, updateTask, openTaskModal, isModalOpen, closeTaskModal, addTask, removeTask, setTasks } = useTaskContext();
+ReactivateModal.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onConfirm: PropTypes.func.isRequired,
+    activeSprint: PropTypes.object,
+    isDarkMode: PropTypes.bool.isRequired
+};
+
+const SprintView = ({ focusedSprintId, user }) => {
+    const { tasks, updateTask, openTaskModal, addTask, removeTask, setTasks } = useTaskContext();
     const [sprints, setSprints] = useState([]);
+    const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
@@ -165,7 +205,8 @@ const SprintView = ({ focusedSprintId }) => {
         assignee: '',
         priority: '',
         sprint: '',
-        changedInTime: ''
+        changedInTime: '',
+        project: ''
     });
     const [foldedSprints, setFoldedSprints] = useState(new Set());
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -194,6 +235,23 @@ const SprintView = ({ focusedSprintId }) => {
     const [selectedUsers, setSelectedUsers] = useState(new Set());
     const [dropdownTarget, setDropdownTarget] = useState(null); // 'sprint' or 'backlog'
 
+    // Define fetchProjects ONCE
+    const fetchProjects = async () => {
+        try {
+            const res = await fetch('/api/projects');
+            const data = await res.json();
+            setProjects(data.projects || []);
+        } catch (err) {
+            setProjects([]);
+            console.error('Error fetching projects:', err);
+        }
+    };
+
+    // Call fetchProjects ONCE on mount
+    useEffect(() => {
+        fetchProjects();
+    }, []);
+
     useEffect(() => {
         const observer = new MutationObserver(() => {
             setIsDarkMode(
@@ -208,7 +266,7 @@ const SprintView = ({ focusedSprintId }) => {
 
     // Global click handler to close context menu
     useEffect(() => {
-        const handleGlobalClick = (e) => {
+        const handleGlobalClick = () => {
             if (contextMenu.isVisible) {
                 handleContextMenuClose();
             }
@@ -236,6 +294,7 @@ const SprintView = ({ focusedSprintId }) => {
     }, []);
 
     useEffect(() => {
+        fetchProjects();
         fetch('/api/settings/hoursperday')
             .then(res => res.json())
             .then(data => {
@@ -328,6 +387,16 @@ const SprintView = ({ focusedSprintId }) => {
         return true;
     });
 
+    // Filter sprints based on selected project
+    const filteredSprints = sprints.filter(sprint => {
+        // If no project filter is selected, show all sprints
+        if (!filters.project) {
+            return true;
+        }
+        // Only show sprints that belong to the selected project
+        return sprint.project_id === parseInt(filters.project);
+    });
+
     // Group tasks by sprint_id
     const tasksBySprint = {};
     filteredTasks.forEach(task => {
@@ -337,14 +406,19 @@ const SprintView = ({ focusedSprintId }) => {
     });
 
     useEffect(() => {
-        // Keep track of active sprint
-        const active = sprints.find(s => s.status === 'active');
+        fetchProjects();
+        // Keep track of active sprint for the selected project (not globally)
+        const projectSprints = filters.project 
+            ? sprints.filter(s => s.project_id === parseInt(filters.project))
+            : sprints;
+        const active = projectSprints.find(s => s.status === 'active');
         setActiveSprint(active || null);
-    }, [sprints]);
+    }, [sprints, filters.project]);
 
     useEffect(() => {
+        fetchProjects();
         if (focusedSprintId) {
-            setFoldedSprints(prev => {
+            setFoldedSprints(() => {
                 // Unfold only the focused sprint/backlog, fold all others
                 const allIds = new Set([
                     ...sprints.map(s => s.id),
@@ -458,7 +532,9 @@ const SprintView = ({ focusedSprintId }) => {
 
     const handleReactivate = (sprint) => {
         setSprintToReactivate(sprint);
-        const activeSprint = sprints.find(s => s.status === 'active');
+        // Find active sprint for the same project (not globally)
+        const projectSprints = sprints.filter(s => s.project_id === sprint.project_id);
+        const activeSprint = projectSprints.find(s => s.status === 'active');
         
         if (activeSprint && activeSprint.id !== sprint.id) {
             setActiveSprint(activeSprint);
@@ -497,32 +573,32 @@ const SprintView = ({ focusedSprintId }) => {
         }
     };
 
-    const handleFoldToggle = (sprintId, event) => {
-        if (event && (event.altKey || event.metaKey)) {
-            // Option/Alt or Command/Meta key: fold/unfold all
-            setFoldedSprints(prev => {
-                const allIds = new Set(sprints.map(s => s.id));
-                const anyUnfolded = sprints.some(s => !prev.has(s.id));
-                return anyUnfolded ? allIds : new Set();
-            });
-        } else {
-            setFoldedSprints(prev => {
-                const newSet = new Set(prev);
-                if (newSet.has(sprintId)) {
-                    newSet.delete(sprintId);
-                } else {
-                    newSet.add(sprintId);
-                }
-                return newSet;
-            });
-        }
+    const handleFoldToggle = (sprintId) => {
+        setFoldedSprints((folded) => {
+            const newSet = new Set(folded);
+            if (newSet.has(sprintId)) {
+                newSet.delete(sprintId);
+            } else {
+                newSet.add(sprintId);
+            }
+            return newSet;
+        });
     };
 
     const handleFilterChange = (filterType, value) => {
-        setFilters(prev => ({
-            ...prev,
-            [filterType]: value
-        }));
+        setFilters(prev => {
+            const newFilters = { ...prev, [filterType]: value };
+            
+            // Clear sprint filter when project changes, unless the selected sprint belongs to the new project
+            if (filterType === 'project') {
+                const selectedSprint = sprints.find(s => String(s.id) === newFilters.sprint);
+                if (!selectedSprint || selectedSprint.project_id !== parseInt(value)) {
+                    newFilters.sprint = '';
+                }
+            }
+            
+            return newFilters;
+        });
     };
 
     // Multi-select dropdown handlers
@@ -712,14 +788,24 @@ const SprintView = ({ focusedSprintId }) => {
         return formatHours(totalHours, hoursPerDay);
     };
 
+    // Find the selected project based on the project filter
+    const selectedProject = projects.find(p => p.id === parseInt(filters.project)) || null;
+
     return (
         <div className={`sprint-view ${isDarkMode ? 'dark' : 'light'}`}>
-            <TaskFilters filters={filters} onFilterChange={handleFilterChange} activeSprintId={activeSprint ? String(activeSprint.id) : ''} />
+            <TaskFilters 
+                filters={filters} 
+                onFilterChange={handleFilterChange} 
+                activeSprintId={activeSprint ? String(activeSprint.id) : ''} 
+                selectedProject={selectedProject}
+                user={user}
+            />
             <SprintModal
                 open={modalOpen}
                 onClose={() => { setModalOpen(false); setEditSprint(null); }}
                 onSave={handleSaveSprint}
                 initial={editSprint}
+                projects={projects}
             />
             <DeleteSprintModal
                 open={deleteModalOpen}
@@ -738,7 +824,12 @@ const SprintView = ({ focusedSprintId }) => {
                 activeSprint={activeSprint}
                 isDarkMode={isDarkMode}
             />
-            <TaskModal viewMode="sprint" activeSprintId="" />
+            <TaskModal 
+                viewMode="sprint" 
+                activeSprintId="" 
+                selectedProjectId={filters.project ? parseInt(filters.project) : null}
+                projects={projects} 
+            />
             <ContextMenu
                 x={contextMenu.x}
                 y={contextMenu.y}
@@ -837,7 +928,7 @@ const SprintView = ({ focusedSprintId }) => {
                 ) : (
                     <>
                         <div className="sprint-list">
-                            {sprints.map((sprint, sprintIdx) => (
+                            {filteredSprints.map((sprint) => (
                                 <Droppable droppableId={String(sprint.id)} key={sprint.id}>
                                     {(provided, snapshot) => (
                                         <div
@@ -851,7 +942,7 @@ const SprintView = ({ focusedSprintId }) => {
                                                 <div className="sprint-section-header-row" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                                     <button
                                                         className="fold-toggle-button"
-                                                        onClick={e => handleFoldToggle(sprint.id, e)}
+                                                        onClick={() => handleFoldToggle(sprint.id)}
                                                         title={foldedSprints.has(sprint.id) ? 'Expand sprint' : 'Collapse sprint'}
                                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                     >
@@ -870,7 +961,7 @@ const SprintView = ({ focusedSprintId }) => {
                                                     </span>
                                                     <button
                                                         className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
-                                                        onClick={(e) => handleOpenDropdown(e, 'sprint')}
+                                                        onClick={() => handleOpenDropdown('sprint')}
                                                         style={{ 
                                                             marginLeft: 8, 
                                                             padding: '4px 8px', 
@@ -992,7 +1083,7 @@ const SprintView = ({ focusedSprintId }) => {
                                             <div className="sprint-section-header-row" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                                 <button
                                                     className="fold-toggle-button"
-                                                    onClick={e => handleFoldToggle('backlog', e)}
+                                                    onClick={() => handleFoldToggle('backlog')}
                                                     title={foldedSprints.has('backlog') ? 'Expand backlog' : 'Collapse backlog'}
                                                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                 >
@@ -1009,7 +1100,7 @@ const SprintView = ({ focusedSprintId }) => {
                                                 </span>
                                                 <button
                                                     className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
-                                                    onClick={(e) => handleOpenDropdown(e, 'backlog')}
+                                                    onClick={() => handleOpenDropdown('backlog')}
                                                     style={{ 
                                                         marginLeft: 8, 
                                                         padding: '4px 8px', 
@@ -1085,10 +1176,11 @@ const SprintView = ({ focusedSprintId }) => {
 };
 
 SprintView.propTypes = {
-  focusedSprintId: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.number,
-  ]),
+    focusedSprintId: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+    ]),
+    user: PropTypes.object,
 };
 
-export default SprintView; 
+export default SprintView;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
 
 const CreateAccount = () => {
     const [firstName, setFirstName] = useState('Hans');
@@ -19,14 +20,17 @@ const CreateAccount = () => {
         setError('');
         setMessage('');
         try {
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ companyName, departmentName, firstName, lastName, email, password }),
-                credentials: 'include',
+            const response = await api.post('/api/register', {
+                companyName, 
+                departmentName, 
+                firstName, 
+                lastName, 
+                email, 
+                password
             });
-            const data = await response.json();
-            if (response.ok) {
+            
+            const data = response.data;
+            if (response.status === 201) {
                 setMessage('Account created successfully! Redirecting to dashboard...');
                 
                 // Store company context for multi-tenant support
@@ -47,7 +51,8 @@ const CreateAccount = () => {
                 setError(data.message || 'Failed to create account');
             }
         } catch (err) {
-            setError('Network error. Please try again.');
+            console.error('Registration error:', err);
+            setError(err.response?.data?.message || 'Network error. Please try again.');
         } finally {
             setIsLoading(false);
         }

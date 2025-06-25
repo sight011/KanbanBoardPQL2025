@@ -1,114 +1,376 @@
 const pool = require('../db');
 
 const sprintController = {
-    // List all sprints
+    // List all sprints for the user's company
     getAllSprints: async (req, res) => {
         try {
-            const result = await pool.query('SELECT * FROM sprints ORDER BY start_date DESC, id DESC');
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await pool.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
+            // Filter sprints by company through project -> department relationship
+            const result = await pool.query(
+                `SELECT s.* FROM sprints s
+                 JOIN projects p ON s.project_id = p.id
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE d.company_id = $1
+                 ORDER BY s.start_date DESC, s.id DESC`,
+                [userCompanyId]
+            );
+            
+            // Only log if there are sprints or on first request
+            if (result.rows.length > 0 || !req.session.sprintQueryLogged) {
+                console.log(`🔍 Found ${result.rows.length} sprints for company ${userCompanyId}`);
+                req.session.sprintQueryLogged = true;
+            }
+            
             res.json({ success: true, sprints: result.rows });
         } catch (error) {
+            console.error('❌ Error in getAllSprints:', error.message);
             res.status(500).json({ success: false, error: error.message });
         }
     },
-    // Get a single sprint
+    // Get a single sprint (with company validation)
     getSprintById: async (req, res) => {
         try {
             const { id } = req.params;
-            const result = await pool.query('SELECT * FROM sprints WHERE id = $1', [id]);
+            
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await pool.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
+            // Filter sprint by company through project -> department relationship
+            const result = await pool.query(
+                `SELECT s.* FROM sprints s
+                 JOIN projects p ON s.project_id = p.id
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE s.id = $1 AND d.company_id = $2`,
+                [id, userCompanyId]
+            );
+            
             if (result.rows.length === 0) {
+                console.log('❌ Sprint not found for ID:', id, 'in company:', userCompanyId);
                 return res.status(404).json({ success: false, error: 'Sprint not found' });
             }
+            
+            console.log('✅ Sprint found:', result.rows[0]);
             res.json({ success: true, sprint: result.rows[0] });
         } catch (error) {
+            console.error('❌ Error in getSprintById:', error.message);
             res.status(500).json({ success: false, error: error.message });
         }
     },
-    // Create a new sprint
+    // Create a new sprint (with company validation)
     createSprint: async (req, res) => {
+        const client = await pool.connect();
         try {
-            const { name, start_date, end_date } = req.body;
+            await client.query('BEGIN');
+            const { name, start_date, end_date, project_id } = req.body;
+            
             if (!name) {
+                await client.query('ROLLBACK');
                 return res.status(400).json({ success: false, error: 'Sprint name is required' });
             }
-            const result = await pool.query(
-                'INSERT INTO sprints (name, start_date, end_date, status) VALUES ($1, $2, $3, $4) RETURNING *',
-                [name, start_date, end_date, 'planned']
+
+            if (!project_id) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ success: false, error: 'Project ID is required' });
+            }
+
+            // Get user's company_id for validation
+            const userResult = await client.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
             );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
+            // Verify project belongs to user's company
+            const projectCheckResult = await client.query(
+                `SELECT p.id FROM projects p
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE p.id = $1 AND d.company_id = $2`,
+                [project_id, userCompanyId]
+            );
+            
+            if (projectCheckResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Project not found or not accessible' });
+            }
+            
+            console.log('🔍 Creating sprint for project_id:', project_id);
+            
+            const result = await client.query(
+                'INSERT INTO sprints (name, start_date, end_date, status, project_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+                [name, start_date, end_date, 'planned', project_id]
+            );
+            
+            await client.query('COMMIT');
+            console.log('✅ Sprint created successfully:', result.rows[0]);
             res.status(201).json({ success: true, sprint: result.rows[0] });
         } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('❌ Error in createSprint:', error.message);
             res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
         }
     },
-    // Update a sprint
+    // Update a sprint (with company validation)
     updateSprint: async (req, res) => {
+        const client = await pool.connect();
         try {
+            await client.query('BEGIN');
             const { id } = req.params;
             const { name, start_date, end_date, status } = req.body;
-            const result = await pool.query(
+            
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await client.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
+            // Verify sprint belongs to user's company
+            const sprintCheckResult = await client.query(
+                `SELECT s.id FROM sprints s
+                 JOIN projects p ON s.project_id = p.id
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE s.id = $1 AND d.company_id = $2`,
+                [id, userCompanyId]
+            );
+            
+            if (sprintCheckResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Sprint not found' });
+            }
+            
+            const result = await client.query(
                 'UPDATE sprints SET name = $1, start_date = $2, end_date = $3, status = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *',
                 [name, start_date, end_date, status, id]
             );
-            if (result.rows.length === 0) {
-                return res.status(404).json({ success: false, error: 'Sprint not found' });
-            }
+            
+            await client.query('COMMIT');
+            console.log('✅ Sprint updated successfully:', result.rows[0]);
             res.json({ success: true, sprint: result.rows[0] });
         } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('❌ Error in updateSprint:', error.message);
             res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
         }
     },
-    // Delete a sprint
+    // Delete a sprint (with company validation)
     deleteSprint: async (req, res) => {
+        const client = await pool.connect();
         try {
+            await client.query('BEGIN');
             const { id } = req.params;
-            // Unassign tasks from this sprint
-            await pool.query('UPDATE tasks SET sprint_id = NULL WHERE sprint_id = $1', [id]);
-            // Delete the sprint
-            const result = await pool.query('DELETE FROM sprints WHERE id = $1 RETURNING *', [id]);
-            if (result.rows.length === 0) {
+            
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await client.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
+            // Verify sprint belongs to user's company
+            const sprintCheckResult = await client.query(
+                `SELECT s.id FROM sprints s
+                 JOIN projects p ON s.project_id = p.id
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE s.id = $1 AND d.company_id = $2`,
+                [id, userCompanyId]
+            );
+            
+            if (sprintCheckResult.rows.length === 0) {
+                await client.query('ROLLBACK');
                 return res.status(404).json({ success: false, error: 'Sprint not found' });
             }
-            res.json({ success: true, message: 'Sprint deleted', sprint: result.rows[0] });
+            
+            const result = await client.query(
+                'DELETE FROM sprints WHERE id = $1 RETURNING *',
+                [id]
+            );
+            
+            await client.query('COMMIT');
+            console.log('✅ Sprint deleted successfully:', result.rows[0]);
+            res.json({ success: true, sprint: result.rows[0] });
         } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('❌ Error in deleteSprint:', error.message);
             res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
         }
     },
-    // Start a sprint (set status to active, set all others to not active)
+    // Start a sprint (with company validation)
     startSprint: async (req, res) => {
+        const client = await pool.connect();
         try {
+            await client.query('BEGIN');
             const { id } = req.params;
-            // Set all other sprints to not active
-            await pool.query("UPDATE sprints SET status = 'planned' WHERE status = 'active'");
+            
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await client.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
+            // Verify sprint belongs to user's company and get its project_id
+            const sprintCheckResult = await client.query(
+                `SELECT s.id, s.project_id FROM sprints s
+                 JOIN projects p ON s.project_id = p.id
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE s.id = $1 AND d.company_id = $2`,
+                [id, userCompanyId]
+            );
+            
+            if (sprintCheckResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Sprint not found' });
+            }
+            
+            const sprintProjectId = sprintCheckResult.rows[0].project_id;
+            
+            // Set all other active sprints in the SAME PROJECT to planned (not all sprints in company)
+            await client.query(
+                `UPDATE sprints SET status = 'planned' 
+                 WHERE project_id = $1 
+                 AND status = 'active' 
+                 AND id != $2`,
+                [sprintProjectId, id]
+            );
+            
             // Set this sprint to active
-            const result = await pool.query("UPDATE sprints SET status = 'active' WHERE id = $1 RETURNING *", [id]);
-            if (result.rows.length === 0) {
-                return res.status(404).json({ success: false, error: 'Sprint not found' });
-            }
+            const result = await client.query("UPDATE sprints SET status = 'active' WHERE id = $1 RETURNING *", [id]);
+            
+            await client.query('COMMIT');
+            console.log('✅ Sprint started successfully:', result.rows[0]);
             res.json({ success: true, sprint: result.rows[0] });
         } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('❌ Error in startSprint:', error.message);
             res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
         }
     },
-    // Complete a sprint (set status to completed)
+    // Complete a sprint (with company validation)
     completeSprint: async (req, res) => {
+        const client = await pool.connect();
         try {
+            await client.query('BEGIN');
             const { id } = req.params;
-            const result = await pool.query("UPDATE sprints SET status = 'completed' WHERE id = $1 RETURNING *", [id]);
-            if (result.rows.length === 0) {
+            
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await client.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
+            // Verify sprint belongs to user's company
+            const sprintCheckResult = await client.query(
+                `SELECT s.id FROM sprints s
+                 JOIN projects p ON s.project_id = p.id
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE s.id = $1 AND d.company_id = $2`,
+                [id, userCompanyId]
+            );
+            
+            if (sprintCheckResult.rows.length === 0) {
+                await client.query('ROLLBACK');
                 return res.status(404).json({ success: false, error: 'Sprint not found' });
             }
-            // No longer move incomplete tasks to backlog; all tasks remain in the sprint
+            
+            const result = await client.query("UPDATE sprints SET status = 'completed' WHERE id = $1 RETURNING *", [id]);
+            
+            await client.query('COMMIT');
+            console.log('✅ Sprint completed successfully:', result.rows[0]);
             res.json({ success: true, sprint: result.rows[0] });
         } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('❌ Error in completeSprint:', error.message);
             res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
         }
     },
-    // Get sprint burndown data
+    // Get sprint burndown data (with company validation)
     getSprintBurndown: async (req, res) => {
         try {
             const { id } = req.params;
             const { priority, assignee } = req.query;
-            // Get sprint details
-            const sprintResult = await pool.query('SELECT * FROM sprints WHERE id = $1', [id]);
+            
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await pool.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
+            // Get sprint details (filtered by company)
+            const sprintResult = await pool.query(
+                `SELECT s.* FROM sprints s
+                 JOIN projects p ON s.project_id = p.id
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE s.id = $1 AND d.company_id = $2`,
+                [id, userCompanyId]
+            );
+            
             if (sprintResult.rows.length === 0) {
                 return res.status(404).json({ success: false, error: 'Sprint not found' });
             }
@@ -123,20 +385,24 @@ const sprintController = {
                 }
             } catch (e) { /* fallback to 8 */ }
 
-            // Build the query with filters
-            let query = 'SELECT id, status, completed_at, effort FROM tasks WHERE sprint_id = $1';
-            const queryParams = [id];
-            let paramIndex = 2;
+            // Build the query with filters (including company filtering)
+            let query = `SELECT t.id, t.status, t.completed_at, t.effort 
+                        FROM tasks t
+                        JOIN users u ON t.reporter_id = u.id
+                        WHERE t.sprint_id = $1 AND u.company_id = $2`;
+            const queryParams = [id, userCompanyId];
+            let paramIndex = 3;
             if (priority) {
-                query += ` AND priority = $${paramIndex}`;
+                query += ` AND t.priority = $${paramIndex}`;
                 queryParams.push(priority);
                 paramIndex++;
             }
             if (assignee) {
-                query += ` AND assignee_id = $${paramIndex}`;
+                query += ` AND t.assignee_id = $${paramIndex}`;
                 queryParams.push(assignee);
                 paramIndex++;
             }
+            
             // Get filtered tasks in the sprint
             const tasksResult = await pool.query(query, queryParams);
             const tasks = tasksResult.rows;
@@ -185,33 +451,70 @@ const sprintController = {
                 }
             });
         } catch (error) {
+            console.error('❌ Error in getSprintBurndown:', error.message);
             res.status(500).json({ success: false, error: error.message });
         }
     },
-    // Reactivate a completed sprint
+    // Reactivate a completed sprint (with company validation)
     reactivateSprint: async (req, res) => {
+        const client = await pool.connect();
         try {
+            await client.query('BEGIN');
             const { id } = req.params;
             
-            // First, set any active sprint to planned
-            await pool.query("UPDATE sprints SET status = 'planned' WHERE status = 'active'");
+            // Get user's company_id for multi-tenant filtering
+            const userResult = await client.query(
+                'SELECT company_id FROM users WHERE id = $1',
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found' });
+            }
+            
+            const userCompanyId = userResult.rows[0].company_id;
+            
+            // Verify sprint belongs to user's company and get its project_id
+            const sprintCheckResult = await client.query(
+                `SELECT s.id, s.project_id FROM sprints s
+                 JOIN projects p ON s.project_id = p.id
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE s.id = $1 AND d.company_id = $2`,
+                [id, userCompanyId]
+            );
+            
+            if (sprintCheckResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Sprint not found' });
+            }
+            
+            const sprintProjectId = sprintCheckResult.rows[0].project_id;
+            
+            // First, set any active sprint in the SAME PROJECT to planned (not all sprints in company)
+            await client.query(
+                `UPDATE sprints SET status = 'planned' 
+                 WHERE project_id = $1 
+                 AND status = 'active' 
+                 AND id != $2`,
+                [sprintProjectId, id]
+            );
             
             // Then set the completed sprint to active
-            const result = await pool.query(
-                "UPDATE sprints SET status = 'active' WHERE id = $1 AND status = 'completed' RETURNING *",
+            const result = await client.query(
+                "UPDATE sprints SET status = 'active' WHERE id = $1 RETURNING *",
                 [id]
             );
             
-            if (result.rows.length === 0) {
-                return res.status(404).json({ 
-                    success: false, 
-                    error: 'Sprint not found or not in completed status' 
-                });
-            }
-            
+            await client.query('COMMIT');
+            console.log('✅ Sprint reactivated successfully:', result.rows[0]);
             res.json({ success: true, sprint: result.rows[0] });
         } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('❌ Error in reactivateSprint:', error.message);
             res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
         }
     }
 };

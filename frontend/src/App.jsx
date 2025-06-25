@@ -134,7 +134,7 @@ Based on the tasks above, please answer the user's question following the respon
                     </header>
                     <main className="app-main">
                         <Routes>
-                            <Route path="/" element={<TaskBoard viewMode={viewMode} setViewMode={setViewMode} />} />
+                            <Route path="/" element={<TaskBoard viewMode={viewMode} setViewMode={setViewMode} user={user} />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/audit" element={<AuditTrailView />} />
                             <Route path="/health" element={<HealthCheck />} />

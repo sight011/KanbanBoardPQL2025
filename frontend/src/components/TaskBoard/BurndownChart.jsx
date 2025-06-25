@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import {
     LineChart,
     Line,
@@ -9,6 +10,7 @@ import {
     Legend,
     ResponsiveContainer
 } from 'recharts';
+import api from '../../api/axios';
 import './BurndownChart.css';
 
 const BurndownChart = ({ sprintId, filters }) => {
@@ -34,8 +36,8 @@ const BurndownChart = ({ sprintId, filters }) => {
         const fetchBurndownData = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`/api/sprints/${sprintId}/burndown?${queryParams}`);
-                const data = await response.json();
+                const response = await api.get(`/api/sprints/${sprintId}/burndown?${queryParams}`);
+                const data = await response.data;
                 if (data.success) {
                     setBurndownData(data);
                 } else {
@@ -70,6 +72,10 @@ const BurndownChart = ({ sprintId, filters }) => {
         if (!burndownData) return null;
         return burndownData.burndownData;
     }, [burndownData]);
+
+    if (!sprintId) {
+        return <div className={`burndown-no-data${isDarkMode ? ' dark' : ''}`}>Please select a sprint to view the burndown chart</div>;
+    }
 
     if (loading) {
         return <div className={`burndown-loading${isDarkMode ? ' dark' : ''}`}>Loading burndown data...</div>;
@@ -150,6 +156,11 @@ const BurndownChart = ({ sprintId, filters }) => {
             </div>
         </div>
     );
+};
+
+BurndownChart.propTypes = {
+    sprintId: PropTypes.string.isRequired,
+    filters: PropTypes.object
 };
 
 export default BurndownChart; 

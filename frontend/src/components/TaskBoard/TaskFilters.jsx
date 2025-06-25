@@ -1,28 +1,46 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
+import api from '../../api/axios';
 import './TaskFilters.css';
 
-const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
+const TaskFilters = ({ filters, onFilterChange, activeSprintId, selectedProject, user }) => {
     const [users, setUsers] = useState([]);
     const [sprints, setSprints] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [usersError, setUsersError] = useState(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
-            try {
-                const res = await fetch('/api/users');
-                const data = await res.json();
-                setUsers(data.users || []);
-            } catch (err) {
+            // Only fetch users if user is authenticated
+            if (!user) {
                 setUsers([]);
+                setUsersError('Authentication required to load users');
+                return;
+            }
+
+            try {
+                const res = await api.get('/api/users');
+                const data = await res.data;
+                setUsers(data.users || []);
+                setUsersError(null);
+            } catch (err) {
+                console.error('Error fetching users:', err);
+                setUsers([]);
+                if (err.response?.status === 401) {
+                    setUsersError('Authentication required to load users');
+                } else {
+                    setUsersError('Failed to load users');
+                }
             }
         };
         fetchUsers();
-    }, []);
+    }, [user]); // Re-fetch when user changes
 
     useEffect(() => {
         const fetchSprints = async () => {
             try {
-                const res = await fetch('/api/sprints');
-                const data = await res.json();
+                const res = await api.get('/api/sprints');
+                const data = await res.data;
                 setSprints(data.sprints || []);
             } catch (err) {
                 setSprints([]);
@@ -31,38 +49,28 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
         fetchSprints();
     }, []);
 
-    const handleInputChange = (e) => {
-        onFilterChange('text', e.target.value);
-    };
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const res = await api.get('/api/projects');
+                const data = await res.data;
+                setProjects(data.projects || []);
+            } catch (err) {
+                setProjects([]);
+            }
+        };
+        fetchProjects();
+    }, []);
 
-    const handleSprintChange = (e) => {
-        onFilterChange('sprint', e.target.value);
-    };
-
-    const handleChangedInTimeChange = (e) => {
-        onFilterChange('changedInTime', e.target.value);
-    };
-
-    const handlePriorityChange = (e) => {
-        onFilterChange('priority', e.target.value);
-    };
-
-    const handleStatusChange = (e) => {
-        onFilterChange('status', e.target.value);
-    };
-
-    const handleAssigneeChange = (e) => {
-        onFilterChange('assignee', e.target.value);
-    };
-
-    const handleClearFilters = () => {
-        onFilterChange('text', '');
-        onFilterChange('sprint', activeSprintId || '');
-        onFilterChange('changedInTime', '');
-        onFilterChange('priority', '');
-        onFilterChange('status', '');
-        onFilterChange('assignee', '');
-    };
+    // Filter sprints based on selected project
+    const filteredSprints = sprints.filter(sprint => {
+        // If no project is selected, show all sprints
+        if (!selectedProject) {
+            return true;
+        }
+        // Only show sprints that belong to the selected project
+        return sprint.project_id === selectedProject.id;
+    });
 
     return (
         <div className="task-filters">
@@ -73,16 +81,28 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
                     placeholder="Search tasks..."
                     className="filter-input"
                     value={filters.text || ''}
-                    onChange={handleInputChange}
+                    onChange={(e) => onFilterChange('text', e.target.value)}
                 />
                 <select
                     className="filter-select"
+                    value={filters.project || ''}
+                    onChange={(e) => onFilterChange('project', e.target.value)}
+                >
+                    <option value="">All Projects</option>
+                    {projects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                            {project.name}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    className="filter-select"
                     value={filters.sprint || ''}
-                    onChange={handleSprintChange}
+                    onChange={(e) => onFilterChange('sprint', e.target.value)}
                 >
                     <option value="">All Sprints</option>
                     <option value="backlog">Backlog</option>
-                    {sprints.map((sprint) => (
+                    {filteredSprints.map((sprint) => (
                         <option key={sprint.id} value={sprint.id}>
                             {sprint.name}{activeSprintId === String(sprint.id) ? ' (active)' : ''}
                         </option>
@@ -91,7 +111,7 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
                 <select
                     className="filter-select"
                     value={filters.changedInTime || ''}
-                    onChange={handleChangedInTimeChange}
+                    onChange={(e) => onFilterChange('changedInTime', e.target.value)}
                 >
                     <option value="">Changed in Time</option>
                     <option value="all">All</option>
@@ -105,7 +125,7 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
                 <select
                     className="filter-select"
                     value={filters.priority || ''}
-                    onChange={handlePriorityChange}
+                    onChange={(e) => onFilterChange('priority', e.target.value)}
                 >
                     <option value="">Priority</option>
                     <option value="low">Low</option>
@@ -115,7 +135,7 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
                 <select
                     className="filter-select"
                     value={filters.status || ''}
-                    onChange={handleStatusChange}
+                    onChange={(e) => onFilterChange('status', e.target.value)}
                 >
                     <option value="">Status</option>
                     <option value="todo">To Do</option>
@@ -126,22 +146,41 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId }) => {
                 <select
                     className="filter-select"
                     value={filters.assignee || ''}
-                    onChange={handleAssigneeChange}
+                    onChange={(e) => onFilterChange('assignee', e.target.value)}
+                    title={usersError || undefined}
                 >
-                    <option value="">Assignee</option>
+                    <option value="">
+                        {usersError ? 'Users unavailable' : `Assignee (${users.length} users)`}
+                    </option>
                     {users.map((user) => (
                         <option key={user.id} value={user.id}>{user.firstName} {user.lastName}</option>
                     ))}
                 </select>
                 <button
                     className="clear-filters-button"
-                    onClick={handleClearFilters}
+                    onClick={() => {
+                        onFilterChange('text', '');
+                        onFilterChange('project', '');
+                        onFilterChange('sprint', activeSprintId || '');
+                        onFilterChange('changedInTime', '');
+                        onFilterChange('priority', '');
+                        onFilterChange('status', '');
+                        onFilterChange('assignee', '');
+                    }}
                 >
                     Clear Filters
                 </button>
             </div>
         </div>
     );
+};
+
+TaskFilters.propTypes = {
+    filters: PropTypes.object.isRequired,
+    onFilterChange: PropTypes.func.isRequired,
+    activeSprintId: PropTypes.string,
+    selectedProject: PropTypes.object,
+    user: PropTypes.object
 };
 
 export default TaskFilters;

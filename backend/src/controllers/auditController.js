@@ -16,7 +16,7 @@ const auditController = {
                     al.entity_id as task_id, 
                     al.user_id, 
                     u.first_name || ' ' || u.last_name as username,
-                    al.action_type as field_name, 
+                    al.action as field_name, 
                     al.details->>'old_values' as old_value, 
                     al.details->>'new_values' as new_value, 
                     al.created_at as changed_at,
@@ -85,7 +85,7 @@ const auditController = {
                 INNER JOIN audit_logs al ON t.id = al.entity_id
                 WHERE al.company_id = $1 
                 AND al.entity_type = 'tasks'
-                AND (al.action_type = 'UPDATE' OR al.action_type = 'INSERT')
+                AND (al.action = 'UPDATE' OR al.action = 'INSERT')
                 ${timeCondition}
                 ORDER BY t.id
             `, [userCompanyId]);

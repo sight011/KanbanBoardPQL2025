@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const auditController = require('../controllers/auditController');
-const { requireLogin } = require('../middleware/auth');
+const { requireLoginWithCompanyIsolation, enforceCompanyIsolation } = require('../middleware/auth');
 
-router.get('/', requireLogin, auditController.getAuditLogs);
-router.get('/tasks-with-changes', requireLogin, auditController.getTasksWithChanges);
+router.get('/', requireLoginWithCompanyIsolation, enforceCompanyIsolation, auditController.getAuditLogs);
+router.get('/tasks-with-changes', requireLoginWithCompanyIsolation, enforceCompanyIsolation, auditController.getTasksWithChanges);
 
 module.exports = router; 

@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const projectController = require('../controllers/projectController');
-const { requireLogin } = require('../middleware/auth');
+const { requireLoginWithCompanyIsolation, enforceCompanyIsolation } = require('../middleware/auth');
 
-// Apply authentication middleware to all project routes
-router.use(requireLogin);
+// Apply middleware to all routes
+router.use(requireLoginWithCompanyIsolation);
+router.use(enforceCompanyIsolation);
 
 // Get all projects for the current user's department
 router.get('/', projectController.getAllProjects);

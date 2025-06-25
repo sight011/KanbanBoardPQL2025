@@ -5,6 +5,7 @@ import TaskColumn from './TaskColumn';
 import TaskFilters from './TaskFilters';
 import TaskModal from './TaskModal';
 import ProjectSelector from './ProjectSelector';
+import DepartmentSelector from './DepartmentSelector';
 import { useTaskContext } from '../../context/TaskContext';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
@@ -62,21 +63,24 @@ const textPlugin = {
 // Register the custom plugin
 ChartJS.register(textPlugin);
 
-const TaskBoard = ({ viewMode, setViewMode }) => {
+const TaskBoard = ({ viewMode, setViewMode, user }) => {
     const { tasks, updateTaskPosition, loading, error, openTaskModal, updateTask, fetchTasks, selectedTask, isModalOpen, closeTaskModal } = useTaskContext();
     const [selectedProject, setSelectedProject] = useState(null);
     const [projects, setProjects] = useState([]);
     const [projectsLoading, setProjectsLoading] = useState(true);
+    const [selectedDepartment, setSelectedDepartment] = useState(null);
+    const [departments, setDepartments] = useState([]);
+    const [departmentsLoading, setDepartmentsLoading] = useState(true);
+    const [selectedSprint, setSelectedSprint] = useState('');
     const [filters, setFilters] = useState({
         text: '',
+        project: '',
         sprint: '',
-        changedInTime: '',
         priority: '',
         assignee: '',
-        status: ''
+        status: '',
+        changedInTime: ''
     });
-    const [sprints, setSprints] = useState([]);
-    const [selectedSprint, setSelectedSprint] = useState('');
     const [users, setUsers] = useState([]);
     const [tasksWithChanges, setTasksWithChanges] = useState([]);
     const [focusedSprintId, setFocusedSprintId] = useState(null);
@@ -107,12 +111,48 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         fetchProjects();
     }, []);
 
+    // Fetch departments
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            try {
+                setDepartmentsLoading(true);
+                const response = await api.get('/api/departments');
+                if (response.data.success) {
+                    const fetchedDepartments = response.data.departments || [];
+                    setDepartments(fetchedDepartments);
+                    
+                    // If no department is selected and we have departments, select the first one
+                    if (!selectedDepartment && fetchedDepartments.length > 0) {
+                        setSelectedDepartment(fetchedDepartments[0]);
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching departments:', err);
+                setDepartments([]);
+            } finally {
+                setDepartmentsLoading(false);
+            }
+        };
+        
+        fetchDepartments();
+    }, []);
+
     // Fetch tasks when project changes
     useEffect(() => {
-        if (selectedProject) {
-            fetchTasks(selectedProject.id);
+        // Always fetch all tasks for the company, let filters handle project selection
+        fetchTasks();
+    }, [fetchTasks]);
+
+    // Update project filter when selected project changes
+    useEffect(() => {
+        // Only set project filter if no project filter is currently set
+        if (selectedProject && !filters.project) {
+            setFilters(prev => ({
+                ...prev,
+                project: String(selectedProject.id)
+            }));
         }
-    }, [selectedProject, fetchTasks]);
+    }, [selectedProject, filters.project]);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -120,16 +160,12 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 const response = await api.get('/api/users');
                 const data = response.data;
                 if (data.users) {
-                    // Create a map of user IDs to user data for faster lookup
-                    const usersMap = data.users.reduce((acc, user) => {
-                        acc[user.id] = user;
-                        return acc;
-                    }, {});
-                    setUsers(usersMap);
+                    // Keep users as an array for TaskModal compatibility
+                    setUsers(data.users);
                 }
             } catch (err) {
                 console.error('Error fetching users:', err);
-                setUsers({});
+                setUsers([]);
             }
         };
         fetchUsers();
@@ -166,42 +202,52 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 const res = await api.get('/api/sprints');
                 const data = res.data;
                 const newSprints = data.sprints || [];
-                setSprints(newSprints);
-                // Only set default to active sprint on initial load
-                if (sprints.length === 0) {
-                    const active = newSprints.find(s => s.status === 'active');
-                    setSelectedSprint(active ? String(active.id) : '');
-                    setFilters(prev => ({
-                        ...prev,
-                        sprint: active ? String(active.id) : ''
-                    }));
-                } else {
-                    // Check if active sprint has changed
-                    const currentActive = sprints.find(s => s.status === 'active');
-                    const newActive = newSprints.find(s => s.status === 'active');
-                    if (currentActive?.id !== newActive?.id) {
-                        setSelectedSprint(newActive ? String(newActive.id) : '');
-                        setFilters(prev => ({
-                            ...prev,
-                            sprint: newActive ? String(newActive.id) : ''
-                        }));
-                    }
-                }
+                
+                // Filter sprints for the selected project
+                const projectSprints = selectedProject 
+                    ? newSprints.filter(s => s.project_id === selectedProject.id)
+                    : newSprints;
+                
+                // Find active sprint for the selected project
+                const activeSprint = projectSprints.find(s => s.status === 'active');
+                
+                // Set the active sprint for the selected project
+                setSelectedSprint(activeSprint ? String(activeSprint.id) : '');
+                setFilters(prev => ({
+                    ...prev,
+                    sprint: activeSprint ? String(activeSprint.id) : ''
+                }));
             } catch (err) {
-                setSprints([]);
+                console.error('Error fetching sprints:', err);
             }
         };
         fetchSprints();
         // Poll for active sprint changes every 10 seconds
         const interval = setInterval(fetchSprints, 10000); // 10 seconds
         return () => clearInterval(interval);
-    }, [sprints.length]);
+    }, [selectedProject]);
 
     const handleFilterChange = (filterType, value) => {
         setFilters(prev => ({
             ...prev,
             [filterType]: value
         }));
+
+        // Handle project filter change
+        if (filterType === 'project') {
+            if (value === '') {
+                // "All Projects" selected - clear selected project
+                setSelectedProject(null);
+                sessionStorage.removeItem('selectedProjectId');
+            } else {
+                // Specific project selected - update selected project
+                const project = projects.find(p => p.id === parseInt(value));
+                if (project) {
+                    setSelectedProject(project);
+                    sessionStorage.setItem('selectedProjectId', project.id.toString());
+                }
+            }
+        }
     };
 
     // Filter tasks based on current filters
@@ -209,6 +255,11 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         return tasks.filter(task => {
             // Text filter
             if (filters.text && !task.title.toLowerCase().includes(filters.text.toLowerCase())) {
+                return false;
+            }
+
+            // Project filter
+            if (filters.project && task.project_id !== parseInt(filters.project)) {
                 return false;
             }
 
@@ -295,15 +346,17 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     };
 
     const getAssigneeInitials = (assigneeId) => {
-        if (!assigneeId || !users[assigneeId]) return '';
-        const user = users[assigneeId];
-        return `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase();
+        if (!assigneeId) return '';
+        const user = users.find(u => u.id === assigneeId);
+        if (!user) return '';
+        return `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
     };
 
     const getAssigneeColor = (assigneeId) => {
-        if (!assigneeId || !users[assigneeId]) return '#6b7280';
-        const user = users[assigneeId];
-        const name = `${user.first_name}${user.last_name}`;
+        if (!assigneeId) return '#6b7280';
+        const user = users.find(u => u.id === assigneeId);
+        if (!user) return '#6b7280';
+        const name = `${user.firstName}${user.lastName}`;
         let hash = 0;
         for (let i = 0; i < name.length; i++) {
             hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -313,9 +366,10 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
     };
 
     const getAssigneeName = (assigneeId) => {
-        if (!assigneeId || !users[assigneeId]) return 'Unassigned';
-        const user = users[assigneeId];
-        return `${user.first_name} ${user.last_name}`;
+        if (!assigneeId) return 'Unassigned';
+        const user = users.find(u => u.id === assigneeId);
+        if (!user) return 'Unassigned';
+        return `${user.firstName} ${user.lastName}`;
     };
 
     // Handler for calendar double click
@@ -334,6 +388,16 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         }
     };
 
+    const handleDepartmentSelect = (department) => {
+        setSelectedDepartment(department);
+        // Store the selected department in sessionStorage for persistence
+        if (department) {
+            sessionStorage.setItem('selectedDepartmentId', department.id.toString());
+        } else {
+            sessionStorage.removeItem('selectedDepartmentId');
+        }
+    };
+
     const handleProjectsChange = (updatedProjects) => {
         setProjects(updatedProjects);
     };
@@ -349,7 +413,18 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
         }
     }, [projects]);
 
-    if (loading || projectsLoading) {
+    // Load selected department from sessionStorage on component mount
+    useEffect(() => {
+        const savedDepartmentId = sessionStorage.getItem('selectedDepartmentId');
+        if (savedDepartmentId && departments.length > 0) {
+            const department = departments.find(d => d.id === parseInt(savedDepartmentId));
+            if (department) {
+                setSelectedDepartment(department);
+            }
+        }
+    }, [departments]);
+
+    if (loading || projectsLoading || departmentsLoading) {
         return (
             <div className="task-board-loading">
                 <div className="loading-spinner"></div>
@@ -372,6 +447,11 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
             <div className="board-header">
                 <div className="board-header-left">
                     <h2>Task Board</h2>
+                    <DepartmentSelector
+                        departments={departments}
+                        selectedDepartment={selectedDepartment}
+                        onDepartmentSelect={handleDepartmentSelect}
+                    />
                     <ProjectSelector
                         projects={projects}
                         selectedProject={selectedProject}
@@ -462,11 +542,13 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                     filters={filters}
                     onFilterChange={handleFilterChange}
                     activeSprintId={selectedSprint}
+                    selectedProject={selectedProject}
+                    user={user}
                 />
             )}
 
             {selectedProject && viewMode === 'sprint' ? (
-                <SprintView focusedSprintId={focusedSprintId} />
+                <SprintView focusedSprintId={focusedSprintId} user={user} />
             ) : selectedProject && viewMode === 'kanban' ? (
                 <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
                     <div className="board-columns">
@@ -548,64 +630,168 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 </div>
             ) : selectedProject && viewMode === 'diagram' ? (
                 <div className="diagram-view">
-                    <div className="chart-container">
-                        <h3>Task Status Distribution</h3>
-                        <div className="chart-wrapper">
-                            <Pie
-                                data={{
-                                    labels: ['To Do', 'In Progress', 'Review', 'Done'],
-                                    datasets: [{
-                                        data: [
-                                            columns.todo.length,
-                                            columns.inProgress.length,
-                                            columns.review.length,
-                                            columns.done.length
-                                        ],
-                                        backgroundColor: [
-                                            '#3b82f6', // Blue for To Do
-                                            '#f59e0b', // Amber for In Progress
-                                            '#8b5cf6', // Purple for Review
-                                            '#10b981'  // Green for Done
-                                        ],
-                                        borderWidth: 2,
-                                        borderColor: '#ffffff'
-                                    }]
-                                }}
-                                options={{
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    plugins: {
-                                        legend: {
-                                            position: 'bottom',
-                                            labels: {
-                                                usePointStyle: true,
-                                                padding: 20,
-                                                font: {
-                                                    size: 12
+                    <div className="charts-grid">
+                        {/* Priority Distribution Chart */}
+                        <div className="chart-container">
+                            <h3>Priority Distribution</h3>
+                            <div className="chart-wrapper">
+                                <Pie
+                                    data={{
+                                        labels: ['High', 'Medium', 'Low'],
+                                        datasets: [{
+                                            data: [
+                                                filteredTasks.filter(task => task.priority === 'high').length,
+                                                filteredTasks.filter(task => task.priority === 'medium').length,
+                                                filteredTasks.filter(task => task.priority === 'low').length
+                                            ],
+                                            backgroundColor: [
+                                                '#ef4444', // Red for High
+                                                '#f59e0b', // Amber for Medium
+                                                '#10b981'  // Green for Low
+                                            ],
+                                            borderWidth: 2,
+                                            borderColor: '#ffffff'
+                                        }]
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                position: 'bottom',
+                                                labels: {
+                                                    usePointStyle: true,
+                                                    padding: 15,
+                                                    font: { size: 11 }
                                                 }
-                                            }
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                label: function(context) {
-                                                    const label = context.label || '';
-                                                    const value = context.parsed;
-                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                    const percentage = ((value / total) * 100).toFixed(1);
-                                                    return `${label}: ${value} (${percentage}%)`;
+                                            },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(context) {
+                                                        const label = context.label || '';
+                                                        const value = context.parsed;
+                                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                                        return `${label}: ${value} (${percentage}%)`;
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
-                                }}
-                            />
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Status Distribution Chart */}
+                        <div className="chart-container">
+                            <h3>Status Distribution</h3>
+                            <div className="chart-wrapper">
+                                <Pie
+                                    data={{
+                                        labels: ['To Do', 'In Progress', 'Review', 'Done'],
+                                        datasets: [{
+                                            data: [
+                                                columns.todo.length,
+                                                columns.inProgress.length,
+                                                columns.review.length,
+                                                columns.done.length
+                                            ],
+                                            backgroundColor: [
+                                                '#3b82f6', // Blue for To Do
+                                                '#f59e0b', // Amber for In Progress
+                                                '#8b5cf6', // Purple for Review
+                                                '#10b981'  // Green for Done
+                                            ],
+                                            borderWidth: 2,
+                                            borderColor: '#ffffff'
+                                        }]
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                position: 'bottom',
+                                                labels: {
+                                                    usePointStyle: true,
+                                                    padding: 15,
+                                                    font: { size: 11 }
+                                                }
+                                            },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(context) {
+                                                        const label = context.label || '';
+                                                        const value = context.parsed;
+                                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                                        return `${label}: ${value} (${percentage}%)`;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Assignment Distribution Chart */}
+                        <div className="chart-container">
+                            <h3>Assignment Distribution</h3>
+                            <div className="chart-wrapper">
+                                <Pie
+                                    data={{
+                                        labels: ['Assigned', 'Unassigned'],
+                                        datasets: [{
+                                            data: [
+                                                filteredTasks.filter(task => task.assignee_id).length,
+                                                filteredTasks.filter(task => !task.assignee_id).length
+                                            ],
+                                            backgroundColor: [
+                                                '#8b5cf6', // Purple for Assigned
+                                                '#6b7280'  // Gray for Unassigned
+                                            ],
+                                            borderWidth: 2,
+                                            borderColor: '#ffffff'
+                                        }]
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                position: 'bottom',
+                                                labels: {
+                                                    usePointStyle: true,
+                                                    padding: 15,
+                                                    font: { size: 11 }
+                                                }
+                                            },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(context) {
+                                                        const label = context.label || '';
+                                                        const value = context.parsed;
+                                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                                                        return `${label}: ${value} (${percentage}%)`;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
             ) : selectedProject && viewMode === 'burndown' ? (
-                <BurndownChart />
+                <BurndownChart 
+                    sprintId={selectedSprint} 
+                    filters={filters}
+                />
             ) : selectedProject && viewMode === 'calendar' ? (
-                <CalendarView onSprintDoubleClick={handleSprintDoubleClick} />
+                <CalendarView onSprintDoubleClick={handleSprintDoubleClick} user={user} />
             ) : null}
 
             <TaskModal
@@ -617,6 +803,7 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
                 users={users}
                 selectedProjectId={selectedProject ? selectedProject.id : null}
                 activeSprintId={selectedSprint}
+                projects={projects}
             />
         </div>
     );
@@ -624,7 +811,8 @@ const TaskBoard = ({ viewMode, setViewMode }) => {
 
 TaskBoard.propTypes = {
     viewMode: PropTypes.string.isRequired,
-    setViewMode: PropTypes.func.isRequired
+    setViewMode: PropTypes.func.isRequired,
+    user: PropTypes.object.isRequired
 };
 
 export default TaskBoard;

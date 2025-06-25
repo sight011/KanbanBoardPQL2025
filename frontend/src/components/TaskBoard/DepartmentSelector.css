@@ -1,0 +1,125 @@
+.department-selector {
+    position: relative;
+    display: inline-block;
+    min-width: 220px;
+    font-family: inherit;
+}
+
+.department-selector__button {
+    width: 100%;
+    background: #fff;
+    color: #222;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: border 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.department-selector__button:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px #6366f133;
+}
+
+.department-selector__selected {
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.department-selector__chevron {
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.department-selector__chevron.open {
+    transform: rotate(180deg);
+}
+
+.department-selector__dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 4px;
+    padding: 0;
+    list-style: none;
+}
+
+.department-selector__option {
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.department-selector__option:hover {
+    background-color: #f3f4f6;
+}
+
+.department-selector__option.selected {
+    background-color: #6366f1;
+    color: white;
+}
+
+.department-selector__option.empty {
+    color: #6b7280;
+    cursor: default;
+    font-style: italic;
+}
+
+.department-selector__option-name {
+    flex: 1;
+    text-align: left;
+}
+
+/* Dark mode styles */
+.dark-mode .department-selector__button {
+    background: #2d3748;
+    color: #e2e8f0;
+    border-color: #4a5568;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.dark-mode .department-selector__button:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px #6366f133;
+}
+
+.dark-mode .department-selector__dropdown {
+    background: #2d3748;
+    border-color: #4a5568;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .department-selector__option:hover {
+    background-color: #4a5568;
+}
+
+.dark-mode .department-selector__option.selected {
+    background-color: #6366f1;
+    color: white;
+}
+
+.dark-mode .department-selector__option.empty {
+    color: #a0aec0;
+} 

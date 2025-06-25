@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const settingsController = require('../controllers/settingsController');
-const { requireLogin } = require('../middleware/auth');
+const { requireLoginWithCompanyIsolation, enforceCompanyIsolation } = require('../middleware/auth');
 
 // Apply authentication middleware to all settings routes
-router.use(requireLogin);
+router.use(requireLoginWithCompanyIsolation);
+router.use(enforceCompanyIsolation);
 
 // Get hours per day setting
 router.get('/hoursperday', settingsController.getHoursPerDay);
