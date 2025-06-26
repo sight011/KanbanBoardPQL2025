@@ -185,6 +185,125 @@ ReactivateModal.propTypes = {
     isDarkMode: PropTypes.bool.isRequired
 };
 
+const SprintAssigneeModal = ({ open, onClose, onSave, sprint, users, isDarkMode }) => {
+    const [selectedAssignees, setSelectedAssignees] = useState(new Set());
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (open && sprint) {
+            // Initialize with current sprint assignees if any
+            setSelectedAssignees(new Set(sprint.assignees || []));
+        }
+    }, [open, sprint]);
+
+    const handleToggleAssignee = (userId) => {
+        setSelectedAssignees(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(userId)) {
+                newSet.delete(userId);
+            } else {
+                newSet.add(userId);
+            }
+            return newSet;
+        });
+    };
+
+    const handleSave = async () => {
+        setLoading(true);
+        try {
+            await onSave(Array.from(selectedAssignees));
+            onClose();
+        } catch (error) {
+            console.error('Error saving sprint assignees:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!open || !sprint) return null;
+
+    return (
+        <div className="modal-backdrop">
+            <div className={`modal-content ${isDarkMode ? 'dark' : 'light'}`}>
+                <h3>Edit Sprint Assignees</h3>
+                <p>Select assignees for sprint: <strong>{sprint.name}</strong></p>
+                
+                <div className="assignee-selection" style={{ 
+                    maxHeight: '300px', 
+                    overflowY: 'auto',
+                    border: `1px solid ${isDarkMode ? '#4a5568' : '#e2e8f0'}`,
+                    borderRadius: '8px',
+                    padding: '8px',
+                    marginBottom: '16px'
+                }}>
+                    {users.map(user => (
+                        <div
+                            key={user.id}
+                            className="user-option"
+                            onClick={() => handleToggleAssignee(user.id)}
+                            style={{
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                backgroundColor: selectedAssignees.has(user.id) ? (isDarkMode ? '#4a5568' : '#edf2f7') : 'transparent',
+                                color: isDarkMode ? '#e2e8f0' : '#2d3748',
+                                borderRadius: '4px',
+                                marginBottom: '4px'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!selectedAssignees.has(user.id)) {
+                                    e.target.style.backgroundColor = isDarkMode ? '#4a5568' : '#edf2f7';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!selectedAssignees.has(user.id)) {
+                                    e.target.style.backgroundColor = 'transparent';
+                                }
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={selectedAssignees.has(user.id)}
+                                onChange={() => handleToggleAssignee(user.id)}
+                                style={{ margin: 0 }}
+                            />
+                            <span>{user.firstName} {user.lastName}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="modal-actions">
+                    <button 
+                        className={`modal-button secondary ${isDarkMode ? 'dark' : 'light'}`}
+                        onClick={onClose}
+                        disabled={loading}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        className={`modal-button primary ${isDarkMode ? 'dark' : 'light'}`}
+                        onClick={handleSave}
+                        disabled={loading}
+                    >
+                        {loading ? 'Saving...' : 'Save'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+SprintAssigneeModal.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onSave: PropTypes.func.isRequired,
+    sprint: PropTypes.object,
+    users: PropTypes.array.isRequired,
+    isDarkMode: PropTypes.bool.isRequired
+};
+
 const SprintView = ({ focusedSprintId, user }) => {
     const { tasks, updateTask, openTaskModal, addTask, removeTask, setTasks } = useTaskContext();
     const [sprints, setSprints] = useState([]);
@@ -231,9 +350,12 @@ const SprintView = ({ focusedSprintId, user }) => {
     
     // Multi-select dropdown state
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
     const [selectedUsers, setSelectedUsers] = useState(new Set());
     const [dropdownTarget, setDropdownTarget] = useState(null); // 'sprint' or 'backlog'
+
+    // Sprint assignee modal state
+    const [assigneeModalOpen, setAssigneeModalOpen] = useState(false);
+    const [sprintForAssignees, setSprintForAssignees] = useState(null);
 
     // Define fetchProjects ONCE
     const fetchProjects = async () => {
@@ -270,14 +392,11 @@ const SprintView = ({ focusedSprintId, user }) => {
             if (contextMenu.isVisible) {
                 handleContextMenuClose();
             }
-            if (dropdownOpen) {
-                handleCloseDropdown();
-            }
         };
 
         document.addEventListener('click', handleGlobalClick);
         return () => document.removeEventListener('click', handleGlobalClick);
-    }, [contextMenu.isVisible, dropdownOpen]);
+    }, [contextMenu.isVisible]);
 
     // Fetch users for the assignee filter
     useEffect(() => {
@@ -494,6 +613,27 @@ const SprintView = ({ focusedSprintId, user }) => {
         fetchSprints();
     };
 
+    const handleSaveSprintAssignees = async (assigneeIds) => {
+        if (!sprintForAssignees) return;
+        
+        try {
+            await fetch(`/api/sprints/${sprintForAssignees.id}/assignees`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assignee_ids: assigneeIds })
+            });
+            await fetchSprints();
+        } catch (error) {
+            console.error('Error saving sprint assignees:', error);
+            throw error;
+        }
+    };
+
+    const handleSprintEdit = (sprint) => {
+        setSprintForAssignees(sprint);
+        setAssigneeModalOpen(true);
+    };
+
     const handleSprintAction = async (sprint) => {
         setActionLoading(sprint.id);
         try {
@@ -603,34 +743,6 @@ const SprintView = ({ focusedSprintId, user }) => {
             
             return newFilters;
         });
-    };
-
-    // Multi-select dropdown handlers
-    const handleOpenDropdown = (event, target) => {
-        console.log('Dropdown button clicked for:', target);
-        const rect = event.currentTarget.getBoundingClientRect();
-        console.log('Button position:', rect);
-        setDropdownPosition({ x: rect.left, y: rect.bottom + 5 });
-        setDropdownTarget(target);
-        setDropdownOpen(true);
-        console.log('Dropdown state set to open');
-    };
-
-    const handleToggleUser = (userId) => {
-        setSelectedUsers(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(userId)) {
-                newSet.delete(userId);
-            } else {
-                newSet.add(userId);
-            }
-            return newSet;
-        });
-    };
-
-    const handleCloseDropdown = () => {
-        setDropdownOpen(false);
-        setDropdownTarget(null);
     };
 
     const handleTaskDoubleClick = (task) => {
@@ -811,6 +923,14 @@ const SprintView = ({ focusedSprintId, user }) => {
                 initial={editSprint}
                 projects={projects}
             />
+            <SprintAssigneeModal
+                open={assigneeModalOpen}
+                onClose={() => { setAssigneeModalOpen(false); setSprintForAssignees(null); }}
+                onSave={handleSaveSprintAssignees}
+                sprint={sprintForAssignees}
+                users={users}
+                isDarkMode={isDarkMode}
+            />
             <DeleteSprintModal
                 open={deleteModalOpen}
                 onClose={() => { setDeleteModalOpen(false); setSprintToDelete(null); }}
@@ -853,68 +973,6 @@ const SprintView = ({ focusedSprintId, user }) => {
                 isDarkMode={isDarkMode}
             />
             
-            {/* Multi-select User Dropdown */}
-            {dropdownOpen && (
-                <div 
-                    className={`user-dropdown ${isDarkMode ? 'dark' : 'light'}`}
-                    style={{
-                        position: 'fixed',
-                        top: dropdownPosition.y,
-                        left: dropdownPosition.x,
-                        zIndex: 9999,
-                        background: isDarkMode ? '#2d3748' : '#ffffff',
-                        border: `1px solid ${isDarkMode ? '#4a5568' : '#e2e8f0'}`,
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                        padding: '8px 0',
-                        minWidth: '200px',
-                        maxHeight: '300px',
-                        overflowY: 'auto'
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div style={{ padding: '8px 12px', borderBottom: `1px solid ${isDarkMode ? '#4a5568' : '#e2e8f0'}`, fontWeight: 'bold', fontSize: '14px' }}>
-                        Select Users for {dropdownTarget === 'backlog' ? 'Backlog' : 'Sprint'} ({users.length} users)
-                    </div>
-                    {users.map(user => (
-                        <div
-                            key={user.id}
-                            className="user-option"
-                            onClick={() => handleToggleUser(user.id)}
-                            style={{
-                                padding: '8px 12px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                backgroundColor: selectedUsers.has(user.id) ? (isDarkMode ? '#4a5568' : '#edf2f7') : 'transparent',
-                                color: isDarkMode ? '#e2e8f0' : '#2d3748'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.target.style.backgroundColor = isDarkMode ? '#4a5568' : '#edf2f7';
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!selectedUsers.has(user.id)) {
-                                    e.target.style.backgroundColor = 'transparent';
-                                }
-                            }}
-                        >
-                            <input
-                                type="checkbox"
-                                checked={selectedUsers.has(user.id)}
-                                onChange={() => handleToggleUser(user.id)}
-                                style={{ margin: 0 }}
-                            />
-                            <span>{user.firstName} {user.lastName}</span>
-                        </div>
-                    ))}
-                    {users.length === 0 && (
-                        <div style={{ padding: '8px 12px', color: isDarkMode ? '#a0aec0' : '#718096', fontStyle: 'italic' }}>
-                            No users available
-                        </div>
-                    )}
-                </div>
-            )}
             <div className="sprint-header">
                 <h2>Sprints</h2>
                 <button 
@@ -965,16 +1023,9 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                     </span>
                                                     <button
                                                         className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
-                                                        onClick={() => handleOpenDropdown('sprint')}
-                                                        style={{ 
-                                                            marginLeft: 8, 
-                                                            padding: '4px 8px', 
-                                                            fontSize: '12px',
-                                                            backgroundColor: dropdownOpen && dropdownTarget === 'sprint' ? (isDarkMode ? '#4a5568' : '#edf2f7') : undefined
-                                                        }}
-                                                        title="Select users for available time calculation"
+                                                        onClick={() => handleSprintEdit(sprint)}
                                                     >
-                                                        👥 {dropdownOpen && dropdownTarget === 'sprint' ? '▼' : ''}
+                                                        Edit
                                                     </button>
                                                     <div className="sprint-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                                                         {sprint.status === 'planned' && (
@@ -1004,12 +1055,6 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                                 {actionLoading === sprint.id ? 'Reactivating...' : 'Reactivate'}
                                                             </button>
                                                         )}
-                                                        <button 
-                                                            className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
-                                                            onClick={() => { setModalOpen(true); setEditSprint(sprint); }}
-                                                        >
-                                                            Edit
-                                                        </button>
                                                         <button 
                                                             className={classNames('sprint-action-button', 'delete', isDarkMode ? 'dark' : 'light')}
                                                             onClick={() => handleDeleteSprint(sprint)} 
@@ -1102,19 +1147,6 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                 <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
                                                     Available Time: TBD
                                                 </span>
-                                                <button
-                                                    className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
-                                                    onClick={() => handleOpenDropdown('backlog')}
-                                                    style={{ 
-                                                        marginLeft: 8, 
-                                                        padding: '4px 8px', 
-                                                        fontSize: '12px',
-                                                        backgroundColor: dropdownOpen && dropdownTarget === 'backlog' ? (isDarkMode ? '#4a5568' : '#edf2f7') : undefined
-                                                    }}
-                                                    title="Select users for available time calculation"
-                                                >
-                                                    👥 {dropdownOpen && dropdownTarget === 'backlog' ? '▼' : ''}
-                                                </button>
                                             </div>
                                         </div>
                                         {!foldedSprints.has('backlog') && (

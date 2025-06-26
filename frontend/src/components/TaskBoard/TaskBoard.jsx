@@ -587,7 +587,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         }}
                         title="Burn Down View"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <rect x="3" y="10" width="3" height="9" rx="1" fill="currentColor"/>
                             <rect x="9" y="6" width="3" height="13" rx="1" fill="currentColor"/>
                             <rect x="15" y="3" width="3" height="16" rx="1" fill="currentColor"/>
@@ -767,8 +767,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                                                 '#f59e0b', // Amber for Medium
                                                 '#10b981'  // Green for Low
                                             ],
-                                            borderWidth: 2,
-                                            borderColor: '#ffffff'
+                                            borderWidth: 0
                                         }]
                                     }}
                                     options={{
@@ -820,8 +819,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                                             '#8b5cf6', // Purple for Review
                                             '#10b981'  // Green for Done
                                         ],
-                                        borderWidth: 2,
-                                        borderColor: '#ffffff'
+                                        borderWidth: 0
                                     }]
                                 }}
                                 options={{
@@ -869,8 +867,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                                                 '#8b5cf6', // Purple for Assigned
                                                 '#6b7280'  // Gray for Unassigned
                                             ],
-                                            borderWidth: 2,
-                                            borderColor: '#ffffff'
+                                            borderWidth: 0
                                         }]
                                     }}
                                     options={{
