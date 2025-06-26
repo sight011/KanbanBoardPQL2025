@@ -74,11 +74,11 @@ const TaskFilters = ({ filters, onFilterChange, activeSprintId, selectedProject,
 
     // Sync project filter with selected project
     useEffect(() => {
-        if (selectedProject) {
-            // Always sync the filter with the selected project
+        if (selectedProject && filters.project !== selectedProject.id) {
+            // Only sync if the filter value is different from the selected project
             onFilterChange('project', selectedProject.id);
         }
-    }, [selectedProject, onFilterChange]);
+    }, [selectedProject, filters.project, onFilterChange]);
 
     return (
         <div className="task-filters">

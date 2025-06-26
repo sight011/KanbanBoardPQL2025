@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import { TaskProvider } from './context/TaskContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider as OriginalThemeProvider } from './context/ThemeContext';
 import TaskBoard from './components/TaskBoard/TaskBoard';
 import CreateTaskButton from './components/CreateTaskButton';
 import ChatBubble from './components/Chat/ChatBubble';
@@ -24,6 +26,59 @@ const App = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [viewMode, setViewMode] = useState('kanban');
     const navigate = useNavigate();
+    const [isDarkMode] = useState(false);
+
+    // Create theme based on dark mode state
+    const theme = createTheme({
+        palette: {
+            mode: isDarkMode ? 'dark' : 'light',
+            primary: {
+                main: '#3B82F6',
+                light: '#60A5FA',
+                dark: '#2563EB',
+            },
+            secondary: {
+                main: '#10B981',
+                light: '#34D399',
+                dark: '#059669',
+            },
+            background: {
+                default: isDarkMode ? '#121212' : '#f5f5f5',
+                paper: isDarkMode ? '#1e1e1e' : '#ffffff',
+            },
+        },
+        typography: {
+            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+            h1: {
+                fontSize: '2.5rem',
+                fontWeight: 500,
+            },
+            h2: {
+                fontSize: '2rem',
+                fontWeight: 500,
+            },
+            h3: {
+                fontSize: '1.75rem',
+                fontWeight: 500,
+            },
+            h4: {
+                fontSize: '1.5rem',
+                fontWeight: 500,
+            },
+            h5: {
+                fontSize: '1.25rem',
+                fontWeight: 500,
+            },
+            h6: {
+                fontSize: '1rem',
+                fontWeight: 500,
+            },
+        },
+        spacing: 8,
+        shape: {
+            borderRadius: 8,
+        },
+    });
 
     // Check session on app startup
     useEffect(() => {
@@ -119,38 +174,41 @@ Based on the tasks above, please answer the user's question following the respon
 
     // If user is authenticated, show main app
     return (
-        <ThemeProvider>
-            <TaskProvider>
-                <div className="app">
-                    <header className="app-header">
-                        <div className="app-logo-container" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
-                            <img src="/FocusX.png" alt="FocusX Logo" width="200" height="55" />
-                        </div>
-                        <div className="header-actions">
-                            <ThemeToggle />
-                            <SettingsButton />
-                            <CreateTaskButton />
-                        </div>
-                    </header>
-                    <main className="app-main">
-                        <Routes>
-                            <Route path="/" element={<TaskBoard viewMode={viewMode} setViewMode={setViewMode} user={user} />} />
-                            <Route path="/settings" element={<Settings />} />
-                            <Route path="/audit" element={<AuditTrailView />} />
-                            <Route path="/health" element={<HealthCheck />} />
-                        </Routes>
-                    </main>
-                    <ChatBubble
-                        onClick={() => setIsChatOpen(!isChatOpen)}
-                        isChatOpen={isChatOpen}
-                    />
-                    <ChatWindow
-                        isOpen={isChatOpen}
-                        onClose={() => setIsChatOpen(false)}
-                        onSendMessage={handleSendMessage}
-                    />
-                </div>
-            </TaskProvider>
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <OriginalThemeProvider>
+                <TaskProvider>
+                    <div className={`app ${isDarkMode ? 'dark-mode' : ''}`}>
+                        <header className="app-header">
+                            <div className="app-logo-container" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
+                                <img src="/Multi.png" alt="Multi Logo" width="200" height="55" />
+                            </div>
+                            <div className="header-actions">
+                                <ThemeToggle />
+                                <SettingsButton />
+                                <CreateTaskButton />
+                            </div>
+                        </header>
+                        <main className="app-main">
+                            <Routes>
+                                <Route path="/" element={<TaskBoard viewMode={viewMode} setViewMode={setViewMode} user={user} />} />
+                                <Route path="/settings" element={<Settings />} />
+                                <Route path="/audit" element={<AuditTrailView />} />
+                                <Route path="/health" element={<HealthCheck />} />
+                            </Routes>
+                        </main>
+                        <ChatBubble
+                            onClick={() => setIsChatOpen(!isChatOpen)}
+                            isChatOpen={isChatOpen}
+                        />
+                        <ChatWindow
+                            isOpen={isChatOpen}
+                            onClose={() => setIsChatOpen(false)}
+                            onSendMessage={handleSendMessage}
+                        />
+                    </div>
+                </TaskProvider>
+            </OriginalThemeProvider>
         </ThemeProvider>
     );
 };

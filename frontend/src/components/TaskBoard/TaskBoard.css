@@ -45,7 +45,7 @@
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    background-color: var(--bg-secondary);
+    background-color: var(#f8f9fa2e);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -167,7 +167,7 @@
 .board-columns {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    gap: 0rem;
     width: 100%;
     min-height: calc(100vh - 200px);
     box-sizing: border-box;
@@ -273,7 +273,7 @@
     color: white;
 }
 
-.list-view .status-inprogress {
+.list-view .status-inProgress {
     background-color: #ffab00;
     color: white;
 }
@@ -415,6 +415,8 @@
         align-items: stretch;
         height: auto;
         padding: 0.5rem;
+        border-radius: 5px;
+        height: 32px;
     }
     
     .task-filters input,
@@ -471,6 +473,8 @@
     padding: 0 0;
     border-radius: 8px;
     margin-bottom: 1rem;
+    border-radius: 5px;
+    height: 32px;
 }
 
 .task-filters input,
@@ -496,6 +500,7 @@
     transition: background-color 0.2s ease;
     display: flex;
     align-items: center;
+    margin-right: 2px;
 }
 
 .dark-mode .list-view .assignee-bubble.unassigned {
@@ -554,4 +559,26 @@ border-bottom: 2px solid #6a7685;
 
 .dark-mode .no-project-message p {
     color: var(--text-secondary-dark, #a0aec0);
+}
+
+.dark-mode .app-header {
+    background-color: #1a202c;
+    width: 1424px;
+}
+
+.app-header {
+    background-color: white;
+}
+
+.app-logo-container img {
+    height: 52px;
+}
+
+.filter-search {
+    margin-left: 2px;
+}
+
+.sprint-view.light {
+    background-color: #ffffff66;
+    border-radius: 6px;
 }

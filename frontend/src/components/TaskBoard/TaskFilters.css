@@ -1,7 +1,9 @@
 .task-filters {
-    background-color: var(--bg-primary);
+    background-color: #ffffff82;
     margin-bottom: 1rem;
     width: 100%;
+    border-radius: 5px;
+    height: 32px;
 }
 
 .filter-group {
@@ -19,8 +21,9 @@
     max-width: 140px;
     font-size: 0.95rem;
     padding: 0.25rem 0.5rem;
-    height: 32px;
+    height: 28px;
     box-sizing: border-box;
+    margin-left: 2px;
 }
 
 .filter-group select,

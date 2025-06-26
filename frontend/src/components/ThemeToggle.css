@@ -1,7 +1,7 @@
 .theme-toggle-button {
     background: none;
     border: none;
-    color: white;
+    color: #333;
     cursor: pointer;
     padding: 6px;
     border-radius: 50%;
@@ -12,7 +12,7 @@
 }
 
 .theme-toggle-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .theme-toggle-button svg {
@@ -21,4 +21,13 @@
 
 .theme-toggle-button:hover svg {
     transform: rotate(30deg);
+}
+
+/* Dark mode styles */
+.dark-mode .theme-toggle-button {
+    color: white;
+}
+
+.dark-mode .theme-toggle-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 } 

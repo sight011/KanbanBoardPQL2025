@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskCard.css';
@@ -6,22 +6,7 @@ import { formatHours } from '../../utils/timeFormat';
 
 const TaskCard = memo(({ task, index }) => {
     const { openTaskModal } = useTaskContext();
-    const [users, setUsers] = useState([]);
     const [hoursPerDay, setHoursPerDay] = useState(8);
-
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const res = await fetch('/api/users');
-                const data = await res.json();
-                setUsers(data.users || []);
-            } catch (err) {
-                console.error('Error fetching users:', err);
-                setUsers([]);
-            }
-        };
-        fetchUsers();
-    }, []);
 
     useEffect(() => {
         fetch('/api/settings/hoursperday')
@@ -31,34 +16,6 @@ const TaskCard = memo(({ task, index }) => {
             })
             .catch(() => {});
     }, []);
-
-    const getAssigneeInitials = (assigneeId) => {
-        if (!assigneeId) return 'UA';
-        
-        const user = users.find(u => u.id === assigneeId);
-        if (!user) return '?';
-        
-        return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-    };
-
-    const getAssigneeColor = (assigneeId) => {
-        // Array of visually distinct colors
-        const colors = [
-            '#0052cc', // Blue
-            '#36b37e', // Green
-            '#ff5630', // Red
-            '#ffab00', // Yellow
-            '#6554c0', // Purple
-            '#00b8d9', // Cyan
-            '#ff7452', // Orange
-            '#8777d9', // Lavender
-            '#57d9a3', // Mint
-            '#00a3bf'  // Teal
-        ];
-        
-        // Use assigneeId to consistently map to a color
-        return colors[(assigneeId - 1) % colors.length];
-    };
 
     return (
         <Draggable draggableId={task.id.toString()} index={index}>
@@ -109,19 +66,6 @@ const TaskCard = memo(({ task, index }) => {
                             {task.timespent && (
                                 <span className="task-timespent">
                                     TS: {task.timespent ? formatHours(task.timespent, hoursPerDay) : '–'}
-                                </span>
-                            )}
-                            {task.assignee_id ? (
-                                <span 
-                                    className="assignee-circle" 
-                                    title={`Assigned to ${getAssigneeInitials(task.assignee_id)}`}
-                                    style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}
-                                >
-                                    {getAssigneeInitials(task.assignee_id)}
-                                </span>
-                            ) : (
-                                <span className="assignee-circle unassigned" title="Unassigned">
-                                    UA
                                 </span>
                             )}
                         </div>

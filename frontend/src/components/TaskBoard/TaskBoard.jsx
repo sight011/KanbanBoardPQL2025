@@ -345,31 +345,26 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
         console.log('Delete task:', taskId);
     };
 
-    const getAssigneeInitials = (assigneeId) => {
-        if (!assigneeId) return '';
-        const user = users.find(u => u.id === assigneeId);
-        if (!user) return '';
-        return `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
-    };
-
-    const getAssigneeColor = (assigneeId) => {
-        if (!assigneeId) return '#6b7280';
-        const user = users.find(u => u.id === assigneeId);
-        if (!user) return '#6b7280';
-        const name = `${user.firstName}${user.lastName}`;
-        let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const hue = Math.abs(hash) % 360;
-        return `hsl(${hue}, 70%, 60%)`;
-    };
-
     const getAssigneeName = (assigneeId) => {
         if (!assigneeId) return 'Unassigned';
         const user = users.find(u => u.id === assigneeId);
         if (!user) return 'Unassigned';
         return `${user.firstName} ${user.lastName}`;
+    };
+
+    const formatStatus = (status) => {
+        switch (status) {
+            case 'inProgress':
+                return 'In Progress';
+            case 'todo':
+                return 'To Do';
+            case 'review':
+                return 'Review';
+            case 'done':
+                return 'Done';
+            default:
+                return status.charAt(0).toUpperCase() + status.slice(1);
+        }
     };
 
     // Handler for calendar double click
@@ -604,22 +599,14 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                                     </td>
                                     <td>
                                         {task.assignee_id ? (
-                                            <div className="assignee-info">
-                                                <div 
-                                                    className="assignee-avatar"
-                                                    style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}
-                                                >
-                                                    {getAssigneeInitials(task.assignee_id)}
-                                                </div>
-                                                <span>{getAssigneeName(task.assignee_id)}</span>
-                                            </div>
+                                            <span>{getAssigneeName(task.assignee_id)}</span>
                                         ) : (
                                             <span className="unassigned">Unassigned</span>
                                         )}
                                     </td>
                                     <td>
                                         <span className={`status-badge status-${task.status}`}>
-                                            {task.status}
+                                            {formatStatus(task.status)}
                                         </span>
                                     </td>
                                 </tr>

@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useTaskContext } from '../../context/TaskContext';
+import { useState, useEffect } from 'react';
 import './ListView.css';
 import { formatHours } from '../../utils/timeFormat';
 
@@ -30,29 +29,19 @@ const ListView = ({ tasks, onEdit, onDelete }) => {
             .catch(() => {});
     }, []);
 
-    const getAssigneeInitials = (assigneeId) => {
-        if (!assigneeId) return 'UA';
-        
-        const user = users.find(u => u.id === assigneeId);
-        if (!user) return '?';
-        
-        return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-    };
-
-    const getAssigneeColor = (assigneeId) => {
-        const colors = [
-            '#0052cc', // Blue
-            '#36b37e', // Green
-            '#ff5630', // Red
-            '#ffab00', // Yellow
-            '#6554c0', // Purple
-            '#00b8d9', // Cyan
-            '#ff7452', // Orange
-            '#8777d9', // Lavender
-            '#57d9a3', // Mint
-            '#00a3bf'  // Teal
-        ];
-        return colors[(assigneeId - 1) % colors.length];
+    const formatStatus = (status) => {
+        switch (status) {
+            case 'inProgress':
+                return 'In Progress';
+            case 'todo':
+                return 'To Do';
+            case 'review':
+                return 'Review';
+            case 'done':
+                return 'Done';
+            default:
+                return status.charAt(0).toUpperCase() + status.slice(1);
+        }
     };
 
     return (
@@ -77,7 +66,7 @@ const ListView = ({ tasks, onEdit, onDelete }) => {
                             <td>{task.title}</td>
                             <td>
                                 <span className={`status-badge status-${task.status}`}>
-                                    {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                                    {formatStatus(task.status)}
                                 </span>
                             </td>
                             <td>
@@ -87,11 +76,14 @@ const ListView = ({ tasks, onEdit, onDelete }) => {
                             </td>
                             <td>
                                 {task.assignee_id ? (
-                                    <div className="assignee-bubble" style={{ backgroundColor: getAssigneeColor(task.assignee_id) }}>
-                                        {getAssigneeInitials(task.assignee_id)}
-                                    </div>
+                                    <span>{
+                                        (() => {
+                                            const user = users.find(u => u.id === task.assignee_id);
+                                            return user ? `${user.firstName} ${user.lastName}` : 'Unassigned';
+                                        })()
+                                    }</span>
                                 ) : (
-                                    <div className="assignee-bubble unassigned">UA</div>
+                                    <span className="unassigned">Unassigned</span>
                                 )}
                             </td>
                             <td>{task.effort ? formatHours(task.effort, hoursPerDay) : '–'}</td>

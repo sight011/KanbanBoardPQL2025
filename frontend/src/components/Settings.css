@@ -1,7 +1,21 @@
+:root {
+    --profile-input-bg: #fff;
+    --profile-input-color: #222;
+    --profile-input-border: #D1D5DB;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --profile-input-bg: #1F2937;
+        --profile-input-color: #F9FAFB;
+        --profile-input-border: #374151;
+    }
+}
+
 .settings-button {
     background: none;
     border: none;
-    color: white;
+    color: #333;
     cursor: pointer;
     padding: 6px;
     border-radius: 50%;
@@ -12,7 +26,7 @@
 }
 
 .settings-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .settings-button svg {
@@ -21,6 +35,15 @@
 
 .settings-button:hover svg {
     transform: rotate(30deg);
+}
+
+/* Dark mode styles */
+.dark-mode .settings-button {
+    color: white;
+}
+
+.dark-mode .settings-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .settings-page {
@@ -250,14 +273,22 @@
 }
 
 .profile-input {
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 1rem;
-    background-color: var(--background-secondary);
-    color: var(--text-color);
-    width: 100%;
-    max-width: 300px;
+    background: var(--profile-input-bg);
+    color: var(--profile-input-color);
+    border: 1px solid var(--profile-input-border);
+    box-shadow: none;
+}
+
+.profile-input:focus {
+    background: var(--profile-input-bg);
+    color: var(--profile-input-color);
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.profile-input[readonly] {
+    background: #F3F4F6;
+    color: #888;
 }
 
 .default-avatar {
@@ -339,23 +370,6 @@
     text-align: left;
 }
 
-.role-select {
-    padding: 6px 12px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    background-color: var(--background-secondary);
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-    text-align: left;
-    font-weight: 500;
-}
-
-.role-select:hover {
-    border-color: var(--primary);
-}
-
 .role-select:disabled {
     opacity: 0.7;
     cursor: not-allowed;
@@ -380,31 +394,29 @@
 }
 
 /* Dark mode styles */
-.dark-mode .role-select {
-    background-color: var(--background-secondary);
-    border-color: var(--border-color-dark);
-    color: var(--text-color-dark);
-}
-
-.dark-mode .role-select:hover {
-    border-color: var(--primary-dark);
-}
-
-.dark-mode .role-select option {
-    background-color: var(--background-primary-dark);
-    color: var(--text-color-dark);
-}
-
-.dark-mode .role-select option[value="Admin"] {
-    color: #EF4444;
-}
-
-.dark-mode .role-select option[value="Project/Product"] {
-    color: #3B82F6;
-}
-
-.dark-mode .role-select option[value="User"] {
-    color: #10B981;
+@media (prefers-color-scheme: dark) {
+    .role-select {
+        background-color: var(--background-secondary);
+        border-color: var(--border-color-dark);
+        color: var(--text-color-dark);
+    }
+    .role-select:focus {
+        border-color: #60A5FA;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+    }
+    .role-select option {
+        background-color: var(--background-primary-dark);
+        color: var(--text-color-dark);
+    }
+    .role-select option[value="Admin"] {
+        color: #EF4444;
+    }
+    .role-select option[value="Project/Product"] {
+        color: #3B82F6;
+    }
+    .role-select option[value="User"] {
+        color: #10B981;
+    }
 }
 
 .loading-spinner {
@@ -447,26 +459,6 @@
     cursor: not-allowed;
 }
 
-.profile-input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #D1D5DB;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    transition: all 0.2s;
-}
-
-.profile-input:not([readonly]):focus {
-    outline: none;
-    border-color: #3B82F6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-.profile-input[readonly] {
-    background-color: #F3F4F6;
-    cursor: not-allowed;
-}
-
 .success-message {
     color: #059669;
     margin-top: 0.5rem;
@@ -486,11 +478,10 @@
         border-color: #374151;
         color: #F9FAFB;
     }
-
     .profile-input[readonly] {
         background-color: #111827;
+        color: #888;
     }
-
     .profile-input:not([readonly]):focus {
         border-color: #60A5FA;
         box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
@@ -678,4 +669,27 @@
 
 .settings-container.dark .maintenance-button:hover {
     background-color: #3a3a3a;
+}
+
+.add-user-form input[type="text"],
+.add-user-form input[type="email"],
+.add-user-form input[type="password"] {
+    background: #fff !important;
+    color: #222 !important;
+    border: 1px solid #D1D5DB !important;
+    box-shadow: none !important;
+}
+
+.add-user-form input[type="text"]:focus,
+.add-user-form input[type="email"]:focus,
+.add-user-form input[type="password"]:focus {
+    background: #fff !important;
+    color: #222 !important;
+    border-color: #3B82F6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.add-user-form input[readonly] {
+    background: #F3F4F6 !important;
+    color: #888 !important;
 } 

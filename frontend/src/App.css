@@ -60,11 +60,12 @@
     justify-content: space-between;
     align-items: center;
     padding: 0 24px;
-    background-color: var(--header-bg, #0052cc);
+    background-color: var(white);
     color: var(--header-text, white);
-    height: 28px;
+    height: 52px;
     width: 1422px;
     box-sizing: border-box;
+    padding-bottom: 4px;
 }
 
 @keyframes gradient-move {
@@ -93,7 +94,7 @@
 }
 
 .app-logo-container img {
-    height: 24px; /* Reduced from 28px */
+    height: 45px; /* Reduced from 28px */
     width: auto;
 }
 
@@ -112,6 +113,8 @@
     margin: 0;
     font-size: 24px;
     color: #172b4d;
+    padding-bottom: 5px;
+
 }
 
 .create-task-button {
@@ -142,7 +145,7 @@
     display: flex;
     width: 103%;
     min-height: 100vh;
-    background-color: var(--bg-primary);
+    background-color: #ffffff3b;
     color: var(--text-primary);
     transition: background-color 0.3s ease, color 0.3s ease;
 }
