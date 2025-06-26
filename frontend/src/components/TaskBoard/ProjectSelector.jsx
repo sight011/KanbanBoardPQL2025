@@ -105,13 +105,11 @@ const ProjectSelector = ({ projects, selectedProject, onProjectSelect, onProject
         }
     };
 
-    // On mount or when localProjects changes, always select the top project and update sessionStorage
+    // On mount or when localProjects changes, only select the top project if none is selected
     useEffect(() => {
-        if (localProjects.length > 0) {
-            if (!selectedProject || selectedProject.id !== localProjects[0].id) {
-                onProjectSelect(localProjects[0]);
-                sessionStorage.setItem('selectedProjectId', localProjects[0].id.toString());
-            }
+        if (localProjects.length > 0 && (!selectedProject || !localProjects.some(p => p.id === selectedProject.id))) {
+            onProjectSelect(localProjects[0]);
+            sessionStorage.setItem('selectedProjectId', localProjects[0].id.toString());
         }
     }, [localProjects, selectedProject, onProjectSelect]);
 
