@@ -778,6 +778,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                 <BurndownChart 
                     sprintId={selectedSprint} 
                     filters={filters}
+                    selectedProject={selectedProject}
                 />
             ) : selectedProject && viewMode === 'calendar' ? (
                 <CalendarView onSprintDoubleClick={handleSprintDoubleClick} user={user} />

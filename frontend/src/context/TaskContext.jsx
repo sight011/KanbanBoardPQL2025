@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import PropTypes from 'prop-types';
 import api from '../api/axios';
 
-const TaskContext = createContext();
+export const TaskContext = createContext();
 
 export const useTaskContext = () => useContext(TaskContext);
 

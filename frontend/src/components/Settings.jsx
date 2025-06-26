@@ -29,7 +29,7 @@ const countries = [
 ];
 
 const Settings = ({ onLogout }) => {
-    const [activeTab, setActiveTab] = useState('profile');
+    const [activeTab, setActiveTab] = useState('general');
     const [imageError, setImageError] = useState('');
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -43,6 +43,7 @@ const Settings = ({ onLogout }) => {
     const [addUserError, setAddUserError] = useState('');
     const [addUserLoading, setAddUserLoading] = useState(false);
     const [deletingUserId, setDeletingUserId] = useState(null);
+    const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem('theme') || 'winter');
 
     useEffect(() => {
         if (activeTab === 'users') {
@@ -51,6 +52,25 @@ const Settings = ({ onLogout }) => {
             fetchProfile();
         }
     }, [activeTab]);
+
+    useEffect(() => {
+        // Set body background on mount and when selectedTheme changes
+        if (selectedTheme === 'summer') {
+            document.body.style.backgroundImage = 'url(/bg.jpg)';
+        } else {
+            document.body.style.backgroundImage = 'url(/bg2.jpg)';
+        }
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundAttachment = 'fixed';
+        localStorage.setItem('theme', selectedTheme);
+        return () => {
+            document.body.style.backgroundImage = '';
+            document.body.style.backgroundSize = '';
+            document.body.style.backgroundRepeat = '';
+            document.body.style.backgroundAttachment = '';
+        };
+    }, [selectedTheme]);
 
     const fetchProfile = async () => {
         setLoading(true);
@@ -254,6 +274,100 @@ const Settings = ({ onLogout }) => {
 
     const renderContent = () => {
         switch (activeTab) {
+            case 'general':
+                return (
+                    <div className="settings-section">
+                        <h2 className="settings-headline">General Settings</h2>
+                        <div style={{ display: 'flex', gap: 32, margin: '32px 0 0 0' }}>
+                            {/* Summer Card */}
+                            <div
+                                onClick={() => setSelectedTheme('summer')}
+                                style={{
+                                    flex: 1,
+                                    background: '#fff',
+                                    borderRadius: 16,
+                                    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    padding: 0,
+                                    position: 'relative',
+                                    cursor: 'pointer',
+                                    border: selectedTheme === 'summer' ? '2px solid #2563eb' : '2px solid transparent',
+                                    transition: 'border 0.2s',
+                                }}
+                            >
+                                {/* Check bubble */}
+                                {selectedTheme === 'summer' && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 14,
+                                        right: 14,
+                                        background: '#2563eb',
+                                        borderRadius: '50%',
+                                        width: 32,
+                                        height: 32,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+                                        zIndex: 2
+                                    }}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    </div>
+                                )}
+                                <img src="/bg.jpg" alt="Summer" style={{ width: '100%', height: 180, objectFit: 'cover' }} />
+                                <div style={{ width: '100%', textAlign: 'left', padding: '12px 0 12px 18px', fontWeight: 600, fontSize: 18, background: 'rgba(255,255,255,0.95)', borderTop: '1px solid #eee' }}>
+                                    Summer
+                                </div>
+                            </div>
+                            {/* Winter Card */}
+                            <div
+                                onClick={() => setSelectedTheme('winter')}
+                                style={{
+                                    flex: 1,
+                                    background: '#fff',
+                                    borderRadius: 16,
+                                    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    padding: 0,
+                                    position: 'relative',
+                                    cursor: 'pointer',
+                                    border: selectedTheme === 'winter' ? '2px solid #2563eb' : '2px solid transparent',
+                                    transition: 'border 0.2s',
+                                }}
+                            >
+                                {/* Check bubble */}
+                                {selectedTheme === 'winter' && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 14,
+                                        right: 14,
+                                        background: '#2563eb',
+                                        borderRadius: '50%',
+                                        width: 32,
+                                        height: 32,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+                                        zIndex: 2
+                                    }}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                    </div>
+                                )}
+                                <img src="/bg2.jpg" alt="Winter" style={{ width: '100%', height: 180, objectFit: 'cover' }} />
+                                <div style={{ width: '100%', textAlign: 'left', padding: '12px 0 12px 18px', fontWeight: 600, fontSize: 18, background: 'rgba(255,255,255,0.95)', borderTop: '1px solid #eee' }}>
+                                    Winter
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
             case 'profile':
                 return (
                     <div className="settings-section">
@@ -519,6 +633,12 @@ const Settings = ({ onLogout }) => {
         <div className="settings-layout">
             <nav className="settings-nav">
                 <ul>
+                    <li 
+                        className={activeTab === 'general' ? 'active' : ''} 
+                        onClick={() => setActiveTab('general')}
+                    >
+                        General
+                    </li>
                     <li 
                         className={activeTab === 'profile' ? 'active' : ''} 
                         onClick={() => setActiveTab('profile')}
