@@ -461,6 +461,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                 </div>
                 <div className="view-controls">
                     <button 
+                        id="view-sprint"
                         className={`view-button ${viewMode === 'sprint' ? 'active' : ''}`}
                         onClick={() => setViewMode('sprint')}
                         title="Sprint View"
@@ -472,6 +473,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         <span>Sprint</span>
                     </button>
                     <button 
+                        id="view-kanban"
                         className={`view-button ${viewMode === 'kanban' ? 'active' : ''}`}
                         onClick={() => setViewMode('kanban')}
                         title="Kanban View"
@@ -484,6 +486,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         <span>Kanban</span>
                     </button>
                     <button 
+                        id="view-list"
                         className={`view-button ${viewMode === 'list' ? 'active' : ''}`}
                         onClick={() => setViewMode('list')}
                         title="List View"
@@ -496,6 +499,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         <span>List</span>
                     </button>
                     <button 
+                        id="view-diagram"
                         className={`view-button ${viewMode === 'diagram' ? 'active' : ''}`}
                         onClick={() => setViewMode('diagram')}
                         title="Diagram View"
@@ -507,16 +511,20 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         <span>Diagram</span>
                     </button>
                     <button
+                        id="view-burndown"
                         className={`view-button ${viewMode === 'burndown' ? 'active' : ''}`}
                         onClick={() => setViewMode('burndown')}
                         title="Burn Down View"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 20h16v-2H4v2zm0-4h10v-2H4v2zm0-4h7V6h3l-4-4-4 4h3v6z" fill="currentColor"/>
+                            <path d="M3 3v18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M7 12l4-4 4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M7 16l4-4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                         <span>Burn Down</span>
                     </button>
                     <button
+                        id="view-calendar"
                         className={`view-button ${viewMode === 'calendar' ? 'active' : ''}`}
                         onClick={() => setViewMode('calendar')}
                         title="Calendar View"
