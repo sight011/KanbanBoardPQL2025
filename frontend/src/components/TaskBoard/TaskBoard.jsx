@@ -90,6 +90,17 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
     // Priority order mapping
     const priorityOrder = { high: 1, medium: 2, low: 3 };
 
+    // Add a helper for default filters
+    const defaultFilters = {
+        text: '',
+        project: '',
+        sprint: '',
+        priority: '',
+        assignee: '',
+        status: '',
+        changedInTime: ''
+    };
+
     // Fetch projects
     useEffect(() => {
         const fetchProjects = async () => {
@@ -508,7 +519,10 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                     <button 
                         id="view-sprint"
                         className={`view-button ${viewMode === 'sprint' ? 'active' : ''}`}
-                        onClick={() => setViewMode('sprint')}
+                        onClick={() => {
+                            setViewMode('sprint');
+                            setFilters(defaultFilters);
+                        }}
                         title="Sprint View"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -520,7 +534,10 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                     <button 
                         id="view-kanban"
                         className={`view-button ${viewMode === 'kanban' ? 'active' : ''}`}
-                        onClick={() => setViewMode('kanban')}
+                        onClick={() => {
+                            setViewMode('kanban');
+                            setFilters(defaultFilters);
+                        }}
                         title="Kanban View"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -533,7 +550,10 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                     <button 
                         id="view-list"
                         className={`view-button ${viewMode === 'list' ? 'active' : ''}`}
-                        onClick={() => setViewMode('list')}
+                        onClick={() => {
+                            setViewMode('list');
+                            setFilters(defaultFilters);
+                        }}
                         title="List View"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -546,7 +566,10 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                     <button 
                         id="view-diagram"
                         className={`view-button ${viewMode === 'diagram' ? 'active' : ''}`}
-                        onClick={() => setViewMode('diagram')}
+                        onClick={() => {
+                            setViewMode('diagram');
+                            setFilters(defaultFilters);
+                        }}
                         title="Diagram View"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -558,7 +581,10 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                     <button
                         id="view-burndown"
                         className={`view-button ${viewMode === 'burndown' ? 'active' : ''}`}
-                        onClick={() => setViewMode('burndown')}
+                        onClick={() => {
+                            setViewMode('burndown');
+                            setFilters(defaultFilters);
+                        }}
                         title="Burn Down View"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -571,7 +597,10 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                     <button
                         id="view-calendar"
                         className={`view-button ${viewMode === 'calendar' ? 'active' : ''}`}
-                        onClick={() => setViewMode('calendar')}
+                        onClick={() => {
+                            setViewMode('calendar');
+                            setFilters(defaultFilters);
+                        }}
                         title="Calendar View"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

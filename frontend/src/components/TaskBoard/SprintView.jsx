@@ -1119,12 +1119,6 @@ const SprintView = ({ focusedSprintId, user }) => {
                                         </div>
                                         {!foldedSprints.has('backlog') && (
                                             <>
-                                                {/* DEBUG: Show project_id and filter for each backlog task */}
-                                                {(tasksBySprint['backlog'] || []).map(task => (
-                                                    <div key={task.id + '-debug'} style={{fontSize: '10px', color: 'red'}}>
-                                                        [DEBUG] Task: {task.title}, project_id: {task.project_id}, filter: {filters.project}
-                                                    </div>
-                                                ))}
                                                 <ul className="backlog-task-list">
                                                     {(tasksBySprint['backlog'] || [])
                                                         .slice()
