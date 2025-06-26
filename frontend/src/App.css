@@ -383,3 +383,64 @@ body:not([data-theme='dark']) .app {
   margin-top: 0.5rem;
   display: block;
 }
+
+/* List View Styles */
+.list-view th {
+    background-color: #f7fafc;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: #4a5568;
+    text-align: center;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.list-view th:first-child {
+    text-align: left;
+}
+
+.list-view .sortable-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+    position: relative;
+}
+
+.list-view .sortable-header:hover {
+    background-color: #edf2f7;
+}
+
+.list-view .sort-indicator {
+    margin-left: 0.5rem;
+    font-weight: bold;
+    color: #4a5568;
+    position: relative;
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+}
+
+.list-view .sort-indicator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+}
+
+.list-view .sort-indicator[data-direction="asc"]::before {
+    border-bottom: 6px solid currentColor;
+    border-top: none;
+}
+
+.list-view .sort-indicator[data-direction="desc"]::before {
+    border-top: 6px solid currentColor;
+    border-bottom: none;
+}
+
+.list-view .sortable-header:hover .sort-indicator {
+    color: #2d3748;
+}

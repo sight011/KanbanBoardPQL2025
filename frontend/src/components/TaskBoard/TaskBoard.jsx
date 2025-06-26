@@ -84,6 +84,8 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
     const [users, setUsers] = useState([]);
     const [tasksWithChanges, setTasksWithChanges] = useState([]);
     const [focusedSprintId, setFocusedSprintId] = useState(null);
+    const [sortColumn, setSortColumn] = useState('priority');
+    const [sortDirection, setSortDirection] = useState('asc');
 
     // Priority order mapping
     const priorityOrder = { high: 1, medium: 2, low: 3 };
@@ -428,6 +430,46 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
         }
     }, [departments]);
 
+    const handleSort = (column) => {
+        if (sortColumn === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortDirection('asc');
+        }
+    };
+
+    const sortTasks = (tasks) => {
+        return tasks.slice().sort((a, b) => {
+            let aValue, bValue;
+            
+            switch (sortColumn) {
+                case 'title':
+                    aValue = a.title.toLowerCase();
+                    bValue = b.title.toLowerCase();
+                    break;
+                case 'priority':
+                    aValue = priorityOrder[a.priority] || 4;
+                    bValue = priorityOrder[b.priority] || 4;
+                    break;
+                case 'assignee':
+                    aValue = getAssigneeName(a.assignee_id).toLowerCase();
+                    bValue = getAssigneeName(b.assignee_id).toLowerCase();
+                    break;
+                case 'status':
+                    aValue = formatStatus(a.status).toLowerCase();
+                    bValue = formatStatus(b.status).toLowerCase();
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+    };
+
     if (loading || projectsLoading || departmentsLoading) {
         return (
             <div className="task-board-loading">
@@ -599,38 +641,79 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                     <table style={{ width: '100%' }}>
                         <thead>
                             <tr>
-                                <th>Title</th>
-                                <th>Priority</th>
-                                <th>Assignee</th>
-                                <th>Status</th>
+                                <th 
+                                    className="sortable-header"
+                                    onClick={() => handleSort('title')}
+                                >
+                                    Title
+                                    {sortColumn === 'title' && (
+                                        <span 
+                                            className="sort-indicator"
+                                            data-direction={sortDirection}
+                                        />
+                                    )}
+                                </th>
+                                <th 
+                                    className="sortable-header"
+                                    onClick={() => handleSort('priority')}
+                                >
+                                    Priority
+                                    {sortColumn === 'priority' && (
+                                        <span 
+                                            className="sort-indicator"
+                                            data-direction={sortDirection}
+                                        />
+                                    )}
+                                </th>
+                                <th 
+                                    className="sortable-header"
+                                    onClick={() => handleSort('assignee')}
+                                >
+                                    Assignee
+                                    {sortColumn === 'assignee' && (
+                                        <span 
+                                            className="sort-indicator"
+                                            data-direction={sortDirection}
+                                        />
+                                    )}
+                                </th>
+                                <th 
+                                    className="sortable-header"
+                                    onClick={() => handleSort('status')}
+                                >
+                                    Status
+                                    {sortColumn === 'status' && (
+                                        <span 
+                                            className="sort-indicator"
+                                            data-direction={sortDirection}
+                                        />
+                                    )}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredTasks
-                                .slice()
-                                .sort((a, b) => (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4))
-                                .map(task => (
-                                    <tr key={task.id} onClick={() => handleTaskClick(task)}>
-                                        <td>{task.title}</td>
-                                        <td>
-                                            <span className={`priority-badge priority-${task.priority}`}>
-                                                {task.priority}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {task.assignee_id ? (
-                                                <span>{getAssigneeName(task.assignee_id)}</span>
-                                            ) : (
-                                                <span className="unassigned">Unassigned</span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <span className={`status-badge status-${task.status}`}>
-                                                {formatStatus(task.status)}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
+                            {sortTasks(filteredTasks).map(task => (
+                                <tr key={task.id} onClick={() => handleTaskClick(task)}>
+                                    <td>{task.title}</td>
+                                    <td>
+                                        <span className={`priority-badge priority-${task.priority}`}>
+                                            {task.priority}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {task.assignee_id ? (
+                                            <span>{getAssigneeName(task.assignee_id)}</span>
+                                        ) : (
+                                            <span className="unassigned">Unassigned</span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <span className={`status-badge status-${task.status}`}>
+                                            {formatStatus(task.status)}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
