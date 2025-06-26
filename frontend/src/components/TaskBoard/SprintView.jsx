@@ -371,6 +371,10 @@ const SprintView = ({ focusedSprintId, user }) => {
         if (filters.priority && task.priority !== filters.priority) {
             return false;
         }
+        // Project filter (type-safe)
+        if (filters.project && Number(task.project_id) !== Number(filters.project)) {
+            return false;
+        }
         // Sprint filter
         if (filters.sprint) {
             if (filters.sprint === 'backlog' && task.sprint_id !== null) {
@@ -1114,55 +1118,63 @@ const SprintView = ({ focusedSprintId, user }) => {
                                             </div>
                                         </div>
                                         {!foldedSprints.has('backlog') && (
-                                            <ul className="backlog-task-list">
-                                                {(tasksBySprint['backlog'] || [])
-                                                    .slice()
-                                                    .sort((a, b) => (a.sprint_order ?? 0) - (b.sprint_order ?? 0) || a.id - b.id)
-                                                    .map((task, idx) => (
-                                                        <Draggable draggableId={String(task.id)} index={idx} key={task.id}>
-                                                            {(provided, snapshot) => (
-                                                                <li
-                                                                    id={`task-${task.id}`}
-                                                                    className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''} ${task.isOptimistic ? 'optimistic' : ''}`}
-                                                                    ref={provided.innerRef}
-                                                                    {...provided.draggableProps}
-                                                                    {...provided.dragHandleProps}
-                                                                    onDoubleClick={() => handleTaskDoubleClick(task)}
-                                                                    onContextMenu={(e) => handleTaskRightClick(e, task)}
-                                                                >
-                                                                    <div className="task-left">
-                                                                        <span className="task-icon">
-                                                                            {task.isOptimistic ? (
-                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="loading-spinner">
-                                                                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
-                                                                                        <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                                                                                        <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
-                                                                                    </circle>
-                                                                                </svg>
-                                                                            ) : (
-                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                                    <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                                    <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                                                </svg>
-                                                                            )}
-                                                                        </span>
-                                                                        <span className="task-title">{task.title}</span>
-                                                                    </div>
-                                                                    <div className="task-right">
-                                                                        <span className="task-effort">
-                                                                            {task.effort ? `EE: ${formatHours(task.effort, hoursPerDay)}` : '–'}
-                                                                        </span>
-                                                                        <span className={`priority-badge priority-${task.priority}`}>
-                                                                            {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                                                                        </span>
-                                                                    </div>
-                                                                </li>
-                                                            )}
-                                                        </Draggable>
-                                                    ))}
-                                                {provided.placeholder}
-                                            </ul>
+                                            <>
+                                                {/* DEBUG: Show project_id and filter for each backlog task */}
+                                                {(tasksBySprint['backlog'] || []).map(task => (
+                                                    <div key={task.id + '-debug'} style={{fontSize: '10px', color: 'red'}}>
+                                                        [DEBUG] Task: {task.title}, project_id: {task.project_id}, filter: {filters.project}
+                                                    </div>
+                                                ))}
+                                                <ul className="backlog-task-list">
+                                                    {(tasksBySprint['backlog'] || [])
+                                                        .slice()
+                                                        .sort((a, b) => (a.sprint_order ?? 0) - (b.sprint_order ?? 0) || a.id - b.id)
+                                                        .map((task, idx) => (
+                                                            <Draggable draggableId={String(task.id)} index={idx} key={task.id}>
+                                                                {(provided, snapshot) => (
+                                                                    <li
+                                                                        id={`task-${task.id}`}
+                                                                        className={`sprint-task ${isDarkMode ? 'dark' : 'light'} ${snapshot.isDragging ? 'dragging' : ''} ${task.isOptimistic ? 'optimistic' : ''}`}
+                                                                        ref={provided.innerRef}
+                                                                        {...provided.draggableProps}
+                                                                        {...provided.dragHandleProps}
+                                                                        onDoubleClick={() => handleTaskDoubleClick(task)}
+                                                                        onContextMenu={(e) => handleTaskRightClick(e, task)}
+                                                                    >
+                                                                        <div className="task-left">
+                                                                            <span className="task-icon">
+                                                                                {task.isOptimistic ? (
+                                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="loading-spinner">
+                                                                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
+                                                                                            <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                                                                                            <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                                                                                        </circle>
+                                                                                    </svg>
+                                                                                ) : (
+                                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                        <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                        <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                                                                                    </svg>
+                                                                                )}
+                                                                            </span>
+                                                                            <span className="task-title">{task.title}</span>
+                                                                        </div>
+                                                                        <div className="task-right">
+                                                                            <span className="task-effort">
+                                                                                {task.effort ? `EE: ${formatHours(task.effort, hoursPerDay)}` : '–'}
+                                                                            </span>
+                                                                            <span className={`priority-badge priority-${task.priority}`}>
+                                                                                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                                                            </span>
+                                                                        </div>
+                                                                    </li>
+                                                                )}
+                                                            </Draggable>
+                                                        ))}
+                                                    {provided.placeholder}
+                                                </ul>
+                                            </>
                                         )}
                                     </div>
                                 )}
