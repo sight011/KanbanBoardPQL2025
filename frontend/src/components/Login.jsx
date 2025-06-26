@@ -31,6 +31,7 @@ export default function Login({ onLogin }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <div className="login-content">
+        <img src="/Multi_white.png" alt="MultiTasKING Logo" className="login-logo" />
         <h2>Login</h2>
         <form onSubmit={handleSubmit}>
           <input
@@ -68,6 +69,7 @@ export default function Login({ onLogin }) {
           <br />
           <button 
             onClick={() => navigate('/forgot-password')}
+            className="forgot-password-link"
             style={{
               background: 'none',
               border: 'none',
