@@ -38,9 +38,12 @@ const BurndownChart = ({ sprintId, filters, selectedProject }) => {
         );
     }, [tasks, currentSprint, selectedProject]);
 
-    // Count tickets without effort estimation
+    // Count tickets with and without effort estimation
+    const ticketsWithEE = sprintTasks.filter(
+        t => t.effort !== null && t.effort !== '' && Number(t.effort) > 0
+    ).length;
     const ticketsWithoutEE = sprintTasks.filter(
-        t => !t.effort || t.effort === '' || t.effort === null || Number(t.effort) === 0
+        t => t.effort === null || t.effort === '' || Number(t.effort) === 0
     ).length;
 
     // Memoize the query parameters to prevent unnecessary re-renders
@@ -115,47 +118,9 @@ const BurndownChart = ({ sprintId, filters, selectedProject }) => {
     return (
         <div className={`burndown-chart-container${isDarkMode ? ' dark' : ''}`} style={{ position: 'relative' }}>
             <div className="sprint-effort-sum" style={{ position: 'absolute', top: 16, right: 24, zIndex: 2 }}>
-                Tickets without EE: {ticketsWithoutEE}
+                Tickets with and without EE: {ticketsWithEE}/{ticketsWithoutEE}
             </div>
             <h3>{sprint.name} Burndown Chart</h3>
-            {/* DEBUG OUTPUT: Show context values */}
-            <div style={{ color: '#c44', fontSize: 12, marginBottom: 8 }}>
-                Chart sprint ID: {sprint.id}<br/>
-                selectedProject: {selectedProject ? JSON.stringify({id: selectedProject.id, name: selectedProject.name}) : 'null'}<br/>
-                currentSprint: {currentSprint ? JSON.stringify({id: currentSprint.id, name: currentSprint.name}) : 'null'}
-            </div>
-            {/* DEBUG OUTPUT START */}
-            <div style={{ color: '#888', fontSize: 12, marginBottom: 8 }}>
-                Debug: {sprintTasks.length} tasks in current sprint.<br/>
-                Efforts: [{sprintTasks.map(t => t.effort === null ? 'null' : t.effort).join(', ')}]
-            </div>
-            {/* DEBUG OUTPUT: Show first 5 raw tasks from context */}
-            <div style={{ color: '#c88', fontSize: 12, marginBottom: 8 }}>
-                Raw tasks (first 5):<br/>
-                {tasks && tasks.slice(0,5).map(t => (
-                    <div key={t.id}>
-                        id: {t.id}, sprint_id: {t.sprint_id}, project_id: {t.project_id}, effort: {t.effort === null ? 'null' : t.effort}
-                    </div>
-                ))}
-            </div>
-            {/* DEBUG OUTPUT: Show all tasks for selected project */}
-            <div style={{ color: '#88c', fontSize: 12, marginBottom: 8 }}>
-                Tasks for selected project ({selectedProject ? selectedProject.id : 'none'}):<br/>
-                {tasks && selectedProject && tasks.filter(t => t.project_id === selectedProject.id).map(t => (
-                    <div key={t.id}>
-                        id: {t.id}, sprint_id: {t.sprint_id}, effort: {t.effort === null ? 'null' : t.effort}
-                    </div>
-                ))}
-            </div>
-            {/* DEBUG OUTPUT: Show all tasks for active sprint */}
-            <div style={{ color: '#8c8', fontSize: 12, marginBottom: 8 }}>
-                Tasks for active sprint ({currentSprint ? currentSprint.id : 'none'}):<br/>
-                {tasks && currentSprint && tasks.filter(t => t.sprint_id === currentSprint.id).map(t => (
-                    <div key={t.id}>
-                        id: {t.id}, project_id: {t.project_id}, effort: {t.effort === null ? 'null' : t.effort}
-                    </div>
-                ))}
-            </div>
             <div className={`burndown-info${isDarkMode ? ' dark' : ''}`}>
                 <p>Start Date: {new Date(sprint.start_date).toLocaleDateString()}</p>
                 <p>End Date: {new Date(sprint.end_date).toLocaleDateString()}</p>
