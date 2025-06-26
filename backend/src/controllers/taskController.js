@@ -650,12 +650,6 @@ const taskController = {
                     );
                 }
 
-                // Resequence both columns to be safe
-                await resequencePositions(oldStatus, client);
-                if (oldStatus !== newStatus) {
-                    await resequencePositions(newStatus, client);
-                }
-
                 // Get all tasks with updated positions (filtered by company)
                 const allTasks = await client.query(
                     `SELECT t.* FROM tasks t

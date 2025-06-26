@@ -327,7 +327,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
         const { draggableId, destination } = result;
         const taskId = parseInt(draggableId);
         const newStatus = destination.droppableId;
-        const newPosition = destination.index;
+        const newPosition = destination.index + 1;
 
         try {
             await updateTaskPosition(taskId, newPosition, newStatus);
