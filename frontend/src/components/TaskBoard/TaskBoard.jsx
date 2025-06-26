@@ -85,6 +85,9 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
     const [tasksWithChanges, setTasksWithChanges] = useState([]);
     const [focusedSprintId, setFocusedSprintId] = useState(null);
 
+    // Priority order mapping
+    const priorityOrder = { high: 1, medium: 2, low: 3 };
+
     // Fetch projects
     useEffect(() => {
         const fetchProjects = async () => {
@@ -603,28 +606,31 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredTasks.map(task => (
-                                <tr key={task.id} onClick={() => handleTaskClick(task)}>
-                                    <td>{task.title}</td>
-                                    <td>
-                                        <span className={`priority-badge priority-${task.priority}`}>
-                                            {task.priority}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {task.assignee_id ? (
-                                            <span>{getAssigneeName(task.assignee_id)}</span>
-                                        ) : (
-                                            <span className="unassigned">Unassigned</span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <span className={`status-badge status-${task.status}`}>
-                                            {formatStatus(task.status)}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
+                            {filteredTasks
+                                .slice()
+                                .sort((a, b) => (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4))
+                                .map(task => (
+                                    <tr key={task.id} onClick={() => handleTaskClick(task)}>
+                                        <td>{task.title}</td>
+                                        <td>
+                                            <span className={`priority-badge priority-${task.priority}`}>
+                                                {task.priority}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {task.assignee_id ? (
+                                                <span>{getAssigneeName(task.assignee_id)}</span>
+                                            ) : (
+                                                <span className="unassigned">Unassigned</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <span className={`status-badge status-${task.status}`}>
+                                                {formatStatus(task.status)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>
