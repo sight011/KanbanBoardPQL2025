@@ -22,7 +22,7 @@ const projectController = {
             console.log('🔍 Filtering projects for department_id:', userDepartmentId);
             
             const result = await pool.query(
-                'SELECT id, name, description, created_at, updated_at FROM projects WHERE department_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC',
+                'SELECT id, name, description, created_at, updated_at, position FROM projects WHERE department_id = $1 AND deleted_at IS NULL ORDER BY position ASC, created_at ASC',
                 [userDepartmentId]
             );
             
@@ -346,6 +346,89 @@ const projectController = {
             console.error('❌ Error in getProjectById:', err.message);
             console.error('Full error stack:', err.stack);
             res.status(500).json({ error: 'Server error', details: err.message });
+        }
+    },
+
+    // Reorder projects
+    reorderProjects: async (req, res) => {
+        console.log('🔍 reorderProjects endpoint hit');
+        console.log('Request body:', req.body);
+        
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const { projectIds } = req.body;
+
+            if (!req.user || !req.user.id) {
+                await client.query('ROLLBACK');
+                console.log('❌ No authenticated user found');
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            // Validate required fields
+            if (!projectIds || !Array.isArray(projectIds) || projectIds.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ 
+                    error: 'Invalid input',
+                    message: 'projectIds array is required and must not be empty' 
+                });
+            }
+
+            // Get user's department_id through the user_departments junction table
+            const userResult = await client.query(
+                `SELECT ud.department_id 
+                 FROM user_departments ud 
+                 WHERE ud.user_id = $1 
+                 LIMIT 1`,
+                [req.user.id]
+            );
+            
+            if (userResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User not found or not assigned to any department' });
+            }
+            
+            const userDepartmentId = userResult.rows[0].department_id;
+
+            // Verify all projects belong to user's department
+            const projectIdsString = projectIds.map((_, index) => `$${index + 2}`).join(',');
+            const verifyProjectsResult = await client.query(
+                `SELECT id FROM projects 
+                 WHERE id IN (${projectIdsString}) 
+                 AND department_id = $1 
+                 AND deleted_at IS NULL`,
+                [userDepartmentId, ...projectIds]
+            );
+            
+            if (verifyProjectsResult.rows.length !== projectIds.length) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ 
+                    error: 'Invalid projects',
+                    message: 'Some projects do not belong to your department or do not exist' 
+                });
+            }
+
+            // Update positions for all projects
+            for (let i = 0; i < projectIds.length; i++) {
+                await client.query(
+                    'UPDATE projects SET position = $1, updated_at = NOW() WHERE id = $2 AND department_id = $3',
+                    [i + 1, projectIds[i], userDepartmentId]
+                );
+            }
+
+            await client.query('COMMIT');
+            console.log('✅ Projects reordered successfully');
+            res.status(200).json({
+                success: true,
+                message: 'Projects reordered successfully'
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('❌ Error in reorderProjects:', err.message);
+            console.error('Full error stack:', err.stack);
+            res.status(500).json({ error: 'Server error', details: err.message });
+        } finally {
+            client.release();
         }
     }
 };

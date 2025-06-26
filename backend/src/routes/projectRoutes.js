@@ -22,4 +22,7 @@ router.put('/:id', projectController.updateProject);
 // Delete a project (soft delete)
 router.delete('/:id', projectController.deleteProject);
 
+// Reorder projects
+router.post('/reorder', projectController.reorderProjects);
+
 module.exports = router; 

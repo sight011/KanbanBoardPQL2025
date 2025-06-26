@@ -395,6 +395,9 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
 
     const handleProjectsChange = (updatedProjects) => {
         setProjects(updatedProjects);
+        if (!selectedProject || !updatedProjects.some(p => p.id === selectedProject.id)) {
+            setSelectedProject(updatedProjects[0] || null);
+        }
     };
 
     // Load selected project from sessionStorage on component mount
