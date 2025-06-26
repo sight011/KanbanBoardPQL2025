@@ -64,7 +64,7 @@ const textPlugin = {
 ChartJS.register(textPlugin);
 
 const TaskBoard = ({ viewMode, setViewMode, user }) => {
-    const { tasks, updateTaskPosition, loading, error, openTaskModal, updateTask, fetchTasks, selectedTask, isModalOpen, closeTaskModal } = useTaskContext();
+    const { tasks, updateTaskPosition, loading, error, openTaskModal, updateTask, fetchTasks, selectedTask, isModalOpen, closeTaskModal, deleteTask } = useTaskContext();
     const [selectedProject, setSelectedProject] = useState(null);
     const [projects, setProjects] = useState([]);
     const [projectsLoading, setProjectsLoading] = useState(true);
@@ -340,9 +340,12 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
         openTaskModal(task);
     };
 
-    const handleDeleteTask = (taskId) => {
-        // This will be handled by the TaskModal component
-        console.log('Delete task:', taskId);
+    const handleDeleteTask = async (taskId) => {
+        try {
+            await deleteTask(taskId);
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        }
     };
 
     const getAssigneeName = (assigneeId) => {
