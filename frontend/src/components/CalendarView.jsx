@@ -162,20 +162,20 @@ const CalendarView = ({ onSprintDoubleClick, user }) => {
   };
 
   return (
-    <div style={{ height: 'calc(100vh - 120px)', width: '100%', background: '#fff', padding: 16 }}>
+    <div className="calendar-view-outer">
       <TaskFilters
         filters={filters}
         onFilterChange={handleFilterChange}
         selectedProject={selectedProject}
         user={user}
       />
-      <div id="calendar-inner-wrapper" style={{ marginTop: '16px', height: '1000px' }}>
+      <div id="calendar-inner-wrapper" style={{ marginTop: '16px' }}>
         <Calendar
           localizer={localizer}
           events={allEvents}
           startAccessor="start"
           endAccessor="end"
-          style={{ height: '100%', minHeight: 500 }}
+          style={{ minHeight: 500, width: '100%' }}
           views={['month', 'week', 'day']}
           defaultView="month"
           popup

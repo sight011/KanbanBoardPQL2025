@@ -628,3 +628,18 @@ border-bottom: 2px solid #6a7685;
   vertical-align: middle;
   transform: translateY(1px);
 }
+
+.calendar-view-outer {
+    min-height: 100vh;
+    height: auto;
+    width: 100%;
+    background: #fff;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+#calendar-inner-wrapper {
+    margin-top: 16px;
+    min-height: 600px;
+    height: auto;
+}
