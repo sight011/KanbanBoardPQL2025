@@ -588,8 +588,8 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         title="Burn Down View"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M4 17C4 13 8 11 12 7V3C16 7 20 11 20 17C20 20 17 21 12 21C7 21 4 20 4 17Z"/>
-                          <polyline points="8 17 12 13 16 17"/>
+                          <circle cx="12" cy="12" r="10"/>
+                          <polyline points="12,6 12,12 16,14"/>
                         </svg>
                         Burn Down
                     </button>
