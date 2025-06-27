@@ -10,8 +10,8 @@ html, body, #root, .app {
     max-width: 1440px;
     margin: 0 auto;
     padding: 0 1.5rem;
-    min-height: calc(100vh - 64px);
-    height: auto;
+    min-height: 100vh;
+    background-color: var(--bg-secondary, #f7fafc);
     overflow-x: visible;
 }
 
@@ -48,12 +48,11 @@ html, body, #root, .app {
 .list-view {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    width: 100%;
-    margin: 0 auto;
-    padding: 0;
-    min-height: 100vh;
+    flex: 1 1 auto;
+    min-height: 0;
     height: auto;
+    width: 100%;
+    padding: 0;
     background-color: var(--bg-secondary, #f7fafc);
 }
 
@@ -63,6 +62,8 @@ html, body, #root, .app {
 
 .list-view table {
     width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
     border-collapse: separate;
     border-spacing: 0;
     background-color: var(#f8f9fa2e);

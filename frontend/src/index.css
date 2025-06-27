@@ -35,6 +35,7 @@ body {
   background-repeat: no-repeat;
   background-attachment: fixed;
   min-height: 100vh;
+  height: auto;
 }
 
 h1 {
@@ -72,4 +73,9 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+html, body, #root {
+  min-height: 100vh;
+  height: auto;
 }
