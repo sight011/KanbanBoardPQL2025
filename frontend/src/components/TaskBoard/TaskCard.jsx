@@ -3,6 +3,14 @@ import { Draggable } from '@hello-pangea/dnd';
 import { useTaskContext } from '../../context/TaskContext';
 import './TaskCard.css';
 import { formatHours } from '../../utils/timeFormat';
+import PropTypes from 'prop-types';
+
+const stripHtml = (html) => {
+    if (!html) return '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+};
 
 const TaskCard = memo(({ task, index }) => {
     const { openTaskModal } = useTaskContext();
@@ -46,8 +54,8 @@ const TaskCard = memo(({ task, index }) => {
                             </span>
                             <h4 className="task-title" title={task.title}>{task.title}</h4>
                         </div>
-                        <p className="task-description" title={task.description}>
-                            {task.description}
+                        <p className="task-description" title={stripHtml(task.description)}>
+                            {stripHtml(task.description).slice(0, 120)}
                         </p>
                         <div className="task-meta">
                             <span className={`priority-badge priority-${task.priority}`}>
@@ -77,5 +85,10 @@ const TaskCard = memo(({ task, index }) => {
 });
 
 TaskCard.displayName = 'TaskCard';
+
+TaskCard.propTypes = {
+    task: PropTypes.object.isRequired,
+    index: PropTypes.number.isRequired,
+};
 
 export default TaskCard; 
