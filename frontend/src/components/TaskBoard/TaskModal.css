@@ -1,22 +1,12 @@
 .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    inset: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    /* Prevent any background interaction */
-    pointer-events: auto;
-    /* Prevent background scrolling */
-    overflow: hidden;
-    /* Mac-specific fixes */
-    -webkit-overflow-scrolling: auto;
+    padding: 6px;
 }
 
 .modal-content-reborn {
@@ -32,11 +22,8 @@
     padding: 0;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    /* Ensure modal content can scroll internally but not propagate to background */
-    position: relative;
-    /* Prevent scroll propagation */
-    isolation: isolate;
-    -webkit-overflow-scrolling: touch;
+    /* Modern scroll containment */
+    overscroll-behavior: contain;
 }
 
 .dark-mode .modal-content-reborn {
@@ -103,6 +90,8 @@
     flex-direction: column;
     flex-grow: 1;
     min-height: 0;
+    /* Modern scroll containment */
+    overscroll-behavior: contain;
 }
 
 .metadata-grid {
@@ -204,15 +193,13 @@
 }
 
 .description-area {
-    flex-grow: 1;
-    min-height: 200px;
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: 350px; /* or adjust as needed for your modal */
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    /* Prevent scroll propagation */
-    position: relative;
-    isolation: isolate;
-    -webkit-overflow-scrolling: touch;
+    overflow: auto;
+    overscroll-behavior: contain;
 }
 
 .description-area textarea {
@@ -231,14 +218,13 @@
 
 /* SimpleEditor specific styles */
 .description-area .simple-editor {
-    flex: 1;
+    flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    /* Ensure scroll events are contained */
+    overflow: auto;
+    height: 100%;
     position: relative;
-    isolation: isolate;
 }
 
 .dark-mode .description-area textarea {
@@ -715,20 +701,18 @@ label {
 
 /* Prevent body scrolling when modal is open */
 body.modal-open {
-    overflow: hidden !important;
-    position: fixed !important;
-    width: 100% !important;
-    height: 100% !important;
-    -webkit-overflow-scrolling: auto !important;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
 }
 
-/* Additional Mac-specific scroll fixes */
-@supports (-webkit-appearance: none) {
-    .modal-content-reborn {
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .description-area {
-        -webkit-overflow-scrolling: touch;
-    }
+/* Ensure modal content scrolls properly */
+.modal-content-reborn {
+    overscroll-behavior: contain;
+}
+
+/* Ensure editor content scrolls properly */
+.simple-editor-content {
+    overscroll-behavior: contain;
 }

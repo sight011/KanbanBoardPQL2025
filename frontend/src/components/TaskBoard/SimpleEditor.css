@@ -60,19 +60,11 @@
   font-family: system-ui, Arial, sans-serif;
   overflow-y: auto;
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  position: relative;
+  /* Modern scroll containment */
+  overscroll-behavior: contain;
 }
 
-/* Mac-specific scrolling fixes */
-@supports (-webkit-appearance: none) {
-  .simple-editor-content {
-    -webkit-overflow-scrolling: touch;
-    overflow-y: scroll;
-  }
-}
-
-/* Ensure the content area can scroll on Mac */
+/* Custom scrollbar styling */
 .simple-editor-content::-webkit-scrollbar {
   width: 8px;
 }

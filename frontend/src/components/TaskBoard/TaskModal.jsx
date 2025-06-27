@@ -200,34 +200,15 @@ const TaskModal = ({
     // Prevent background scrolling when modal is open
     useEffect(() => {
         if (isModalOpen) {
-            // Save current scroll position
-            const scrollY = window.scrollY;
-            
-            // Prevent background scrolling
-            document.body.style.overflow = 'hidden';
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollY}px`;
-            document.body.style.width = '100%';
-            
-            // Add modal-open class for additional CSS-based prevention
+            // Add modal-open class for CSS-based prevention
             document.body.classList.add('modal-open');
             
             return () => {
-                // Restore scrolling when modal closes
-                document.body.style.overflow = '';
-                document.body.style.position = '';
-                document.body.style.top = '';
-                document.body.style.width = '';
+                // Remove modal-open class when modal closes
                 document.body.classList.remove('modal-open');
-                window.scrollTo(0, scrollY);
             };
         }
     }, [isModalOpen]);
-
-    // Prevent wheel events from propagating to background
-    const handleModalWheel = (e) => {
-        e.stopPropagation();
-    };
 
     useEffect(() => {
         setShowConfirmDelete(false);
@@ -378,7 +359,7 @@ const TaskModal = ({
     return (
         <div className="modal-overlay" onClick={closeTaskModal}>
             {!showConfirmDelete ? (
-                <div className="modal-content-reborn" onClick={e => e.stopPropagation()} onWheel={handleModalWheel}>
+                <div className="modal-content-reborn" onClick={e => e.stopPropagation()}>
                     <div className="modal-main-content">
                         <div className="modal-header">
                             <input
@@ -483,7 +464,7 @@ const TaskModal = ({
                                     </select>
                                 )})}
                             </div>
-                            <div className="description-area" onWheel={handleModalWheel}>
+                            <div className="description-area">
                                 <SimpleEditor
                                     content={formData.description}
                                     onUpdate={(value) => {

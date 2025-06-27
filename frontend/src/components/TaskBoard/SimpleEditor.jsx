@@ -37,50 +37,12 @@ const SimpleEditor = ({ content = '', onUpdate, placeholder = 'Enter description
     }
   }, [editor, content])
 
-  // Prevent scroll propagation from editor content
-  useEffect(() => {
-    if (editor) {
-      const editorElement = editor.view.dom
-      
-      const handleScroll = (e) => {
-        e.stopPropagation()
-      }
-      
-      const handleWheel = (e) => {
-        e.stopPropagation()
-      }
-      
-      const handleTouchMove = (e) => {
-        e.stopPropagation()
-      }
-      
-      editorElement.addEventListener('scroll', handleScroll, { passive: false })
-      editorElement.addEventListener('wheel', handleWheel, { passive: false })
-      editorElement.addEventListener('touchmove', handleTouchMove, { passive: false })
-      
-      return () => {
-        editorElement.removeEventListener('scroll', handleScroll)
-        editorElement.removeEventListener('wheel', handleWheel)
-        editorElement.removeEventListener('touchmove', handleTouchMove)
-      }
-    }
-  }, [editor])
-
-  // Prevent scroll propagation from editor
-  const handleEditorScroll = (e) => {
-    e.stopPropagation()
-  }
-
-  const handleEditorWheel = (e) => {
-    e.stopPropagation()
-  }
-
   if (!editor) {
     return null
   }
 
   return (
-    <div className="simple-editor" onScroll={handleEditorScroll} onWheel={handleEditorWheel}>
+    <div className="simple-editor" id="simple-editor-container">
       <div className="simple-editor-toolbar" id="simple-editor-toolbar">
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -130,7 +92,7 @@ const SimpleEditor = ({ content = '', onUpdate, placeholder = 'Enter description
           Link
         </button>
       </div>
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} id="simple-editor-prosemirror-wrapper" />
     </div>
   )
 }
