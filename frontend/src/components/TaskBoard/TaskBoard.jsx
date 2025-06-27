@@ -83,7 +83,6 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
     });
     const [users, setUsers] = useState([]);
     const [tasksWithChanges, setTasksWithChanges] = useState([]);
-    const [focusedSprintId, setFocusedSprintId] = useState(null);
     const [sortColumn, setSortColumn] = useState('priority');
     const [sortDirection, setSortDirection] = useState('asc');
 
@@ -386,12 +385,6 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
         }
     };
 
-    // Handler for calendar double click
-    const handleSprintDoubleClick = (sprintId) => {
-        setFocusedSprintId(sprintId);
-        setViewMode('sprint');
-    };
-
     const handleProjectSelect = (project) => {
         setSelectedProject(project);
         // Store the selected project in sessionStorage for persistence
@@ -629,7 +622,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
             )}
 
             {selectedProject && viewMode === 'sprint' ? (
-                <SprintView focusedSprintId={focusedSprintId} user={user} />
+                <SprintView user={user} />
             ) : selectedProject && viewMode === 'kanban' ? (
                 <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
                     <div className="board-columns">
@@ -906,7 +899,15 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                     selectedProject={selectedProject}
                 />
             ) : selectedProject && viewMode === 'calendar' ? (
-                <CalendarView onSprintDoubleClick={handleSprintDoubleClick} user={user} />
+                <div className="list-view" id="calendar-main-wrapper">
+                    <CalendarView
+                        tasks={filteredTasks}
+                        projects={projects}
+                        users={users}
+                        filters={filters}
+                        setFilters={setFilters}
+                    />
+                </div>
             ) : null}
 
             <TaskModal

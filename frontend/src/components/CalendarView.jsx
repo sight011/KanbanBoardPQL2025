@@ -169,7 +169,7 @@ const CalendarView = ({ onSprintDoubleClick, user }) => {
         selectedProject={selectedProject}
         user={user}
       />
-      <div style={{ marginTop: '16px', height: 'calc(100% - 80px)' }}>
+      <div id="calendar-inner-wrapper" style={{ marginTop: '16px', height: '1000px' }}>
         <Calendar
           localizer={localizer}
           events={allEvents}
