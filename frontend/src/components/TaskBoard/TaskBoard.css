@@ -2,12 +2,12 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    width: 91%;
+    width: 100%;
     max-width: 1440px;
     margin: 0 auto;
     padding: 0 1.5rem;
     min-height: calc(100vh - 64px);
-    overflow-x: hidden;
+    overflow-x: visible;
 }
 
 .kanban-board {
@@ -17,11 +17,24 @@
     overflow-x: auto;
     padding-bottom: 1rem;
     box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) var(--bg-secondary);
+}
+
+.kanban-board::-webkit-scrollbar {
+    height: 8px;
+}
+.kanban-board::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+.kanban-board::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
 }
 
 .kanban-column {
     min-width: 300px;
-    width: 300px;
+    flex: 1 1 300px;
     background-color: var(--bg-secondary);
     border-radius: 8px;
     padding: 1rem;
@@ -140,6 +153,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 120px;
 }
 
 .view-button svg {
@@ -584,8 +598,24 @@ border-bottom: 2px solid #6a7685;
 }
 
 #view-burndown svg {
-  width: 32px !important;
-  height: 32px !important;
-  vertical-align: middle;
   margin-right: 8px;
+  vertical-align: middle;
+}
+
+#view-diagram-2 svg {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px;
+  min-height: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+#view-diagram-2 {
+  min-width: 130px;
+}
+
+#view-list svg {
+  margin-right: 8px;
+  vertical-align: middle;
+  transform: translateY(1px);
 }

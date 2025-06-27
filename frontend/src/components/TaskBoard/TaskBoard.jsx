@@ -540,12 +540,12 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         }}
                         title="Kanban View"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 6H20V8H4V6Z" fill="currentColor"/>
-                            <path d="M4 10H20V12H4V10Z" fill="currentColor"/>
-                            <path d="M4 14H20V16H4V14Z" fill="currentColor"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="4" height="16" rx="1"/>
+                          <rect x="10" y="4" width="4" height="16" rx="1"/>
+                          <rect x="17" y="4" width="4" height="16" rx="1"/>
                         </svg>
-                        <span>Kanban</span>
+                        Kanban
                     </button>
                     <button 
                         id="view-list"
@@ -578,7 +578,7 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         </svg>
                         <span>Diagram</span>
                     </button>
-                    <button
+                    <button 
                         id="view-burndown"
                         className={`view-button ${viewMode === 'burndown' ? 'active' : ''}`}
                         onClick={() => {
@@ -587,12 +587,11 @@ const TaskBoard = ({ viewMode, setViewMode, user }) => {
                         }}
                         title="Burn Down View"
                     >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="3" y="10" width="3" height="9" rx="1" fill="currentColor"/>
-                            <rect x="9" y="6" width="3" height="13" rx="1" fill="currentColor"/>
-                            <rect x="15" y="3" width="3" height="16" rx="1" fill="currentColor"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 17C4 13 8 11 12 7V3C16 7 20 11 20 17C20 20 17 21 12 21C7 21 4 20 4 17Z"/>
+                          <polyline points="8 17 12 13 16 17"/>
                         </svg>
-                        <span>Burn Down</span>
+                        Burn Down
                     </button>
                     <button
                         id="view-calendar"

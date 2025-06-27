@@ -49,6 +49,8 @@
     background-color: var(--background-primary);
     color: var(--text-color);
     transition: background-color 0.3s ease;
+    max-width: 1380px;
+    margin: 0 auto;
 }
 
 .dark-mode .app {
@@ -63,9 +65,10 @@
     background-color: var(white);
     color: var(--header-text, white);
     height: 52px;
-    width: 1422px;
+    width: 100%;
     box-sizing: border-box;
     padding-bottom: 4px;
+    margin: 0 auto;
 }
 
 @keyframes gradient-move {
@@ -143,7 +146,7 @@
 
 .app-main {
     display: flex;
-    width: 103%;
+    width: 100%;
     min-height: 100vh;
     background-color: #ffffff3b;
     color: var(--text-primary);
@@ -371,10 +374,6 @@ body.login-bg::after {
 
 .dark-mode .back-to-settings-button:hover {
     background-color: #3a3a3a;
-}
-
-body:not([data-theme='dark']) .app {
-    width: 1382px;
 }
 
 .login-content img.login-logo {
