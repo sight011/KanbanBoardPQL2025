@@ -333,7 +333,13 @@ const TaskModal = ({
 
     const handleAddTemplate = (e) => {
         e.preventDefault();
-        const template = `View: \nWhat: \nWhy: \n\nDescription:\nThe ability for the user to\n\nAcceptance criteria:\n· `;
+        const template = `
+<p><strong>View:</strong></p>
+<p><strong>What:</strong></p>
+<p><strong>Why:</strong></p>
+<p><strong>Description:</strong><br>The ability for the user to</p>
+<p><strong>Acceptance criteria:</strong><br>· </p>
+`;
 
         if (formData.description && formData.description.trim() !== '') {
             if (window.confirm('The description is not empty. Are you sure you want to replace it with the template?')) {
@@ -372,11 +378,9 @@ const TaskModal = ({
                             />
                         </div>
 
-                        {selectedTask && selectedTask.id && (
-                            <div className="ai-bar">
-                                ✨ <a href="#" onClick={handleAddTemplate}>Create Template for description below</a>
-                            </div>
-                        )}
+                        <div className="ai-bar">
+                            ✨ <a href="#" onClick={handleAddTemplate}>Create Template for description below</a>
+                        </div>
                         
                         <div className="modal-body">
                             <div className="metadata-grid">
