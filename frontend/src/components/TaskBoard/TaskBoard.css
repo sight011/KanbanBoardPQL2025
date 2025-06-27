@@ -640,6 +640,25 @@ border-bottom: 2px solid #6a7685;
 
 #calendar-inner-wrapper {
     margin-top: 16px;
-    min-height: 600px;
-    height: auto;
+    height: 780px;
+}
+
+/* Make react-big-calendar month cells square */
+.rbc-month-row {
+  display: flex !important;
+}
+
+.rbc-month-row .rbc-date-cell,
+.rbc-month-row .rbc-day-bg {
+  aspect-ratio: 1 / 1;
+  height: auto !important;
+  min-width: 0;
+  min-height: 80px;
+  max-width: 200px;
+  max-height: 200px;
+  box-sizing: border-box;
+}
+
+.rbc-month-view {
+  height: 100% !important;
 }
