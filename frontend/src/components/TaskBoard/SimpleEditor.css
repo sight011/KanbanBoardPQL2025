@@ -1,0 +1,243 @@
+.simple-editor {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  height: 100%;
+  position: relative;
+}
+
+.simple-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+.simple-editor-toolbar button {
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.simple-editor-toolbar button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.simple-editor-toolbar button.is-active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.simple-editor-content {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+  outline: none;
+  resize: none;
+  text-align: left;
+  font-family: system-ui, Arial, sans-serif;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+/* Mac-specific scrolling fixes */
+@supports (-webkit-appearance: none) {
+  .simple-editor-content {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: scroll;
+  }
+}
+
+/* Ensure the content area can scroll on Mac */
+.simple-editor-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.simple-editor-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.simple-editor-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.simple-editor-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.simple-editor-content p {
+  margin: 0 0 8px 0;
+}
+
+.simple-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+.simple-editor-content ul,
+.simple-editor-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.simple-editor-content li {
+  margin: 4px 0;
+}
+
+.simple-editor-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.simple-editor-content a:hover {
+  color: #1d4ed8;
+}
+
+.simple-editor-content strong {
+  font-weight: 600;
+}
+
+.simple-editor-content em {
+  font-style: italic !important;
+  font-weight: normal;
+}
+
+.simple-editor-content i {
+  font-style: italic !important;
+  font-weight: normal;
+}
+
+/* Ensure italic text is visible */
+.simple-editor-content em,
+.simple-editor-content i {
+  font-style: italic !important;
+  font-weight: normal;
+  color: inherit;
+}
+
+.simple-editor-content u {
+  text-decoration: underline;
+}
+
+/* Dark mode support */
+body.dark .simple-editor {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .simple-editor-toolbar {
+  background: #111827;
+  border-color: #374151;
+}
+
+body.dark .simple-editor-toolbar button {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+body.dark .simple-editor-toolbar button:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+}
+
+body.dark .simple-editor-toolbar button.is-active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+body.dark .simple-editor-content {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+/* Typography styles */
+.simple-editor-content h1,
+.simple-editor-content h2,
+.simple-editor-content h3,
+.simple-editor-content h4,
+.simple-editor-content h5,
+.simple-editor-content h6 {
+  margin: 0 0 0.5em 0;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.simple-editor-content h1 { font-size: 1.5em; }
+.simple-editor-content h2 { font-size: 1.25em; }
+.simple-editor-content h3 { font-size: 1.125em; }
+
+.simple-editor-content p {
+  margin: 0 0 0.5em 0;
+}
+
+.simple-editor-content ul,
+.simple-editor-content ol {
+  margin: 0 0 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.simple-editor-content li {
+  margin: 0.25em 0;
+}
+
+.simple-editor-content strong {
+  font-weight: 600;
+}
+
+.simple-editor-content em {
+  font-style: italic !important;
+  font-weight: normal;
+}
+
+.simple-editor-content i {
+  font-style: italic !important;
+  font-weight: normal;
+}
+
+.simple-editor-content u {
+  text-decoration: underline;
+}
+
+body.dark .simple-editor-content a {
+  color: #60a5fa;
+}
+
+/* Placeholder styling */
+.simple-editor-content[data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+body.dark .simple-editor-content[data-placeholder]:empty:before {
+  color: #6b7280;
+} 

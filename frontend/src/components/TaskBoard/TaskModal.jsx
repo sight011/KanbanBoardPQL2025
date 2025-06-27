@@ -10,6 +10,7 @@ import {
 import TagsInput from './TagsInput';
 import DueDate from './DueDate';
 import ActivityFeed from './ActivityFeed';
+import SimpleEditor from './SimpleEditor';
 
 const TaskModal = ({ 
     viewMode = '', 
@@ -99,9 +100,10 @@ const TaskModal = ({
         if (isModalOpen) {
             if (selectedTask) {
                 // Edit mode
+                console.log('Setting form data for editing task:', selectedTask.description);
                 setFormData({
                     title: selectedTask.title,
-                    description: selectedTask.description,
+                    description: selectedTask.description || '',
                     status: selectedTask.status,
                     priority: selectedTask.priority,
                     assignee_id: selectedTask.assignee_id || '',
@@ -131,6 +133,7 @@ const TaskModal = ({
                     }
                 }
                 
+                console.log('Setting form data for creating new task');
                 setFormData({
                     title: '',
                     description: '',
@@ -161,13 +164,18 @@ const TaskModal = ({
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
-                // Check if the focused element is the comment textarea
+                // Check if the focused element is the comment textarea or SimpleEditor
                 const activeElement = document.activeElement;
                 const isCommentTextarea = activeElement && 
                     activeElement.tagName === 'TEXTAREA' && 
                     activeElement.closest('.comment-form');
                 
-                if (!isCommentTextarea) {
+                const isSimpleEditor = activeElement && 
+                    (activeElement.closest('.simple-editor') || 
+                     activeElement.closest('.simple-editor-content') ||
+                     activeElement.classList.contains('simple-editor-content'));
+                
+                if (!isCommentTextarea && !isSimpleEditor) {
                     e.preventDefault();
                     handleSubmit(e);
                 }
@@ -188,6 +196,38 @@ const TaskModal = ({
             confirmDeleteRef.current.focus();
         }
     }, [showConfirmDelete]);
+
+    // Prevent background scrolling when modal is open
+    useEffect(() => {
+        if (isModalOpen) {
+            // Save current scroll position
+            const scrollY = window.scrollY;
+            
+            // Prevent background scrolling
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+            
+            // Add modal-open class for additional CSS-based prevention
+            document.body.classList.add('modal-open');
+            
+            return () => {
+                // Restore scrolling when modal closes
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                document.body.classList.remove('modal-open');
+                window.scrollTo(0, scrollY);
+            };
+        }
+    }, [isModalOpen]);
+
+    // Prevent wheel events from propagating to background
+    const handleModalWheel = (e) => {
+        e.stopPropagation();
+    };
 
     useEffect(() => {
         setShowConfirmDelete(false);
@@ -280,6 +320,7 @@ const TaskModal = ({
         e.preventDefault();
         if (effortError || timeSpentError) return;
         try {
+            console.log('Submitting form data:', formData);
             const payload = {
                 ...formData,
                 sprint_id: formData.sprint_id === '' ? null : Number(formData.sprint_id),
@@ -337,7 +378,7 @@ const TaskModal = ({
     return (
         <div className="modal-overlay" onClick={closeTaskModal}>
             {!showConfirmDelete ? (
-                <div className="modal-content-reborn" onClick={e => e.stopPropagation()}>
+                <div className="modal-content-reborn" onClick={e => e.stopPropagation()} onWheel={handleModalWheel}>
                     <div className="modal-main-content">
                         <div className="modal-header">
                             <input
@@ -442,11 +483,13 @@ const TaskModal = ({
                                     </select>
                                 )})}
                             </div>
-                            <div className="description-area">
-                                <textarea
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleInputChange}
+                            <div className="description-area" onWheel={handleModalWheel}>
+                                <SimpleEditor
+                                    content={formData.description}
+                                    onUpdate={(value) => {
+                                        console.log('SimpleEditor onUpdate called with:', value);
+                                        setFormData(prev => ({ ...prev, description: value }));
+                                    }}
                                     placeholder="Add a description..."
                                 />
                             </div>
