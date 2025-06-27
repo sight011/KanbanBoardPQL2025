@@ -747,7 +747,50 @@
 
 /* Sprint Action Button for User Selection */
 .sprint-action-button.edit {
-    min-width: auto;
+    min-width: 90px;
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: 0.875rem;
+    display: inline-block;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    background-color: #edf2f7;
+    color: #4a5568;
+    transition: all 0.2s;
+}
+
+.sprint-action-button.edit.dark {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    border: 1px solid #4a5568;
+}
+
+.sprint-action-button.edit.light {
+    background-color: #edf2f7;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+}
+
+.sprint-action-button.edit.light:hover {
+    background-color: #e2e8f0;
+}
+
+.sprint-action-button.edit.dark:hover {
+    background-color: #4a5568;
+}
+
+.fold-arrow-svg.light {
+    stroke: #2d3748;
+    fill: none;
+}
+.fold-arrow-svg.dark {
+    stroke: #DDD;
+    fill: none;
+}
+
+/* Ensure Assignee button in header row has consistent height */
+.sprint-section-header-row .sprint-action-button {
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 } 

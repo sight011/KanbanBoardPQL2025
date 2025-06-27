@@ -348,11 +348,6 @@ const SprintView = ({ focusedSprintId, user }) => {
     const [deleteTaskModalOpen, setDeleteTaskModalOpen] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState(null);
     
-    // Multi-select dropdown state
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [selectedUsers, setSelectedUsers] = useState(new Set());
-    const [dropdownTarget, setDropdownTarget] = useState(null); // 'sprint' or 'backlog'
-
     // Sprint assignee modal state
     const [assigneeModalOpen, setAssigneeModalOpen] = useState(false);
     const [sprintForAssignees, setSprintForAssignees] = useState(null);
@@ -1008,8 +1003,8 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                         title={foldedSprints.has(sprint.id) ? 'Expand sprint' : 'Collapse sprint'}
                                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                     >
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: foldedSprints.has(sprint.id) ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                                                            <path d="M19 9l-7 7-7-7" stroke={isDarkMode ? '#DDD' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        <svg className={`fold-arrow-svg ${isDarkMode ? 'dark' : 'light'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: foldedSprints.has(sprint.id) ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                                                            <path d="M19 9l-7 7-7-7" stroke={isDarkMode ? '#DDD' : '#2d3748'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                                         </svg>
                                                     </button>
                                                     <h3 style={{ margin: 0 }}>{sprint.name}</h3>
@@ -1024,8 +1019,9 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                     <button
                                                         className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
                                                         onClick={() => handleSprintEdit(sprint)}
+                                                        style={{ marginLeft: 16 }}
                                                     >
-                                                        Edit
+                                                        Assignee
                                                     </button>
                                                     <div className="sprint-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                                                         {sprint.status === 'planned' && (
@@ -1055,6 +1051,15 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                                 {actionLoading === sprint.id ? 'Reactivating...' : 'Reactivate'}
                                                             </button>
                                                         )}
+                                                        <button
+                                                            className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
+                                                            onClick={() => {
+                                                                setEditSprint(sprint);
+                                                                setModalOpen(true);
+                                                            }}
+                                                        >
+                                                            Edit
+                                                        </button>
                                                         <button 
                                                             className={classNames('sprint-action-button', 'delete', isDarkMode ? 'dark' : 'light')}
                                                             onClick={() => handleDeleteSprint(sprint)} 
@@ -1136,8 +1141,8 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                     title={foldedSprints.has('backlog') ? 'Expand backlog' : 'Collapse backlog'}
                                                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                 >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: foldedSprints.has('backlog') ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                                                        <path d="M19 9l-7 7-7-7" stroke={isDarkMode ? '#DDD' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    <svg className={`fold-arrow-svg ${isDarkMode ? 'dark' : 'light'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: foldedSprints.has('backlog') ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                                                        <path d="M19 9l-7 7-7-7" stroke={isDarkMode ? '#DDD' : '#2d3748'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                                     </svg>
                                                 </button>
                                                 <h3 style={{ margin: 0 }}>Backlog</h3>
