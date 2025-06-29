@@ -712,9 +712,30 @@ const SprintView = ({ focusedSprintId, user }) => {
         }
     };
 
-    const handleFoldToggle = (sprintId) => {
-        setFoldedSprints((folded) => {
-            const newSet = new Set(folded);
+    const handleFoldToggle = (sprintId, event) => {
+        // Check if Cmd key is pressed (Cmd+Click)
+        if (event && (event.metaKey || event.ctrlKey)) {
+            // Fold/unfold all sprints and backlog
+            setFoldedSprints((folded) => {
+                const allSprintIds = ['backlog', ...sprints.map(s => s.id)];
+                const newSet = new Set();
+                
+                // If any sprint is folded, unfold all. Otherwise, fold all.
+                const hasAnyFolded = allSprintIds.some(id => folded.has(id));
+                
+                if (hasAnyFolded) {
+                    // Unfold all - don't add any to the set
+                } else {
+                    // Fold all - add all to the set
+                    allSprintIds.forEach(id => newSet.add(id));
+                }
+                
+                return newSet;
+            });
+        } else {
+            // Normal single sprint toggle
+            setFoldedSprints((folded) => {
+                const newSet = new Set(folded);
                 if (newSet.has(sprintId)) {
                     newSet.delete(sprintId);
                 } else {
@@ -722,6 +743,7 @@ const SprintView = ({ focusedSprintId, user }) => {
                 }
                 return newSet;
             });
+        }
     };
 
     const handleFilterChange = (filterType, value) => {
@@ -999,7 +1021,7 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                 <div className="sprint-section-header-row" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                                     <button
                                                         className="fold-toggle-button"
-                                                        onClick={() => handleFoldToggle(sprint.id)}
+                                                        onClick={(event) => handleFoldToggle(sprint.id, event)}
                                                         title={foldedSprints.has(sprint.id) ? 'Expand sprint' : 'Collapse sprint'}
                                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                     >
@@ -1137,7 +1159,7 @@ const SprintView = ({ focusedSprintId, user }) => {
                                             <div className="sprint-section-header-row" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                                 <button
                                                     className="fold-toggle-button"
-                                                    onClick={() => handleFoldToggle('backlog')}
+                                                    onClick={(event) => handleFoldToggle('backlog', event)}
                                                     title={foldedSprints.has('backlog') ? 'Expand backlog' : 'Collapse backlog'}
                                                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                                 >

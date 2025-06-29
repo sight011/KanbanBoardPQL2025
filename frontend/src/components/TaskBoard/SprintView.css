@@ -102,6 +102,8 @@
 }
 
 .sprint-dates {
+    margin-left: 0px;
+    width: 246px;
     font-size: 0.875rem;
     color: #718096;
 }
@@ -519,9 +521,11 @@
 }
 
 .sprint-dates {
+    margin-left: 0px;
+    width: 246px;
     font-size: 0.95rem;
     color: #718096;
-    margin-left: 1rem;
+    font-weight: 500;
 }
 
 .sprint-status-badge {
@@ -633,7 +637,7 @@
 }
 
 .folded {
-    height: 35px;
+    height: 80px;
     padding-top: 6px;
 }
 
@@ -646,6 +650,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    width: 236px !important;
 }
 
 /* Light mode styling */
@@ -662,6 +667,7 @@
     color: #60a5fa;
     background-color: rgba(59, 130, 246, 0.15);
     border: 1px solid rgba(59, 130, 246, 0.3);
+    width: 236px !important;
 }
 
 /* Hover effects */
@@ -793,4 +799,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+}
+
+.sprint-section.dark .sprint-dates,
+.dark-mode .sprint-dates,
+[data-theme="dark"] .sprint-dates {
+    margin-left: 0px;
+    width: 246px;
 } 

@@ -5,6 +5,7 @@ import DeleteProjectModal from './DeleteProjectModal';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import api from '../../api/axios';
 import './ProjectSelector.css';
+import CreateProjectModal from './CreateProjectModal';
 
 const ProjectSelector = ({ projects, selectedProject, onProjectSelect, onProjectsChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -16,6 +17,7 @@ const ProjectSelector = ({ projects, selectedProject, onProjectSelect, onProject
     const [reorderSuccess, setReorderSuccess] = useState(false);
     const [localProjects, setLocalProjects] = useState(projects);
     const dropdownRef = useRef(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     useEffect(() => {
         setLocalProjects(projects);
@@ -177,6 +179,9 @@ const ProjectSelector = ({ projects, selectedProject, onProjectSelect, onProject
                                     </Draggable>
                                 ))}
                                 {provided.placeholder}
+                                <li className="project-selector__option add-project" onClick={() => { setIsOpen(false); setIsCreateModalOpen(true); }} role="option" tabIndex={0} style={{fontWeight: 'bold', color: '#1976d2', cursor: 'pointer', borderTop: '1px solid #eee', marginTop: 4}}>
+                                    + Add Project
+                                </li>
                             </ul>
                         )}
                     </Droppable>
@@ -198,6 +203,19 @@ const ProjectSelector = ({ projects, selectedProject, onProjectSelect, onProject
                     onClose={() => setIsDeleteModalOpen(false)}
                     project={selectedProjectForAction}
                     onProjectDeleted={handleProjectDeleted}
+                />
+            )}
+            {isCreateModalOpen && (
+                <CreateProjectModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onProjectCreated={(newProject) => {
+                        const updated = [...localProjects, newProject];
+                        setLocalProjects(updated);
+                        onProjectsChange(updated);
+                        onProjectSelect(newProject);
+                        setIsCreateModalOpen(false);
+                    }}
                 />
             )}
         </div>
