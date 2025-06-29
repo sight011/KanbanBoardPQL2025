@@ -107,4 +107,10 @@
 .assignee-bubble.unassigned {
     background-color: #e0e0e0;
     color: #666;
+}
+
+body.dark-mode .list-view td,
+.app.dark-mode .list-view td,
+.dark-mode .list-view td {
+    color: #fff !important;
 } 

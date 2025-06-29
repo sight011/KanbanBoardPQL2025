@@ -1,24 +1,24 @@
 import { useState, useEffect } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
+import { useTheme } from './context/ThemeContext';
 import { TaskProvider } from './context/TaskContext';
-import { ThemeProvider as OriginalThemeProvider } from './context/ThemeContext';
 import TaskBoard from './components/TaskBoard/TaskBoard';
 import CreateTaskButton from './components/CreateTaskButton';
-import ChatBubble from './components/Chat/ChatBubble';
-import ChatWindow from './components/Chat/ChatWindow';
-import ThemeToggle from './components/ThemeToggle';
 import SettingsButton from './components/SettingsButton';
-import Settings from './components/Settings';
+import ThemeToggle from './components/ThemeToggle';
 import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
-import AuditTrailView from './components/Audit/AuditTrailView';
-import HealthCheck from './components/Health/HealthCheck';
 import CreateAccount from './components/CreateAccount';
 import api from './api/axios'; // Import axios for API calls
 import './App.css';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import Settings from './components/Settings';
+import AuditTrailView from './components/Audit/AuditTrailView';
+import HealthCheck from './components/Health/HealthCheck';
+import ChatBubble from './components/Chat/ChatBubble';
+import ChatWindow from './components/Chat/ChatWindow';
 
 const App = () => {
     const [user, setUser] = useState(null);
@@ -26,7 +26,7 @@ const App = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [viewMode, setViewMode] = useState('kanban');
     const navigate = useNavigate();
-    const [isDarkMode] = useState(false);
+    const { isDarkMode } = useTheme();
 
     // Create theme based on dark mode state
     const theme = createTheme({
@@ -174,42 +174,45 @@ Based on the tasks above, please answer the user's question following the respon
 
     // If user is authenticated, show main app
     return (
-        <ThemeProvider theme={theme}>
+        <MuiThemeProvider theme={theme}>
             <CssBaseline />
-            <OriginalThemeProvider>
-                <TaskProvider>
-                    <div className={`app ${isDarkMode ? 'dark-mode' : ''}`}>
-                        <header className="app-header">
-                            <div className="app-logo-container" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
-                                <img src="/Multi.png" alt="Multi Logo" width="200" height="55" />
-                            </div>
-                            <div className="header-actions">
-                                <ThemeToggle />
-                                <SettingsButton />
-                                <CreateTaskButton />
-                            </div>
-                        </header>
-                        <main className="app-main">
-                            <Routes>
-                                <Route path="/" element={<TaskBoard viewMode={viewMode} setViewMode={setViewMode} user={user} />} />
-                                <Route path="/settings" element={<Settings />} />
-                                <Route path="/audit" element={<AuditTrailView />} />
-                                <Route path="/health" element={<HealthCheck />} />
-                            </Routes>
-                        </main>
-                        <ChatBubble
-                            onClick={() => setIsChatOpen(!isChatOpen)}
-                            isChatOpen={isChatOpen}
-                        />
-                        <ChatWindow
-                            isOpen={isChatOpen}
-                            onClose={() => setIsChatOpen(false)}
-                            onSendMessage={handleSendMessage}
-                        />
-                    </div>
-                </TaskProvider>
-            </OriginalThemeProvider>
-        </ThemeProvider>
+            <TaskProvider>
+                <div className={`app ${isDarkMode ? 'dark-mode' : ''}`}>
+                    <header className="app-header">
+                        <div className="app-logo-container" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
+                            <img 
+                                src={isDarkMode ? "/Multi_white.png" : "/Multi.png"} 
+                                alt="Multi Logo" 
+                                width="200" 
+                                height="55" 
+                            />
+                        </div>
+                        <div className="header-actions">
+                            <ThemeToggle />
+                            <SettingsButton />
+                            <CreateTaskButton />
+                        </div>
+                    </header>
+                    <main className="app-main">
+                        <Routes>
+                            <Route path="/" element={<TaskBoard viewMode={viewMode} setViewMode={setViewMode} user={user} />} />
+                            <Route path="/settings" element={<Settings />} />
+                            <Route path="/audit" element={<AuditTrailView />} />
+                            <Route path="/health" element={<HealthCheck />} />
+                        </Routes>
+                    </main>
+                    <ChatBubble
+                        onClick={() => setIsChatOpen(!isChatOpen)}
+                        isChatOpen={isChatOpen}
+                    />
+                    <ChatWindow
+                        isOpen={isChatOpen}
+                        onClose={() => setIsChatOpen(false)}
+                        onSendMessage={handleSendMessage}
+                    />
+                </div>
+            </TaskProvider>
+        </MuiThemeProvider>
     );
 };
 

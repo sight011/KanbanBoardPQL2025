@@ -692,4 +692,17 @@
 .add-user-form input[readonly] {
     background: #F3F4F6 !important;
     color: #888 !important;
+}
+
+.dark-mode .settings-nav {
+    background: #232b36 !important;
+}
+
+.dark-mode .settings-section-content {
+    background: #232b36 !important;
+}
+
+.dark-mode .settings-content {
+    background: #232b36 !important;
+    color: #e0e6ed !important;
 } 

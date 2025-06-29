@@ -13,6 +13,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+[data-theme="dark"]:root,
+body.dark-mode:root,
+.dark-mode :root {
+  background-color: #1a202c !important;
+}
+
 /* Remove blue focus border globally */
 *:focus,
 *:focus-visible {
@@ -42,6 +48,15 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   height: auto;
+}
+
+body.dark, .dark-mode body, [data-theme="dark"] body, body.dark-mode {
+  background-image: none !important;
+  background-color: #1a202c !important;
+}
+
+body.dark-mode {
+  background-color: #1a202c !important;
 }
 
 h1 {
@@ -84,4 +99,8 @@ button:focus-visible {
 html, body, #root {
   min-height: 100vh;
   height: auto;
+}
+
+.dark-mode .app-header, [data-theme="dark"] .app-header, body.dark .app-header {
+  background: #1a202c !important;
 }

@@ -86,7 +86,7 @@
 .dark-mode .app-header {
     background: linear-gradient(45deg, var(--primary), var(--secondary));
     box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
-    width: 1380px;
+    width: 1316px;
     margin: 0 auto;
 }
 
@@ -165,12 +165,24 @@
     --shadow-color: rgba(0, 0, 0, 0.1);
 }
 
+:root .dark-mode{
+  --primary: #0066ff;
+  --secondary: #0097ff;
+  --primary-color: #3182ce;
+  --secondary-color: #2b6cb0;
+  --background-color: #1a202c;
+  --text-color: #e2e8f0;
+  --border-color: #4a5568;
+  --hover-color: #2d3748;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
 .dark-mode {
     --primary: #0066ff;
     --secondary: #0097ff;
     --primary-color: #3182ce;
     --secondary-color: #2b6cb0;
-    --background-color: #e4e9ed;
+    --background-color: #1a202c;
     --text-color: #e2e8f0;
     --border-color: #4a5568;
     --hover-color: #2d3748;
@@ -187,6 +199,10 @@ body {
     background-color: var(--background-color);
     color: var(--text-color);
     transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body .dark-mode{
+background-color: #1a202c !important;
 }
 
 /* Animated login background for login page only */

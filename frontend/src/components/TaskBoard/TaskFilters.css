@@ -60,7 +60,7 @@
     --danger-color-hover: #c53030;
 }
 
-.dark-mode {
+:root.dark-mode {
     --bg-primary: #2d3748;
     --bg-secondary: #1a202c;
     --text-primary: #e2e8f0;
@@ -85,4 +85,10 @@
 .dark-mode .task-filters select {
     background-color: #23272f;
     color: #e2e8f0;
+}
+
+.dark-mode .filter-group {
+    background: #232b36 !important;
+    color: #e2e8f0 !important;
+    border-radius: 5px;
 }

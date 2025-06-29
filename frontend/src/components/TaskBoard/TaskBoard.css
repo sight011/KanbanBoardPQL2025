@@ -179,7 +179,8 @@ html, body, #root, .app {
 }
 
 .dark-mode .view-button {
-    color: var(--text-primary);
+    color: #e2e8f0;
+    background-color: #2d3748;
 }
 
 .dark-mode .view-button:hover:not(.active) {
@@ -219,6 +220,10 @@ html, body, #root, .app {
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: center;
+}
+
+.list-view td .dark-mode{
+    color: White;
 }
 
 .list-view td:first-child {
@@ -326,7 +331,14 @@ html, body, #root, .app {
 }
 
 :root[data-theme='dark'] .list-view td {
-    color: var(--text-primary);
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: #fff !important;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
 }
 
 :root[data-theme='dark'] .list-view tr:hover {
@@ -661,4 +673,8 @@ border-bottom: 2px solid #6a7685;
 
 .rbc-month-view {
   height: 100% !important;
+}
+
+.sprint-status-badge {
+    width: 180px;
 }
