@@ -13,6 +13,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Remove blue focus border globally */
+*:focus,
+*:focus-visible {
+  outline: none !important;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -59,7 +65,7 @@ button:hover {
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: none;
 }
 
 @media (prefers-color-scheme: light) {
