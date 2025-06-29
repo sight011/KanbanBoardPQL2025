@@ -33,19 +33,13 @@ const colorPalette = [
   '#455a64', // blue grey
 ];
 
-const CalendarView = ({ onSprintDoubleClick, user }) => {
+const CalendarView = ({ onSprintDoubleClick, user, filters, setFilters, tasks, projects }) => {
   const [sprintEvents, setSprintEvents] = useState([]);
-  const [taskEvents, setTaskEvents] = useState([]);
-  const [filters, setFilters] = useState({
-    text: '',
-    project: '',
-    sprint: '',
-    priority: '',
-    assignee: '',
-    status: '',
-    changedInTime: ''
-  });
-  const [selectedProject] = useState(null);
+
+  // Use selected project from filters
+  const selectedProject = projects && filters.project
+    ? projects.find(p => String(p.id) === String(filters.project))
+    : null;
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
@@ -69,7 +63,6 @@ const CalendarView = ({ onSprintDoubleClick, user }) => {
             color: colorPalette[idx % colorPalette.length],
             type: 'sprint'
           })).filter(e => e.start && e.end);
-          
           // Add a special "Backlog" event
           const backlogEvent = {
             id: 'backlog',
@@ -77,54 +70,17 @@ const CalendarView = ({ onSprintDoubleClick, user }) => {
             start: new Date(),
             end: new Date(),
             allDay: true,
-            color: '#6c757d', // gray color for backlog
+            color: '#6c757d',
             type: 'backlog'
           };
-          
           setSprintEvents([...events, backlogEvent]);
         }
       } catch (err) {
-        setSprintEvents([]);
+        console.error('Failed to fetch sprints', err);
       }
     };
     fetchSprints();
   }, []);
-
-  // Fetch tasks based on filters
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (filters.project) params.append('project', filters.project);
-        if (filters.sprint) params.append('sprint', filters.sprint);
-        if (filters.priority) params.append('priority', filters.priority);
-        if (filters.assignee) params.append('assignee', filters.assignee);
-        if (filters.status) params.append('status', filters.status);
-        if (filters.text) params.append('search', filters.text);
-
-        const res = await api.get(`/api/tasks?${params.toString()}`);
-        const data = res.data;
-        if (data.tasks) {
-          const events = data.tasks
-            .filter(task => task.duedate) // Only show tasks with due dates
-            .map((task) => ({
-              id: task.id,
-              title: `${task.ticket_number}: ${task.title}`,
-              start: new Date(task.duedate),
-              end: new Date(task.duedate),
-              allDay: true,
-              color: getTaskColor(task.priority, task.status),
-              type: 'task',
-              task: task
-            }));
-          setTaskEvents(events);
-        }
-      } catch (err) {
-        setTaskEvents([]);
-      }
-    };
-    fetchTasks();
-  }, [filters]);
 
   // Helper function to get task color based on priority and status
   const getTaskColor = (priority, status) => {
@@ -134,22 +90,20 @@ const CalendarView = ({ onSprintDoubleClick, user }) => {
     return '#6b7280'; // Gray for low priority
   };
 
-  // Merge sprints and task events
-  const allEvents = [...sprintEvents, ...taskEvents];
-
-  // Custom event style getter
-  const eventPropGetter = (event) => {
-    return {
-      style: {
-        backgroundColor: event.color || '#1976d2',
-        color: '#fff',
-        borderRadius: '4px',
-        border: 'none',
-        padding: '2px 6px',
-        fontWeight: 500,
-      },
-    };
-  };
+  // Use tasks prop to generate task events
+  const taskEvents = (tasks || [])
+    .filter(task => task.duedate)
+    .map((task) => ({
+      id: task.id,
+      title: `${task.ticket_number}: ${task.title}`,
+      start: new Date(task.duedate),
+      end: new Date(task.duedate),
+      allDay: true,
+      color: getTaskColor(task.priority, task.status),
+      type: 'task',
+      task: task
+    }));
+  console.log('Task events:', taskEvents);
 
   // Double click handler
   const handleDoubleClickEvent = (event) => {
@@ -160,6 +114,16 @@ const CalendarView = ({ onSprintDoubleClick, user }) => {
       console.log('Task clicked:', event.task);
     }
   };
+
+  // Combine sprint and task events
+  const allEvents = [...sprintEvents, ...taskEvents];
+
+  // Ensure allEvents have Date objects for start/end
+  const allEventsForCalendar = allEvents.map(e => ({
+    ...e,
+    start: typeof e.start === 'string' ? new Date(e.start) : e.start,
+    end: typeof e.end === 'string' ? new Date(e.end) : e.end,
+  }));
 
   return (
     <div className="calendar-view-outer">
@@ -172,14 +136,10 @@ const CalendarView = ({ onSprintDoubleClick, user }) => {
       <div id="calendar-inner-wrapper" style={{ marginTop: '16px' }}>
         <Calendar
           localizer={localizer}
-          events={allEvents}
+          events={allEventsForCalendar}
           startAccessor="start"
           endAccessor="end"
           style={{ minHeight: 500, width: '100%' }}
-          views={['month', 'week', 'day']}
-          defaultView="month"
-          popup
-          eventPropGetter={eventPropGetter}
           onDoubleClickEvent={handleDoubleClickEvent}
         />
       </div>
@@ -190,6 +150,10 @@ const CalendarView = ({ onSprintDoubleClick, user }) => {
 CalendarView.propTypes = {
   onSprintDoubleClick: PropTypes.func,
   user: PropTypes.object,
+  filters: PropTypes.object.isRequired,
+  setFilters: PropTypes.func.isRequired,
+  tasks: PropTypes.array,
+  projects: PropTypes.array,
 };
 
 export default CalendarView; 
