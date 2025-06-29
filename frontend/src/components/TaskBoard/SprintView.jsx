@@ -313,7 +313,6 @@ const SprintView = ({ focusedSprintId, user }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [editSprint, setEditSprint] = useState(null);
     const [actionLoading, setActionLoading] = useState(null);
-    const [deleteLoading, setDeleteLoading] = useState(null);
     const [isDarkMode, setIsDarkMode] = useState(() =>
         document.documentElement.classList.contains('dark-mode') ||
         document.body.classList.contains('dark-mode')
@@ -649,7 +648,6 @@ const SprintView = ({ focusedSprintId, user }) => {
     };
 
     const confirmDeleteSprint = async (destination) => {
-        setDeleteLoading(sprintToDelete.id);
         try {
             // Move all tasks to destination
             const tasksToMove = tasks.filter(t => t.sprint_id === sprintToDelete.id);
@@ -663,7 +661,6 @@ const SprintView = ({ focusedSprintId, user }) => {
             await fetch(`/api/sprints/${sprintToDelete.id}`, { method: 'DELETE' });
             await fetchSprints();
         } finally {
-            setDeleteLoading(null);
             setDeleteModalOpen(false);
             setSprintToDelete(null);
         }
@@ -1029,7 +1026,9 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                             <path d="M19 9l-7 7-7-7" stroke={isDarkMode ? '#DDD' : '#2d3748'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                                         </svg>
                                                     </button>
-                                                    <h3 style={{ margin: 0 }}>{sprint.name}</h3>
+                                                    <h3 title={sprint.name}>
+                                                        {sprint.name}
+                                                    </h3>
                                                     <span className="sprint-dates" style={{ marginLeft: 16 }}>{formatDateRange(sprint.start_date, sprint.end_date)}</span>
                                                     <span className="sprint-status-badge" style={{ marginLeft: 16 }}>Status: {sprint.status}</span>
                                                     <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
@@ -1039,57 +1038,60 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                         Available Time: TBD
                                                     </span>
                                                     <button
+                                                        id="sprint-edit-btn"
+                                                        className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
+                                                        onClick={() => { setModalOpen(true); setEditSprint(sprint); }}
+                                                        style={{ marginLeft: 16 }}
+                                                        aria-label="Edit Sprint"
+                                                    >
+                                                        {/* Pencil icon SVG */}
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M12 20h9"/>
+                                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z"/>
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        id="sprint-assignee-btn"
                                                         className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
                                                         onClick={() => handleSprintEdit(sprint)}
-                                                        style={{ marginLeft: 16 }}
+                                                        style={{ marginLeft: 8 }}
+                                                        aria-label="Manage Sprint Assignees"
                                                     >
-                                                        Assignee
+                                                        {/* Person silhouette icon SVG */}
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                                            <circle cx="12" cy="7" r="4"/>
+                                                        </svg>
                                                     </button>
-                                                    <div className="sprint-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                                                        {sprint.status === 'planned' && (
-                                                            <button 
-                                                                className={classNames('sprint-action-button', 'start', isDarkMode ? 'dark' : 'light')}
-                                                                onClick={() => handleSprintAction(sprint)} 
-                                                                disabled={actionLoading === sprint.id}
-                                                            >
-                                                                {actionLoading === sprint.id ? 'Starting...' : 'Start'}
-                                                            </button>
-                                                        )}
-                                                        {sprint.status === 'active' && (
-                                                            <button 
-                                                                className={classNames('sprint-action-button', 'complete', isDarkMode ? 'dark' : 'light')}
-                                                                onClick={() => handleSprintAction(sprint)} 
-                                                                disabled={actionLoading === sprint.id}
-                                                            >
-                                                                {actionLoading === sprint.id ? 'Completing...' : 'Complete'}
-                                                            </button>
-                                                        )}
-                                                        {sprint.status === 'completed' && (
-                                                            <button 
-                                                                className={classNames('sprint-action-button', 'reactivate', isDarkMode ? 'dark' : 'light')}
-                                                                onClick={() => handleReactivate(sprint)} 
-                                                                disabled={actionLoading === sprint.id}
-                                                            >
-                                                                {actionLoading === sprint.id ? 'Reactivating...' : 'Reactivate'}
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            className={classNames('sprint-action-button', 'edit', isDarkMode ? 'dark' : 'light')}
-                                                            onClick={() => {
-                                                                setEditSprint(sprint);
-                                                                setModalOpen(true);
-                                                            }}
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                        <button 
-                                                            className={classNames('sprint-action-button', 'delete', isDarkMode ? 'dark' : 'light')}
-                                                            onClick={() => handleDeleteSprint(sprint)} 
-                                                            disabled={deleteLoading === sprint.id}
-                                                        >
-                                                            {deleteLoading === sprint.id ? 'Deleting...' : 'Delete'}
-                                                        </button>
-                                                    </div>
+                                                    <button
+                                                        id="sprint-delete-btn"
+                                                        className={classNames('sprint-action-button', 'delete', isDarkMode ? 'dark' : 'light')}
+                                                        onClick={() => handleDeleteSprint(sprint)}
+                                                        style={{ marginLeft: 8 }}
+                                                        aria-label="Delete Sprint"
+                                                    >
+                                                        {/* Trash icon SVG */}
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                                                    </button>
+                                                    <button
+                                                        id="sprint-status-btn"
+                                                        className={classNames('sprint-action-button',
+                                                            sprint.status === 'planned' ? 'start' : sprint.status === 'active' ? 'complete' : 'reactivate',
+                                                            isDarkMode ? 'dark' : 'light')}
+                                                        onClick={() => {
+                                                            if (sprint.status === 'planned' || sprint.status === 'active') {
+                                                                handleSprintAction(sprint);
+                                                            } else if (sprint.status === 'completed') {
+                                                                handleReactivate(sprint);
+                                                            }
+                                                        }}
+                                                        disabled={actionLoading === sprint.id}
+                                                        style={{ marginLeft: 8 }}
+                                                    >
+                                                        {actionLoading === sprint.id
+                                                            ? (sprint.status === 'planned' ? 'Starting...' : sprint.status === 'active' ? 'Completing...' : 'Reactivating...')
+                                                            : (sprint.status === 'planned' ? 'Start' : sprint.status === 'active' ? 'Complete' : 'Reactivate')}
+                                                    </button>
                                                 </div>
                                             </div>
                                             {!foldedSprints.has(sprint.id) && (
@@ -1167,7 +1169,9 @@ const SprintView = ({ focusedSprintId, user }) => {
                                                         <path d="M19 9l-7 7-7-7" stroke={isDarkMode ? '#DDD' : '#2d3748'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                                     </svg>
                                                 </button>
-                                                <h3 style={{ margin: 0 }}>Backlog</h3>
+                                                <h3 title="Backlog">
+                                                    Backlog
+                                                </h3>
                                                 <span className="sprint-effort-sum" style={{ marginLeft: 16 }}>
                                                     Total Effort: {calculateTotalEffort(tasksBySprint['backlog'])}
                                                 </span>

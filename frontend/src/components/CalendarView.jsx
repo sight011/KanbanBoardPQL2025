@@ -228,17 +228,27 @@ const CalendarView = ({ onSprintDoubleClick, user, filters, setFilters, tasks, p
       max-height: 120px !important;
       padding: 0 !important;
     }
-    .rbc-event-content, .rbc-event-label {
-      white-space: normal !important;
-      overflow: visible !important;
-      font-size: 13px !important;
-      line-height: 1.2 !important;
+    .rbc-date-cell {
+      padding-top: 0 !important;
+      vertical-align: top !important;
+    }
+    .rbc-row-segment {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
     }
     .rbc-event {
-      margin: 2px 0 0 2px !important;
+      margin-top: 0 !important;
+      margin-bottom: 2px !important;
+      margin-left: 2px !important;
       padding: 2px 6px !important;
       border-radius: 4px !important;
       min-width: 60px !important;
+      border: none !important;
+    }
+    .rbc-allday-cell {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      min-height: 0 !important;
     }
     .rbc-toolbar-label {
       font-weight: bold !important;
@@ -247,6 +257,9 @@ const CalendarView = ({ onSprintDoubleClick, user, filters, setFilters, tasks, p
     .rbc-event.rbc-selected {
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       border: 2px solid #3182ce;
+    }
+    .sprint-effort-sum {
+      width: 266px !important;
     }
   `;
 

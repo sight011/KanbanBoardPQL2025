@@ -515,9 +515,11 @@
 }
 
 .sprint-section-header-row h3 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+    cursor: pointer;
 }
 
 .sprint-dates {
@@ -642,6 +644,7 @@
 }
 
 .sprint-effort-sum {
+    width: 205px !important;
     font-size: 0.875rem;
     font-weight: 500;
     padding: 4px 8px;
@@ -650,15 +653,13 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    width: 236px !important;
-}
-
-/* Light mode styling */
-.sprint-effort-sum {
+    
     color: #1e40af;
     background-color: #dbeafe;
     border: 1px solid #93c5fd;
 }
+
+
 
 /* Dark mode styling */
 .sprint-section.dark .sprint-effort-sum,
@@ -667,7 +668,7 @@
     color: #60a5fa;
     background-color: rgba(59, 130, 246, 0.15);
     border: 1px solid rgba(59, 130, 246, 0.3);
-    width: 236px !important;
+    width: 266px !important;
 }
 
 /* Hover effects */
@@ -752,36 +753,50 @@
 }
 
 /* Sprint Action Button for User Selection */
-.sprint-action-button.edit {
-    min-width: 90px;
-    padding: 4px 8px;
-    font-size: 0.875rem;
-    display: inline-block;
-    border-radius: 4px;
-    border: 1px solid #e2e8f0;
-    background-color: #edf2f7;
-    color: #4a5568;
-    transition: all 0.2s;
+.sprint-action-button.edit,
+.sprint-action-button.delete {
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.sprint-action-button.edit.dark {
-    background-color: #2d3748;
-    color: #e2e8f0;
-    border: 1px solid #4a5568;
+.sprint-action-button.edit svg,
+.sprint-action-button.delete svg {
+    width: 18px;
+    height: 18px;
+    display: block;
 }
 
-.sprint-action-button.edit.light {
-    background-color: #edf2f7;
-    color: #4a5568;
-    border: 1px solid #e2e8f0;
+.sprint-section-header-row .sprint-action-button.edit,
+.sprint-section-header-row .sprint-action-button.delete {
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.sprint-action-button.edit.light:hover {
-    background-color: #e2e8f0;
+/* Ensure Assignee button in header row has consistent height */
+.sprint-section-header-row .sprint-action-button {
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.sprint-action-button.edit.dark:hover {
-    background-color: #4a5568;
+/* Override for start/complete/assignee buttons to keep normal styling */
+.sprint-section-header-row .sprint-action-button.start,
+.sprint-section-header-row .sprint-action-button.complete {
+    width: auto !important;
+    min-width: 90px !important;
+    padding: 0.375rem 0.75rem !important;
+    display: inline-block !important;
 }
 
 .fold-arrow-svg.light {
@@ -793,17 +808,29 @@
     fill: none;
 }
 
-/* Ensure Assignee button in header row has consistent height */
-.sprint-section-header-row .sprint-action-button {
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .sprint-section.dark .sprint-dates,
 .dark-mode .sprint-dates,
 [data-theme="dark"] .sprint-dates {
     margin-left: 0px;
     width: 246px;
+}
+
+#sprint-edit-btn,
+#sprint-assignee-btn,
+#sprint-delete-btn {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#sprint-edit-btn svg,
+#sprint-assignee-btn svg,
+#sprint-delete-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
 } 
