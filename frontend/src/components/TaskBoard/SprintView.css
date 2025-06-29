@@ -825,6 +825,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    margin-left: 0px!important;
 }
 
 #sprint-edit-btn svg,
