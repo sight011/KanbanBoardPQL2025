@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import './ListView.css';
 import { formatHours } from '../../utils/timeFormat';
+import { useTheme } from '../../context/ThemeContext';
+import PropTypes from 'prop-types';
 
 const ListView = ({ tasks, onEdit, onDelete }) => {
+    const { theme } = useTheme();
     const [users, setUsers] = useState([]);
     const [hoursPerDay, setHoursPerDay] = useState(8);
 
@@ -45,7 +48,8 @@ const ListView = ({ tasks, onEdit, onDelete }) => {
     };
 
     return (
-        <div className="list-view">
+        <div className={`list-view${theme === 'dark' ? ' dark-mode' : ''}`}
+            style={{ width: '100%', maxWidth: '1320px', margin: '0px auto', padding: '0px' }}>
             <table>
                 <thead>
                     <tr>
@@ -110,6 +114,12 @@ const ListView = ({ tasks, onEdit, onDelete }) => {
             </table>
         </div>
     );
+};
+
+ListView.propTypes = {
+    tasks: PropTypes.arrayOf(PropTypes.object).isRequired,
+    onEdit: PropTypes.func.isRequired,
+    onDelete: PropTypes.func.isRequired,
 };
 
 export default ListView; 

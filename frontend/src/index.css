@@ -57,6 +57,7 @@ body.dark, .dark-mode body, [data-theme="dark"] body, body.dark-mode {
 
 body.dark-mode {
   background-color: #1a202c !important;
+  --text-primary: #fff;
 }
 
 h1 {

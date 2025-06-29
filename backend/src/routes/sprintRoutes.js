@@ -26,4 +26,7 @@ router.post('/:id/reactivate', sprintController.reactivateSprint);
 // Get sprint burndown data
 router.get('/:id/burndown', sprintController.getSprintBurndown);
 
+// Export company calendar as .ics
+router.get('/company/:companyId/calendar.ics', requireLoginWithCompanyIsolation, sprintController.exportCompanyCalendarICS);
+
 module.exports = router; 

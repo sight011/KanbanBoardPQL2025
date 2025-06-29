@@ -407,6 +407,10 @@ html, body, #root, .app {
     color: #e2e8f0;
 }
 
+.dark-mode .diagram-view h3 {
+    color: #6b7280 !important;
+}
+
 /* Responsive Design */
 @media (max-width: 1440px) {
     .task-board {
@@ -677,4 +681,8 @@ border-bottom: 2px solid #6a7685;
 
 .sprint-status-badge {
     width: 180px;
+}
+
+.dark-mode .calendar-view-outer {
+    background: #1a202c;
 }

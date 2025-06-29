@@ -52,7 +52,7 @@
 }
 
 .burndown-chart-container.dark {
-    background: #23272f;
+    background: #1a202c;
     color: #e2e8f0;
     box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
@@ -62,12 +62,12 @@
 }
 
 .burndown-info.dark {
-    background: #2d3748;
-    color: #e2e8f0;
+    background: #1a202c;
+    color: #ffffff;
 }
 
 .burndown-info.dark p {
-    color: #cbd5e1;
+    color: #ffffff;
 }
 
 .burndown-loading.dark,
@@ -165,3 +165,18 @@
     font-weight: 600;
     text-shadow: 0 0 2px #222;
 } 
+
+
+.dark-mode .burndown-info{
+background-color: #1a202c;
+}
+
+.dark-mode .burndown-info p{
+    color: #e2e8f0;
+    }
+
+.dark-mode .burndown-chart-container{
+    background-color: #1a202c;}
+
+
+.dark-mode .burndown-chart-container h3 { color: #e2e8f0}

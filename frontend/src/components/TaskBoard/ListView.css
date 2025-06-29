@@ -109,8 +109,90 @@
     color: #666;
 }
 
-body.dark-mode .list-view td,
+.dark-mode .list-view td{
+    color: #fff !important;
+}
+
+.list-view.dark-mode td {
+    color: #ffffff;
+    border-bottom: 1px solid #444;
+}
+
+.list-view.dark-mode .status-badge,
+.list-view.dark-mode .priority-badge {
+    color: #ffffff !important;
+}
+
+.list-view.dark-mode th {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border-bottom: 1px solid #444;
+}
+
+.list-view.dark-mode tr:hover {
+    background-color: #3a3a3a;
+}
+
+.dark-mode .list-view td,
+.dark-mode .list-view td * {
+    color: #ffffff !important;
+}
+
+body.dark-mode .list-view td {
+    color: #ffffff !important;
+}
+
+.dark-mode .list-view td,
+.dark-mode .list-view td span,
+.dark-mode .list-view td div,
+.dark-mode .list-view td p {
+    color: #ffffff !important;
+}
+
+[class*="dark-mode"] td,
+.dark-mode td,
+body.dark-mode td,
+html.dark-mode td {
+    color: #ffffff !important;
+}
+
+.dark-mode .list-view td > *,
+.dark-mode .list-view td::before,
+.dark-mode .list-view td::after {
+    color: #ffffff !important;
+}
+
+.dark-mode * {
+    color: #ffffff !important;
+}
+
+/* Add this to your CSS */
+.dark-mode .status-todo {
+    color: #ffffff !important;
+}
+
+.dark-mode .status-in-progress {
+    color: #ffffff !important;
+}
+
+.dark-mode .status-done {
+    color: #ffffff !important;
+}
+
+.dark-mode .assignee-bubble {
+    color: #ffffff !important;
+}
+
+.dark-mode .assignee-bubble.unassigned {
+    color: #ffffff !important;
+}
+
 .app.dark-mode .list-view td,
+body.dark-mode .list-view td,
 .dark-mode .list-view td {
     color: #fff !important;
-} 
+}
+
+.list-view td, .list-view td * {
+  color: #fff !important;
+}

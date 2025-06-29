@@ -1,4 +1,5 @@
 const pool = require('../db');
+const ical = require('ical-generator');
 
 const sprintController = {
     // List all sprints for the user's company
@@ -515,6 +516,73 @@ const sprintController = {
             res.status(500).json({ success: false, error: error.message });
         } finally {
             client.release();
+        }
+    },
+    exportCompanyCalendarICS: async (req, res) => {
+        try {
+            const { companyId } = req.params;
+            const userCompanyId = req.user.company_id;
+            if (parseInt(companyId) !== userCompanyId) {
+                return res.status(403).send('Forbidden: You do not have access to this company calendar.');
+            }
+
+            // Fetch all sprints for the company
+            const sprintsResult = await pool.query(
+                `SELECT s.id, s.name, s.start_date, s.end_date, s.status, p.name AS project_name
+                 FROM sprints s
+                 JOIN projects p ON s.project_id = p.id
+                 JOIN departments d ON p.department_id = d.id
+                 WHERE d.company_id = $1
+                 ORDER BY s.start_date DESC, s.id DESC`,
+                [userCompanyId]
+            );
+            const sprints = sprintsResult.rows;
+
+            // Fetch all tasks for the company
+            const tasksResult = await pool.query(
+                `SELECT t.id, t.title, t.description, t.status, t.duedate, t.sprint_id, t.project_id, t.created_at, t.completed_at
+                 FROM tasks t
+                 JOIN users u ON t.reporter_id = u.id
+                 WHERE u.company_id = $1
+                 ORDER BY t.duedate, t.id`,
+                [userCompanyId]
+            );
+            const tasks = tasksResult.rows;
+
+            // Create calendar
+            const cal = ical({ name: `Company ${userCompanyId} Kanban Calendar` });
+
+            // Add sprints as all-day events
+            sprints.forEach(sprint => {
+                if (sprint.start_date && sprint.end_date) {
+                    cal.createEvent({
+                        start: new Date(sprint.start_date),
+                        end: new Date(sprint.end_date),
+                        allDay: true,
+                        summary: `[Sprint] ${sprint.name} (${sprint.project_name})`,
+                        description: `Sprint Status: ${sprint.status}`
+                    });
+                }
+            });
+
+            // Add tasks as events (use duedate if available, else created_at)
+            tasks.forEach(task => {
+                const start = task.duedate ? new Date(task.duedate) : new Date(task.created_at);
+                const end = task.completed_at ? new Date(task.completed_at) : start;
+                cal.createEvent({
+                    start,
+                    end,
+                    summary: `[Task] ${task.title}`,
+                    description: task.description || '',
+                });
+            });
+
+            res.setHeader('Content-Type', 'text/calendar');
+            res.setHeader('Content-Disposition', 'attachment; filename="calendar.ics"');
+            cal.serve(res);
+        } catch (error) {
+            console.error('Error generating .ics calendar:', error);
+            res.status(500).send('Failed to generate calendar.');
         }
     }
 };
